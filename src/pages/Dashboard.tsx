@@ -20,10 +20,16 @@ const VENUES = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { signOut: authSignOut } = useAuth();
+  const { user, signOut: authSignOut } = useAuth();
   const [venue, setVenue] = useState<string>("");
   const [date, setDate] = useState<Date>();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user?.email) return "U";
+    return user.email.charAt(0).toUpperCase();
+  };
 
   const handleGetAdvice = async () => {
     if (!venue || !date) return;
@@ -56,15 +62,28 @@ const Dashboard = () => {
               <p className="text-sm text-white/80">Get AI-powered insights</p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm"
-            onClick={handleSignOut}
-            disabled={isLoading}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-4">
+            {user && (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center font-semibold">
+                  {getUserInitials()}
+                </div>
+                <div className="hidden sm:block text-right">
+                  <p className="text-sm font-medium">{user.email}</p>
+                  <p className="text-xs text-white/70">My Profile</p>
+                </div>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm"
+              onClick={handleSignOut}
+              disabled={isLoading}
+            >
+              <LogOut className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </Button>
+          </div>
         </div>
       </header>
 
