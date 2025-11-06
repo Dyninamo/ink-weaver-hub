@@ -14,7 +14,168 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      fishing_reports: {
+        Row: {
+          best_spots: string[] | null
+          created_at: string | null
+          flies: string[] | null
+          id: string
+          methods: string[] | null
+          report_date: string
+          report_text: string | null
+          rod_average: number | null
+          venue: string
+          weather: string[] | null
+        }
+        Insert: {
+          best_spots?: string[] | null
+          created_at?: string | null
+          flies?: string[] | null
+          id?: string
+          methods?: string[] | null
+          report_date: string
+          report_text?: string | null
+          rod_average?: number | null
+          venue: string
+          weather?: string[] | null
+        }
+        Update: {
+          best_spots?: string[] | null
+          created_at?: string | null
+          flies?: string[] | null
+          id?: string
+          methods?: string[] | null
+          report_date?: string
+          report_text?: string | null
+          rod_average?: number | null
+          venue?: string
+          weather?: string[] | null
+        }
+        Relationships: []
+      }
+      queries: {
+        Row: {
+          advice_text: string | null
+          created_at: string | null
+          email_sent: boolean | null
+          email_sent_at: string | null
+          id: string
+          map_image_url: string | null
+          query_date: string
+          recommended_locations: Json | null
+          user_id: string
+          venue: string
+          weather_data: Json | null
+        }
+        Insert: {
+          advice_text?: string | null
+          created_at?: string | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          id?: string
+          map_image_url?: string | null
+          query_date: string
+          recommended_locations?: Json | null
+          user_id: string
+          venue: string
+          weather_data?: Json | null
+        }
+        Update: {
+          advice_text?: string | null
+          created_at?: string | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          id?: string
+          map_image_url?: string | null
+          query_date?: string
+          recommended_locations?: Json | null
+          user_id?: string
+          venue?: string
+          weather_data?: Json | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          mobile_number: string | null
+          mobile_verified: boolean | null
+          two_factor_enabled: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          mobile_number?: string | null
+          mobile_verified?: boolean | null
+          two_factor_enabled?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mobile_number?: string | null
+          mobile_verified?: boolean | null
+          two_factor_enabled?: boolean | null
+        }
+        Relationships: []
+      }
+      venue_metadata: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      verification_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          mobile_number: string
+          user_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          mobile_number: string
+          user_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          mobile_number?: string
+          user_id?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
