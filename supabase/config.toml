@@ -1,1 +1,4 @@
 project_id = "zprlfecbvdltfpneidte"
+
+[functions.get-fishing-advice-mock]
+verify_jwt = false
