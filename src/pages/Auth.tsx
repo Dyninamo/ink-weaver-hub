@@ -51,7 +51,10 @@ const Auth = () => {
           setCurrentUserId(session.user.id);
           setShowMobileModal(true);
         } else {
-          navigate("/dashboard");
+          // Check for redirect parameter
+          const params = new URLSearchParams(window.location.search);
+          const redirectTo = params.get("redirect") || "/dashboard";
+          navigate(redirectTo);
         }
       }
     };
@@ -122,14 +125,18 @@ const Auth = () => {
           console.error("Profile update error:", profileError);
         }
 
-        toast({
-          title: "Account created!",
-          description: "Welcome to Fishing Advice. Redirecting to dashboard...",
-        });
+      toast({
+        title: "Account created!",
+        description: "Welcome to Fishing Advice. Redirecting...",
+      });
 
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1000);
+      // Check for redirect parameter
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get("redirect") || "/dashboard";
+      
+      setTimeout(() => {
+        navigate(redirectTo);
+      }, 1000);
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -188,11 +195,15 @@ const Auth = () => {
 
       toast({
         title: "Welcome back!",
-        description: "Redirecting to dashboard...",
+        description: "Redirecting...",
       });
 
+      // Check for redirect parameter
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get("redirect") || "/dashboard";
+
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate(redirectTo);
       }, 1000);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -268,7 +279,11 @@ const Auth = () => {
       });
 
       setShowMobileModal(false);
-      navigate("/dashboard");
+      
+      // Check for redirect parameter
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get("redirect") || "/dashboard";
+      navigate(redirectTo);
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
