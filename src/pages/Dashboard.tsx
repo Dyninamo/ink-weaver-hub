@@ -9,8 +9,7 @@ import { CalendarIcon, Fish, LogOut } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const VENUES = [
   "Grafham Water",
@@ -21,7 +20,7 @@ const VENUES = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signOut: authSignOut } = useAuth();
   const [venue, setVenue] = useState<string>("");
   const [date, setDate] = useState<Date>();
   const [isLoading, setIsLoading] = useState(false);
@@ -38,24 +37,9 @@ const Dashboard = () => {
   };
 
   const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error("Sign out error:", error);
-      }
-      
-      toast({
-        title: "Signed out",
-        description: "You have been signed out successfully.",
-      });
-      
-      navigate("/");
-    } catch (error) {
-      console.error("Unexpected sign out error:", error);
-      // Still redirect even on error
-      navigate("/");
-    }
+    setIsLoading(true);
+    await authSignOut();
+    navigate("/");
   };
 
   return (

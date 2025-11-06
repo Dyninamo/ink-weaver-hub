@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,48 +10,20 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isLoading } = useAuth();
+  const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
-    // Check initial session
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          setIsAuthenticated(true);
-        } else {
-          // Save intended destination
-          const redirectTo = `${location.pathname}${location.search}`;
-          navigate(`/auth?redirect=${encodeURIComponent(redirectTo)}`, { replace: true });
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        navigate("/auth", { replace: true });
-      } finally {
-        setIsLoading(false);
+    if (!isLoading) {
+      if (!user) {
+        // Save intended destination
+        const redirectTo = `${location.pathname}${location.search}`;
+        navigate(`/auth?redirect=${encodeURIComponent(redirectTo)}`, { replace: true });
+      } else {
+        setShouldRender(true);
       }
-    };
-
-    checkAuth();
-
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_OUT" || !session) {
-          setIsAuthenticated(false);
-          navigate("/auth", { replace: true });
-        } else if (event === "SIGNED_IN" || session) {
-          setIsAuthenticated(true);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, location.pathname, location.search]);
+    }
+  }, [user, isLoading, navigate, location.pathname, location.search]);
 
   if (isLoading) {
     return (
@@ -64,7 +36,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!shouldRender || !user) {
     return null;
   }
 
@@ -72,3 +44,4 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 };
 
 export default ProtectedRoute;
+
