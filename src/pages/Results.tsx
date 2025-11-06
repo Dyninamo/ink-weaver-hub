@@ -1,10 +1,33 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Fish, Wind, Thermometer, Cloud, Mail, ArrowLeft } from "lucide-react";
+import { Fish, Wind, Thermometer, Cloud, Mail, ArrowLeft, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Results = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Sign out error:", error);
+      }
+      
+      toast({
+        title: "Signed out",
+        description: "You have been signed out successfully.",
+      });
+      
+      navigate("/");
+    } catch (error) {
+      console.error("Unexpected sign out error:", error);
+      navigate("/");
+    }
+  };
 
   // Mock data - will be replaced with real data
   const mockData = {
@@ -46,9 +69,19 @@ Morning and late afternoon sessions typically produce the best results in these 
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <div className="flex items-center gap-2">
-            <Fish className="w-6 h-6" />
-            <span className="font-semibold">Fishing Advice</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Fish className="w-6 h-6" />
+              <span className="font-semibold">Fishing Advice</span>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={handleSignOut}
+              className="text-white hover:bg-white/10"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>

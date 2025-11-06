@@ -5,10 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Fish } from "lucide-react";
+import { CalendarIcon, Fish, LogOut } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const VENUES = [
   "Grafham Water",
@@ -19,6 +21,7 @@ const VENUES = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [venue, setVenue] = useState<string>("");
   const [date, setDate] = useState<Date>();
   const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +35,27 @@ const Dashboard = () => {
       setIsLoading(false);
       navigate("/results");
     }, 2000);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Sign out error:", error);
+      }
+      
+      toast({
+        title: "Signed out",
+        description: "You have been signed out successfully.",
+      });
+      
+      navigate("/");
+    } catch (error) {
+      console.error("Unexpected sign out error:", error);
+      // Still redirect even on error
+      navigate("/");
+    }
   };
 
   return (
@@ -51,8 +75,10 @@ const Dashboard = () => {
           <Button
             variant="outline"
             className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm"
-            onClick={() => navigate("/")}
+            onClick={handleSignOut}
+            disabled={isLoading}
           >
+            <LogOut className="w-4 h-4 mr-2" />
             Sign Out
           </Button>
         </div>
