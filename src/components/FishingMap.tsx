@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import React, { useEffect, useState, useMemo } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Location } from "@/services/adviceService";
@@ -47,6 +47,35 @@ const getMarkerIcon = (type: Location["type"]) => {
   }
 };
 
+// Component to handle map bounds after map is ready
+function MapBoundsHandler({ locations }: { locations: Location[] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || locations.length === 0) return;
+
+    try {
+      if (locations.length === 1) {
+        const [lat, lng] = locations[0].coordinates;
+        map.setView([lat, lng], 13, { animate: false });
+      } else {
+        const bounds = L.latLngBounds(
+          locations.map((loc) => [loc.coordinates[0], loc.coordinates[1]])
+        );
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+      }
+      
+      // Small delay to ensure tiles are loaded
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+    } catch (error) {
+      console.error("Error setting map bounds:", error);
+    }
+  }, [map, locations]);
+
+  return null;
+}
 
 interface FishingMapProps {
   locations: Location[];
@@ -79,7 +108,6 @@ class MapErrorBoundary extends React.Component<{ fallback?: React.ReactNode; chi
 
 const FishingMap = ({ locations, venueName }: FishingMapProps) => {
   const [mounted, setMounted] = useState(false);
-  const mapRef = useRef<L.Map | null>(null);
 
   // Client-only rendering guard
   useEffect(() => {
@@ -113,27 +141,6 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
     }
   }, [mounted, validLocations]);
 
-  // Handle map bounds after map is created
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || validLocations.length === 0) return;
-
-    try {
-      if (validLocations.length === 1) {
-        const [lat, lng] = validLocations[0].coordinates;
-        map.setView([lat, lng], 13, { animate: false });
-      } else {
-        const bounds = L.latLngBounds(
-          validLocations.map((loc) => [loc.coordinates[0], loc.coordinates[1]])
-        );
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
-      }
-      map.invalidateSize();
-    } catch (error) {
-      console.error("Error setting map bounds:", error);
-    }
-  }, [validLocations]);
-
   // Show loading state before mount
   if (!mounted) {
     return (
@@ -164,20 +171,17 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
       </div>
     }>
       <MapContainer
+        key={venueName}
         center={[centerLat, centerLng]}
         zoom={12}
         className="w-full h-full rounded-lg shadow-soft"
         style={{ minHeight: "400px" }}
-        ref={(mapInstance) => {
-          if (mapInstance) {
-            mapRef.current = mapInstance;
-          }
-        }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapBoundsHandler locations={validLocations} />
         {validLocations.map((location, index) => (
           <Marker
             key={index}
