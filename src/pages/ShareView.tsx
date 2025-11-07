@@ -15,7 +15,8 @@ interface SharedReport {
   query_date: string;
   advice_text: string;
   weather_data: any;
-  recommended_locations: any[];
+  recommended_locations?: any[];
+  recommended_locations_count?: number;
   map_image_url?: string;
 }
 
@@ -42,8 +43,19 @@ export default function ShareView() {
       setLoading(true);
       setError(null);
 
+      const includeFullContent = !!user;
+      
+      // Get auth token if user is logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error: functionError } = await supabase.functions.invoke('get-shared-report', {
-        body: { token },
+        body: { 
+          token,
+          includeFullContent 
+        },
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`,
+        } : undefined,
       });
 
       if (functionError) throw functionError;
@@ -53,8 +65,8 @@ export default function ShareView() {
         return;
       }
 
-      setReport(data.report);
-      setCreator(data.creator);
+      setReport(data.query);
+      setCreator(data.shareInfo.created_by);
     } catch (err: any) {
       console.error('Error fetching shared report:', err);
       setError(err.message || 'Failed to load shared report');
@@ -131,7 +143,6 @@ export default function ShareView() {
 
   if (!report) return null;
 
-  const previewText = report.advice_text?.substring(0, 200) + '...';
   const isLoggedIn = !!user;
 
   return (
@@ -218,7 +229,7 @@ export default function ShareView() {
               <h3 className="text-lg font-semibold mb-3">Fishing Advice</h3>
               <div className={`prose prose-sm max-w-none ${!isLoggedIn ? 'blur-sm select-none' : ''}`}>
                 <p className="whitespace-pre-wrap text-foreground">
-                  {isLoggedIn ? report.advice_text : previewText}
+                  {report.advice_text}
                 </p>
               </div>
               
@@ -256,15 +267,20 @@ export default function ShareView() {
                 {isLoggedIn && report.recommended_locations ? (
                   <FishingMap venueName={report.venue} locations={report.recommended_locations} />
                 ) : (
-                  <div className="aspect-video bg-muted flex items-center justify-center">
+                  <div className="aspect-video bg-muted flex flex-col items-center justify-center gap-3">
                     <MapPin className="h-16 w-16 text-muted-foreground/50" />
+                    {!isLoggedIn && report.recommended_locations_count && (
+                      <p className="text-sm text-muted-foreground">
+                        {report.recommended_locations_count} recommended spots available
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             {/* Recommended Spots */}
-            {isLoggedIn && report.recommended_locations && (
+            {isLoggedIn && report.recommended_locations && Array.isArray(report.recommended_locations) && (
               <div>
                 <h3 className="text-lg font-semibold mb-3">Top Spots</h3>
                 <div className="grid gap-3">
