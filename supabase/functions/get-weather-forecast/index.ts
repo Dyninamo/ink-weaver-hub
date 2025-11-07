@@ -14,9 +14,20 @@ const VENUE_COORDINATES: Record<string, [number, number]> = {
 };
 
 // Convert degrees to cardinal direction
-function degreesToCardinal(degrees: number): string {
-  const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-  const index = Math.round(degrees / 22.5) % 16;
+function getCardinalDirection(degrees: number): string {
+  const directions = [
+    'N', 'NNE', 'NE', 'ENE', 
+    'E', 'ESE', 'SE', 'SSE',
+    'S', 'SSW', 'SW', 'WSW', 
+    'W', 'WNW', 'NW', 'NNW'
+  ];
+  
+  // Normalize degrees to 0-360
+  const normalized = ((degrees % 360) + 360) % 360;
+  
+  // Calculate index (16 directions, so 360/16 = 22.5 degrees per direction)
+  const index = Math.round(normalized / 22.5) % 16;
+  
   return directions[index];
 }
 
@@ -146,7 +157,7 @@ serve(async (req) => {
     const result = {
       temperature: Math.round(closestForecast.main.temp),
       windSpeed: Math.round(closestForecast.wind.speed * 2.237), // m/s to mph
-      windDirection: degreesToCardinal(closestForecast.wind.deg),
+      windDirection: getCardinalDirection(closestForecast.wind.deg),
       conditions: closestForecast.weather[0].description,
       precipitation: closestForecast.rain?.['3h'] || 0,
       precipitationProbability: Math.round((closestForecast.pop || 0) * 100),
