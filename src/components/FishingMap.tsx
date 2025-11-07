@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Location } from "@/services/adviceService";
 
-// Fix for default marker icons in React-Leaflet
+// Fix for default marker icons in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -47,55 +46,6 @@ const getMarkerIcon = (type: Location["type"]) => {
   }
 };
 
-// Component to handle map bounds after map is ready
-function MapBoundsHandler({ locations }: { locations: Location[] }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!map || !map.whenReady || locations.length === 0) return;
-
-    // Use whenReady to ensure map is fully initialized
-    map.whenReady(() => {
-      try {
-        if (locations.length === 1) {
-          const [lat, lng] = locations[0].coordinates;
-          map.setView([lat, lng], 13, { animate: false });
-        } else {
-          const bounds = L.latLngBounds(
-            locations.map((loc) => [loc.coordinates[0], loc.coordinates[1]])
-          );
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
-        }
-        
-        // Small delay to ensure tiles are loaded
-        setTimeout(() => {
-          map.invalidateSize();
-        }, 100);
-        
-        console.log("Map bounds set successfully");
-      } catch (error) {
-        console.error("Error setting map bounds:", error);
-      }
-    });
-  }, [map, locations]);
-
-  return null;
-}
-
-// Delayed wrapper to ensure map context is ready
-function DelayedMapBoundsHandler({ locations }: { locations: Location[] }) {
-  const [ready, setReady] = useState(false);
-  
-  useEffect(() => {
-    const timer = setTimeout(() => setReady(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-  
-  if (!ready) return null;
-  
-  return <MapBoundsHandler locations={locations} />;
-}
-
 interface FishingMapProps {
   locations: Location[];
   venueName: string;
@@ -124,11 +74,12 @@ class MapErrorBoundary extends React.Component<{ fallback?: React.ReactNode; chi
   }
 }
 
-
 const FishingMap = ({ locations, venueName }: FishingMapProps) => {
   const [mounted, setMounted] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
 
-  // Client-only rendering guard
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -153,12 +104,96 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
     return filtered;
   }, [locations]);
 
-  // Log locations on mount
+  // Compute a reasonable initial center
+  const [centerLat, centerLng] = useMemo((): [number, number] => {
+    if (validLocations.length === 0) return [51.505, -0.09]; // London fallback
+    const lat = validLocations.reduce((sum, loc) => sum + loc.coordinates[0], 0) / validLocations.length;
+    const lng = validLocations.reduce((sum, loc) => sum + loc.coordinates[1], 0) / validLocations.length;
+    return [lat, lng];
+  }, [validLocations]);
+
+  // Initialize Leaflet map once
   useEffect(() => {
-    if (mounted && validLocations.length > 0) {
-      console.log(`FishingMap mounted: ${validLocations.length} valid locations`, validLocations.slice(0, 3));
+    if (!mounted || !containerRef.current || mapRef.current) return;
+
+    const map = L.map(containerRef.current, {
+      center: [centerLat, centerLng],
+      zoom: 12,
+      zoomControl: true,
+      preferCanvas: true,
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    markersLayerRef.current = L.layerGroup().addTo(map);
+    mapRef.current = map;
+
+    // Invalidate size after first paint to ensure correct layout
+    setTimeout(() => map.invalidateSize(), 100);
+    console.log("Leaflet map initialized for:", venueName);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markersLayerRef.current = null;
+    };
+  }, [mounted, centerLat, centerLng, venueName]);
+
+  // Update markers and bounds when locations change
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = markersLayerRef.current;
+    if (!map || !layer) return;
+
+    // Clear previous markers
+    layer.clearLayers();
+
+    if (validLocations.length === 0) return;
+
+    // Add markers
+    validLocations.forEach((loc) => {
+      const marker = L.marker([loc.coordinates[0], loc.coordinates[1]], {
+        icon: getMarkerIcon(loc.type),
+      });
+      const popupHtml = `
+        <div class="p-2">
+          <h3 class="font-semibold text-base mb-1">${loc.name}</h3>
+          <p class="text-sm text-muted-foreground mb-2">${loc.description ?? ""}</p>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="w-3 h-3 rounded-full" style="background-color:${
+              loc.type === "hotSpot"
+                ? "hsl(var(--primary))"
+                : loc.type === "goodArea"
+                ? "hsl(var(--accent))"
+                : "hsl(var(--secondary))"
+            }"></span>
+            <span class="capitalize">${
+              loc.type === "hotSpot" ? "Hot Spot" : loc.type === "goodArea" ? "Good Area" : "Entry Point"
+            }</span>
+          </div>
+        </div>
+      `;
+      marker.bindPopup(popupHtml, { closeButton: true });
+      marker.addTo(layer);
+    });
+
+    // Fit to markers
+    try {
+      if (validLocations.length === 1) {
+        const [lat, lng] = validLocations[0].coordinates;
+        map.setView([lat, lng], 13, { animate: false });
+      } else {
+        const bounds = L.latLngBounds(validLocations.map((l) => [l.coordinates[0], l.coordinates[1]] as [number, number]));
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+      }
+      setTimeout(() => map.invalidateSize(), 100);
+      console.log("Leaflet: markers updated and bounds set");
+    } catch (e) {
+      console.error("Leaflet: error updating bounds", e);
     }
-  }, [mounted, validLocations]);
+  }, [validLocations]);
 
   // Show loading state before mount
   if (!mounted) {
@@ -177,67 +212,18 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
     );
   }
 
-  // Calculate center point from all valid locations
-  const centerLat =
-    validLocations.reduce((sum, loc) => sum + loc.coordinates[0], 0) / validLocations.length;
-  const centerLng =
-    validLocations.reduce((sum, loc) => sum + loc.coordinates[1], 0) / validLocations.length;
-
   return (
     <MapErrorBoundary fallback={
       <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
         <p className="text-muted-foreground">Map failed to load</p>
       </div>
     }>
-      <MapContainer
-        center={[centerLat, centerLng]}
-        zoom={12}
-        whenReady={() => console.log("Map ready for:", venueName)}
+      <div
+        ref={containerRef}
         className="w-full h-full rounded-lg shadow-soft"
         style={{ minHeight: "400px" }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <DelayedMapBoundsHandler locations={validLocations} />
-        {validLocations.map((location, index) => (
-          <Marker
-            key={index}
-            position={[location.coordinates[0], location.coordinates[1]]}
-            icon={getMarkerIcon(location.type)}
-          >
-            <Popup>
-              <div className="p-2">
-                <h3 className="font-semibold text-base mb-1">{location.name}</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {location.description}
-                </p>
-                <div className="flex items-center gap-2 text-xs">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{
-                      backgroundColor:
-                        location.type === "hotSpot"
-                          ? "hsl(var(--primary))"
-                          : location.type === "goodArea"
-                          ? "hsl(var(--accent))"
-                          : "hsl(var(--secondary))",
-                    }}
-                  />
-                  <span className="capitalize">
-                    {location.type === "hotSpot"
-                      ? "Hot Spot"
-                      : location.type === "goodArea"
-                      ? "Good Area"
-                      : "Entry Point"}
-                  </span>
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+        aria-label={`Map for ${venueName}`}
+      />
     </MapErrorBoundary>
   );
 };
