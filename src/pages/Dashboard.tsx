@@ -19,6 +19,7 @@ import type { FishingAdvice } from "@/services/adviceService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getRecentQueries, getQueryById, QueryServiceError } from "@/services/queryService";
 import type { QuerySummary } from "@/services/queryService";
+import { ShareDialog } from "@/components/ShareDialog";
 
 const VENUES = [
   "Grafham Water",
@@ -46,6 +47,7 @@ const Dashboard = () => {
   const [isLoadingQuery, setIsLoadingQuery] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedQueryIds, setSelectedQueryIds] = useState<Set<string>>(new Set());
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
   // Fetch recent queries on mount
   useEffect(() => {
@@ -229,10 +231,16 @@ const Dashboard = () => {
   };
 
   const handleShareSelected = () => {
-    // TODO: Implement sharing functionality
+    setIsShareDialogOpen(true);
+  };
+
+  const handleShareComplete = () => {
+    setIsShareDialogOpen(false);
+    setIsSelectionMode(false);
+    setSelectedQueryIds(new Set());
     toast({
-      title: "Sharing feature",
-      description: `Ready to share ${selectedQueryIds.size} report(s)`,
+      title: "Success!",
+      description: "Reports shared successfully",
     });
   };
 
@@ -535,6 +543,14 @@ const Dashboard = () => {
 
       {/* Debug Panel */}
       <DebugPanel />
+
+      {/* Share Dialog */}
+      <ShareDialog
+        open={isShareDialogOpen}
+        selectedQueryIds={Array.from(selectedQueryIds)}
+        onClose={() => setIsShareDialogOpen(false)}
+        onShareComplete={handleShareComplete}
+      />
     </div>
   );
 };
