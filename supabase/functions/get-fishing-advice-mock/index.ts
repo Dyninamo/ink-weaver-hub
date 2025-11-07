@@ -93,11 +93,12 @@ serve(async (req) => {
 });
 
 function generateAdvice(venue: string, weather: WeatherData): string {
-  const { temperature, windSpeed, windDirection, conditions } = weather;
+  const { temperature, windSpeed, windDirection, conditions, precipitationProbability } = weather;
 
   // Weather-based adjustments
   const windStrength = windSpeed < 10 ? 'light' : windSpeed < 20 ? 'moderate' : 'strong';
   const tempCategory = temperature < 10 ? 'cold' : temperature < 18 ? 'mild' : 'warm';
+  const rainCategory = precipitationProbability > 60 ? 'high' : precipitationProbability > 30 ? 'moderate' : 'low';
 
   switch (venue) {
     case 'Grafham Water':
@@ -106,23 +107,30 @@ function generateAdvice(venue: string, weather: WeatherData): string {
 Weather Impact:
 With ${windDirection} winds at ${windSpeed}mph and temperatures around ${temperature}°C, fish should be ${tempCategory === 'warm' ? 'active in the upper layers' : 'holding at mid to deep levels'}. ${windStrength === 'strong' ? 'The strong wind will create excellent drift conditions.' : 'Calm conditions favor stalking visible fish.'}
 
+${tempCategory === 'cold' ? '❄️ Cold Water Strategy: Fish deeper with slower retrieves. Use darker flies as fish are less active and holding in deeper, warmer water.' : tempCategory === 'mild' ? '🌤️ Ideal Conditions: Fish are active throughout the water column. Normal retrieves work well.' : '☀️ Warm Water Advantage: Fish the surface with faster retrieves. Consider dry flies as fish are feeding actively in upper layers.'}
+
+${windStrength === 'light' ? '💨 Light Wind Tactics: Perfect for dry fly fishing and stalking visible fish. Stealthy approach essential.' : windStrength === 'moderate' ? '💨 Moderate Wind Bonus: Use wind for natural drift. Washing line setup very effective in these conditions.' : '💨 Strong Wind Strategy: Focus on sheltered areas like Stumps and use sinking lines to get below wind-affected layers.'}
+
+${rainCategory === 'high' ? '🌧️ Rain Incoming: Fish often feed aggressively before rain arrives - prime fishing window! Get on the water early.' : rainCategory === 'moderate' ? '☁️ Overcast Advantage: Cloud cover can improve fishing significantly as fish are less cautious.' : '☀️ Clear Conditions: Fish deeper or focus on early morning/late evening sessions when light levels are lower.'}
+
 Best Methods:
 - Buzzers on a ${windStrength === 'strong' ? 'floating line (wind will create good drift)' : 'slow-sinking line'}
 - Lures ${tempCategory === 'warm' ? 'in the morning' : 'throughout the day'} (current conditions favor lures)
 - Nymphs in ${windStrength === 'strong' ? 'sheltered areas' : 'open water'}
+${tempCategory === 'warm' && windStrength === 'light' ? '- Try dry flies - conditions are perfect for surface feeding' : ''}
 
 Recommended Spots:
-- The Dam (consistent catches, ${windDirection === 'SW' || windDirection === 'W' ? 'perfect for current wind' : 'fishable in all winds'})
-- Stumps (excellent for lures, ${windStrength !== 'strong' ? 'ideal in current conditions' : 'sheltered area'})
-- Sanctuary Bay (${windDirection === 'SW' ? 'wind pushes fish here - top choice!' : 'afternoon fishing'})
-- Willows (good ${windStrength === 'light' ? 'in current calm conditions' : 'when wind drops'})
+- ${windDirection === 'SW' || windDirection === 'W' ? '⭐ Sanctuary Bay (PRIORITY: downwind bank - fish pushed here by wind)' : 'Sanctuary Bay (afternoon fishing)'}
+- The Dam (consistent catches, ${windDirection === 'SW' || windDirection === 'W' ? 'good wind direction' : 'fishable in all conditions'})
+- ${windStrength === 'strong' ? '⭐ Stumps (PRIORITY: excellent shelter in strong winds, perfect for lures)' : 'Stumps (excellent for lures)'}
+- Willows (${windStrength === 'light' ? 'perfect in current calm' : 'best when wind drops'})
 
 Rod Average: ${tempCategory === 'warm' ? '5-7' : '4-6'} fish per rod expected in these conditions.
 
 Top Flies:
 - Diawl Bach (size 12-14)
-- Bloodworm patterns ${tempCategory === 'cold' ? '(essential in cold water)' : ''}
-- ${tempCategory === 'warm' ? 'Daddy Long Legs and hoppers' : 'Black Lures for morning sessions'}
+- ${tempCategory === 'cold' ? 'Bloodworm patterns (essential - fish deep and slow)' : 'Bloodworm patterns'}
+- ${tempCategory === 'warm' ? 'Daddy Long Legs and hoppers (surface feeding active)' : tempCategory === 'cold' ? 'Black Lures with slow retrieve' : 'Black Lures for morning sessions'}
 - ${windStrength === 'strong' ? 'Big booby patterns for deep fishing' : 'Small nymphs for careful presentations'}`;
 
     case 'Rutland Water':
@@ -131,24 +139,30 @@ Top Flies:
 Weather Considerations:
 Current ${windDirection} winds at ${windSpeed}mph with ${temperature}°C temperatures create ${windStrength === 'light' ? 'perfect calm water conditions for surface activity' : 'ideal conditions for drifting with buzzers'}.
 
+${tempCategory === 'cold' ? '❄️ Cold Water Strategy: Fish are holding deeper. Use slower retrieves with darker patterns. Focus on mid to deep water columns.' : tempCategory === 'mild' ? '🌤️ Balanced Approach: Fish active at all depths. Standard techniques producing well.' : '☀️ Warm Water Tactics: Surface activity excellent. Use faster retrieves and do not be afraid to fish shallow.'}
+
+${windStrength === 'light' ? '💨 Calm Water Advantage: Ideal for dry fly fishing and targeting visible cruising fish. Stealth is key.' : windStrength === 'moderate' ? '💨 Perfect Drift Conditions: Wind creating excellent natural drift. Washing line setup highly recommended.' : '💨 Heavy Wind Plan: Fish sheltered banks especially Armley Wood. Use sinking lines to avoid surface turbulence.'}
+
+${rainCategory === 'high' ? '🌧️ Pre-Rain Feeding: Excellent timing - fish sense pressure change and feed actively. Make the most of it!' : rainCategory === 'moderate' ? '☁️ Overcast Bonus: Reduced light makes fish bolder. Great opportunity for larger flies and aggressive tactics.' : '☀️ Bright Conditions: Fish early/late or focus on deeper areas during midday. Use more natural patterns.'}
+
 Productive Methods:
-- Floating line with buzzers ${windStrength === 'light' ? '(perfect in calm)' : '(good drift conditions)'}
-- Intermediate line with lures ${tempCategory === 'cold' ? '(fish are deeper in cold water)' : ''}
-- ${windStrength === 'light' ? 'Dry fly in these calm conditions' : 'Sinking line in the wind'}
+- Floating line with buzzers ${windStrength === 'light' ? '(perfect in calm)' : '(excellent drift in this wind)'}
+- Intermediate line with lures ${tempCategory === 'cold' ? '(essential - fish are deeper in cold)' : '(covers mid-water effectively)'}
+- ${windStrength === 'light' && tempCategory !== 'cold' ? 'Dry fly - conditions are perfect for surface work' : 'Sinking line for deeper presentations'}
 
 Hot Spots:
-- North Arm (${windDirection === 'N' || windDirection === 'NW' ? 'sheltered from current wind' : 'consistent for boat fishing'})
-- South Arm (excellent ${windStrength === 'light' ? 'bank fishing in calm' : 'with wave action'})
-- Armley Wood (${windStrength === 'strong' ? 'perfect shelter in strong winds' : 'good all conditions'})
-- Dam area (${windDirection === 'E' || windDirection === 'NE' ? 'prime spot with current wind' : 'good all conditions'})
+- ${(windDirection === 'E' || windDirection === 'NE') ? '⭐ Dam Area (PRIORITY: downwind bank - fish concentrated here)' : 'Dam area (reliable all conditions)'}
+- ${windStrength === 'strong' ? '⭐ Armley Wood (PRIORITY: best shelter from wind)' : 'Armley Wood (consistent producer)'}
+- North Arm (${windDirection === 'N' || windDirection === 'NW' ? 'sheltered from wind' : 'excellent boat fishing'})
+- South Arm (${windStrength === 'light' ? 'top bank fishing in calm' : 'good with wave action'})
 
 Expected Rod Average: ${tempCategory === 'warm' && windStrength !== 'strong' ? '6-8' : '5-7'} fish per rod.
 
 Recommended Patterns:
-- FAB patterns (${temperature > 15 ? 'bright colors in warm water' : 'darker colors in cold water'})
-- Cormorants ${windStrength === 'strong' ? '(excellent in choppy water)' : ''}
-- Cat's Whisker ${tempCategory === 'warm' ? '(very effective in warm conditions)' : ''}
-- ${windStrength === 'light' ? 'Hoppers and surface patterns' : 'Weighted nymphs'}`;
+- FAB patterns (${temperature > 15 ? 'bright colors work well in warm water' : 'darker colors better in cold'})
+- Cormorants ${windStrength === 'strong' ? '(perfect for choppy water)' : '(always reliable)'}
+- Cat's Whisker ${tempCategory === 'warm' ? '(excellent in warm conditions)' : ''}
+- ${windStrength === 'light' && tempCategory !== 'cold' ? 'Hoppers and CDC patterns for surface' : 'Weighted nymphs for depth'}`;
 
     case 'Pitsford Water':
       return `Pitsford Water is showing good form with quality fish being caught regularly.
@@ -156,24 +170,31 @@ Recommended Patterns:
 Weather Analysis:
 With ${windDirection} winds at ${windSpeed}mph and ${temperature}°C, expect fish to be ${tempCategory === 'warm' ? 'feeding actively in the upper layers' : 'moving to deeper areas'}.
 
+${tempCategory === 'cold' ? '❄️ Cold Water Approach: Slow down everything. Fish deeper with darker flies and patient retrieves. Quality over quantity in these temperatures.' : tempCategory === 'mild' ? '🌤️ Optimal Conditions: Fish active throughout water column. All standard techniques effective.' : '☀️ Warm Water Opportunity: Fish surface layers with confidence. Faster retrieves and dry flies producing well.'}
+
+${windStrength === 'light' ? '💨 Calm Perfection: Ideal for static buzzer fishing and stalking. Watch for risers and target them specifically.' : windStrength === 'moderate' ? '💨 Wind Advantage: Perfect for washing line. Use the wind to create natural movement in your flies.' : '💨 Strong Wind Tactics: Focus on sheltered Causeway area. Lure stripping highly effective in these conditions.'}
+
+${rainCategory === 'high' ? '🌧️ Pre-Storm Feeding: Fish are on! They know rain is coming and are feeding hard. Prime fishing ahead.' : rainCategory === 'moderate' ? '☁️ Cloud Cover Benefit: Overcast skies reduce spooking. Fish are more confident and easier to approach.' : '☀️ Bright Sky Strategy: Fish deeper water or time your sessions for dawn/dusk when fish are less cautious.'}
+
 Effective Techniques:
-- Washing line setup ${windStrength !== 'light' ? '(perfect for current conditions)' : ''}
-- Static buzzer fishing ${windStrength === 'light' ? '(ideal in calm water)' : '(less effective in wind)'}
-- Lure stripping ${windStrength === 'strong' ? 'in breezy conditions (highly recommended)' : tempCategory === 'warm' ? 'early morning' : 'throughout the day'}
+- Washing line setup ${windStrength !== 'light' ? '(excellent in current wind)' : '(works but static better in calm)'}
+- Static buzzer fishing ${windStrength === 'light' ? '(perfect technique right now)' : '(challenging in wind)'}
+- Lure stripping ${windStrength === 'strong' ? '(top choice in breezy conditions)' : tempCategory === 'warm' ? 'early morning' : 'throughout the day'}
+${tempCategory === 'warm' && windStrength === 'light' ? '- Dry fly fishing - do not miss this opportunity!' : ''}
 
 Prime Locations:
-- The Dam (${windDirection === 'SW' || windDirection === 'S' ? 'excellent with current wind direction' : 'reliable year-round'})
-- Holcot Bank (${windStrength === 'light' ? 'perfect bank fishing in calm' : 'good from bank'})
-- Causeway (${windStrength === 'strong' ? 'best sheltered spot today' : 'sheltered spot'})
-- Walgrave Shallows (${windStrength === 'light' && tempCategory === 'warm' ? 'top choice in current conditions' : 'in calmer weather'})
+- ${(windDirection === 'SW' || windDirection === 'S') ? '⭐ The Dam (PRIORITY: wind direction perfect, fish pushed to this bank)' : 'The Dam (reliable year-round)'}
+- ${windStrength === 'strong' ? '⭐ Causeway (PRIORITY: best shelter available)' : 'Causeway (sheltered option)'}
+- Holcot Bank (${windStrength === 'light' ? 'excellent bank fishing in calm' : 'accessible from shore'})
+- Walgrave Shallows (${windStrength === 'light' && tempCategory === 'warm' ? 'perfect conditions for this spot!' : 'better in calmer weather'})
 
 Rod Average Prediction: ${tempCategory === 'warm' ? '4-6' : '3-5'} fish per rod.
 
 Fly Selection:
-- Black Buzzers (${tempCategory === 'cold' ? 'essential in cold water' : 'always reliable'})
-- Shipman's Buzzers ${windStrength === 'light' ? '(perfect for surface feeding)' : ''}
-- ${tempCategory === 'warm' ? 'Daddy patterns and hoppers' : 'Tadpoles'}
-- Small lures (size ${temperature > 15 ? '10-12' : '8-10'})`;
+- Black Buzzers (${tempCategory === 'cold' ? 'critical in cold - fish slow and deep' : 'always productive'})
+- Shipman's Buzzers ${windStrength === 'light' ? '(ideal for surface in calm)' : ''}
+- ${tempCategory === 'warm' ? 'Daddy patterns and hoppers (surface feeding active)' : 'Tadpoles and nymphs'}
+- Small lures (size ${temperature > 15 ? '10-12 with brighter colors' : '8-10 darker patterns'})`;
 
     case 'Ravensthorpe Reservoir':
       return `Ravensthorpe offers intimate fishing with quality rainbows and browns.
@@ -181,24 +202,30 @@ Fly Selection:
 Current Conditions:
 ${windDirection} winds at ${windSpeed}mph with ${temperature}°C create ${windStrength === 'light' ? 'perfect stalking conditions' : windStrength === 'moderate' ? 'favorable fishing conditions' : 'challenging but productive conditions'}.
 
+${tempCategory === 'cold' ? '❄️ Cold Water Tactics: Fish will be lethargic. Use smaller flies, slower retrieves, and focus on deeper areas like Dam Wall where water is slightly warmer.' : tempCategory === 'mild' ? '🌤️ Ideal Conditions: Fish active and responsive. Standard approaches all working well.' : '☀️ Warm Water Tactics: Fish are feeding confidently. Faster retrieves work well and surface activity likely, especially early/late.'}
+
+${windStrength === 'light' ? '💨 Calm Water Advantage: Perfect for stalking individual fish. Watch for cruisers and target them with precision casts. Stealth crucial.' : windStrength === 'moderate' ? '💨 Moderate Wind: Good for systematic coverage. Fish less spooked but still requires accurate casting.' : '💨 Strong Wind Challenge: Difficult conditions but fish still feeding. Focus on downwind sheltered banks.'}
+
+${rainCategory === 'high' ? '🌧️ Pre-Rain Activity: Great timing for Ravensthorpe. Fish become less cautious before rain - they will be more aggressive.' : rainCategory === 'moderate' ? '☁️ Overcast Conditions: Cloud cover is your friend here. Fish more willing to move and less wary.' : '☀️ Clear Sky Tactics: Bright sun makes fish cautious at Ravensthorpe. Early morning or evening sessions will be most productive.'}
+
 Best Approaches:
-- Light lines and smaller flies ${windStrength === 'light' ? '(essential in calm water)' : '(even in wind)'}
-- ${windStrength === 'light' ? 'Stealthy presentations to visible fish' : 'Systematic coverage of likely areas'}
-- Accurate casting ${windStrength === 'strong' ? 'despite the wind' : 'to visible fish'}
+- Light lines and smaller flies ${windStrength === 'light' ? '(absolutely essential in calm - fish are easily spooked)' : '(maintains natural presentation)'}
+- ${windStrength === 'light' ? 'Stealthy stalking to visible fish (stay low, move slowly)' : 'Systematic coverage of likely holding areas'}
+- Accurate casting ${windStrength === 'strong' ? '(challenging but necessary in wind)' : '(precision to individual fish)'}
 
 Productive Areas:
-- Eastern Shore (${windDirection === 'W' || windDirection === 'SW' ? 'sheltered from wind today' : 'morning sun'})
-- Western Shore (${windDirection === 'E' || windDirection === 'NE' ? 'best protection from current wind' : 'afternoon shade'})
-- Dam Wall (deeper water ${tempCategory === 'cold' ? '- fish often hold here in cold' : '- consistent'})
-- North Bank (${windDirection === 'S' || windDirection === 'SW' ? 'well sheltered today' : 'sheltered'})
+- ${(windDirection === 'W' || windDirection === 'SW') ? '⭐ Eastern Shore (PRIORITY: sheltered from wind, excellent conditions)' : 'Eastern Shore (morning sun, good visibility)'}
+- ${(windDirection === 'E' || windDirection === 'NE') ? '⭐ Western Shore (PRIORITY: protected from wind today)' : 'Western Shore (afternoon shade)'}
+- Dam Wall (${tempCategory === 'cold' ? 'key spot - fish hold in deeper, warmer water' : 'deeper water, consistent producer'})
+- North Bank (${windDirection === 'S' || windDirection === 'SW' ? 'well sheltered - top choice!' : 'good shelter option'})
 
 Expected Catches: ${tempCategory === 'warm' && windStrength === 'light' ? '3-5' : '2-4'} fish per session.
 
 Fly Recommendations:
-- PTN (size ${temperature > 15 ? '14-16' : '12-14'})
-- Hare's Ear nymphs ${tempCategory === 'cold' ? '(very effective in cold water)' : ''}
-- Small black lures ${windStrength !== 'light' ? '(good in choppy water)' : ''}
-- ${windStrength === 'light' && tempCategory === 'warm' ? 'CDC dry flies in calm (top choice!)' : 'Weighted nymphs'}`;
+- PTN (size ${temperature > 15 ? '14-16 (smaller in warm)' : '12-14 (standard for cold)'})
+- Hare's Ear nymphs ${tempCategory === 'cold' ? '(excellent cold water choice)' : '(reliable all-rounder)'}
+- Small black lures ${windStrength !== 'light' ? '(effective in choppy water)' : '(subtle presentation)'}
+- ${windStrength === 'light' && tempCategory === 'warm' ? 'CDC dry flies (perfect conditions - do not miss this!)' : tempCategory === 'cold' ? 'Weighted nymphs (get down to the fish)' : 'Nymphs and small lures'}`;
 
     default:
       return 'Venue not found. Please select a valid venue.';
