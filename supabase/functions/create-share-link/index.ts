@@ -12,7 +12,7 @@ interface CreateShareRequest {
 
 interface ShareResult {
   queryId: string;
-  token: string;
+  shareToken: string;
   shareUrl: string;
   shortUrl?: string;
 }
@@ -203,7 +203,7 @@ serve(async (req) => {
 
         results.push({
           queryId,
-          token: shareToken,
+          shareToken: shareToken,
           shareUrl,
           shortUrl,
         });
@@ -227,7 +227,7 @@ serve(async (req) => {
     console.log('Successfully created shares:', results);
 
     return new Response(
-      JSON.stringify({ shares: results }),
+      JSON.stringify({ shareLinks: results }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
