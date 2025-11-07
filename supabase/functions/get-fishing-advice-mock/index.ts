@@ -11,7 +11,10 @@ interface WeatherData {
   windSpeed: number;
   windDirection: string;
   conditions: string;
+  precipitation: number;
   precipitationProbability: number;
+  humidity: number;
+  pressure: number;
 }
 
 interface RequestBody {
