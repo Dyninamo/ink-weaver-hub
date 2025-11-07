@@ -8,6 +8,7 @@ import type { Location, WeatherData } from "@/services/adviceService";
 import { cn } from "@/lib/utils";
 import FishingMap from "@/components/FishingMap";
 import { WeatherBadge } from "@/components/WeatherBadge";
+import ResultsErrorBoundary from "@/components/ResultsErrorBoundary";
 
 interface ResultsState {
   venue: string;
@@ -50,7 +51,8 @@ const Results = () => {
   console.log("Results: locations count", locations?.length);
 
   return (
-    <div className="min-h-screen bg-background">
+    <ResultsErrorBoundary>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-water text-white py-4 px-4 shadow-medium">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -185,6 +187,7 @@ const Results = () => {
         </div>
       </main>
     </div>
+    </ResultsErrorBoundary>
   );
 };
 
