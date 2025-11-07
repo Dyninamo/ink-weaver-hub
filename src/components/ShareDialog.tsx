@@ -10,7 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, MessageSquare, Link2, Share2, ArrowLeft, Loader2 } from "lucide-react";
+import { 
+  Mail, 
+  MessageSquare, 
+  Link2, 
+  Share2, 
+  ArrowLeft, 
+  Loader2, 
+  Check,
+  AlertCircle 
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   copyShareLink,
@@ -20,6 +29,7 @@ import {
   isNativeShareSupported,
   createShareLinks,
 } from "@/services/shareService";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ShareDialogProps {
   open: boolean;
@@ -42,17 +52,32 @@ export function ShareDialog({
   const [phoneInput, setPhoneInput] = useState("");
   const [customMessage, setCustomMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+
+  const SMS_CHAR_LIMIT = 100;
 
   const handleCopyLink = async () => {
     try {
       setIsLoading(true);
       const url = await copyShareLink(selectedQueryIds);
       
+      const displayUrl = selectedQueryIds.length === 1 
+        ? url 
+        : `${selectedQueryIds.length} share links`;
+      
       toast({
-        title: "Link copied!",
-        description: selectedQueryIds.length === 1 
-          ? "Share link has been copied to clipboard"
-          : `${selectedQueryIds.length} share links copied to clipboard`,
+        title: "✓ Link copied!",
+        description: (
+          <div className="space-y-2">
+            <p className="text-sm">Share link has been copied to clipboard</p>
+            {selectedQueryIds.length === 1 && (
+              <code className="block text-xs bg-muted p-2 rounded break-all">
+                {url}
+              </code>
+            )}
+          </div>
+        ),
       });
       
       onShareComplete();
@@ -74,7 +99,7 @@ export function ShareDialog({
       await nativeShare(selectedQueryIds);
       
       toast({
-        title: "Shared successfully!",
+        title: "✓ Shared successfully!",
         description: "Reports have been shared",
       });
       
@@ -94,28 +119,66 @@ export function ShareDialog({
     }
   };
 
+  const validateEmail = (email: string): boolean => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setEmailError("Email address is required");
+      return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setEmailError("Please enter a valid email address");
+      return false;
+    }
+    
+    setEmailError("");
+    return true;
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    const trimmedPhone = phone.trim();
+    if (!trimmedPhone) {
+      setPhoneError("Phone number is required");
+      return false;
+    }
+    
+    // Check if it starts with +
+    if (!trimmedPhone.startsWith('+')) {
+      setPhoneError("Phone number must include country code (e.g., +44)");
+      return false;
+    }
+    
+    // Check if it has at least 10 digits after the +
+    const phoneRegex = /^\+\d{10,15}$/;
+    if (!phoneRegex.test(trimmedPhone)) {
+      setPhoneError("Invalid phone number format (e.g., +447939009911)");
+      return false;
+    }
+    
+    setPhoneError("");
+    return true;
+  };
+
   const handleSendEmail = async () => {
-    if (!emailInput || !emailInput.includes("@")) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
+    if (!validateEmail(emailInput)) {
       return;
     }
 
     setIsLoading(true);
+    setEmailError("");
+    
     try {
       // Create share links first
       const links = await createShareLinks(selectedQueryIds);
       const shareTokens = links.map(link => link.shareToken);
       
       // Send via email
-      await shareViaEmail(shareTokens, emailInput, customMessage || undefined);
+      await shareViaEmail(shareTokens, emailInput.trim(), customMessage || undefined);
       
       toast({
-        title: "Email sent!",
-        description: `Reports sent to ${emailInput}`,
+        title: "✓ Email sent!",
+        description: `Reports successfully sent to ${emailInput}`,
       });
       
       setEmailInput("");
@@ -124,38 +187,31 @@ export function ShareDialog({
       onShareComplete();
     } catch (error: any) {
       console.error('Email share error:', error);
-      toast({
-        title: "Failed to send",
-        description: error.message || "Could not send email. Please try again.",
-        variant: "destructive",
-      });
+      setEmailError(error.message || "Failed to send email. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSendSMS = async () => {
-    if (!phoneInput || phoneInput.length < 10) {
-      toast({
-        title: "Invalid phone number",
-        description: "Please enter a valid phone number with country code (e.g., +447XXX)",
-        variant: "destructive",
-      });
+    if (!validatePhone(phoneInput)) {
       return;
     }
 
     setIsLoading(true);
+    setPhoneError("");
+    
     try {
       // Create share links first
       const links = await createShareLinks(selectedQueryIds);
       const shareTokens = links.map(link => link.shareToken);
       
       // Send via SMS
-      await shareViaSMS(shareTokens, phoneInput, customMessage || undefined);
+      await shareViaSMS(shareTokens, phoneInput.trim(), customMessage || undefined);
       
       toast({
-        title: "SMS sent!",
-        description: `Reports sent to ${phoneInput}`,
+        title: "✓ SMS sent!",
+        description: `Reports successfully sent to ${phoneInput}`,
       });
       
       setPhoneInput("");
@@ -164,11 +220,7 @@ export function ShareDialog({
       onShareComplete();
     } catch (error: any) {
       console.error('SMS share error:', error);
-      toast({
-        title: "Failed to send",
-        description: error.message || "Could not send SMS. Please try again.",
-        variant: "destructive",
-      });
+      setPhoneError(error.message || "Failed to send SMS. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -179,6 +231,8 @@ export function ShareDialog({
     setEmailInput("");
     setPhoneInput("");
     setCustomMessage("");
+    setEmailError("");
+    setPhoneError("");
   };
 
   const handleClose = () => {
@@ -186,6 +240,8 @@ export function ShareDialog({
     setEmailInput("");
     setPhoneInput("");
     setCustomMessage("");
+    setEmailError("");
+    setPhoneError("");
     onClose();
   };
 
@@ -278,15 +334,25 @@ export function ShareDialog({
         {currentView === "email" && (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">Email Address *</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="recipient@example.com"
                 value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
+                onChange={(e) => {
+                  setEmailInput(e.target.value);
+                  setEmailError("");
+                }}
                 disabled={isLoading}
+                className={emailError ? "border-destructive" : ""}
               />
+              {emailError && (
+                <Alert variant="destructive" className="py-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">{emailError}</AlertDescription>
+                </Alert>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -299,20 +365,26 @@ export function ShareDialog({
                 rows={3}
                 disabled={isLoading}
               />
+              <p className="text-xs text-muted-foreground">
+                This message will be included in the email
+              </p>
             </div>
 
             <Button
               onClick={handleSendEmail}
               disabled={isLoading || !emailInput}
-              className="w-full bg-gradient-water"
+              className="w-full"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
+                  Sending Email...
                 </>
               ) : (
-                "Send Email"
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Send Email
+                </>
               )}
             </Button>
           </div>
@@ -321,41 +393,71 @@ export function ShareDialog({
         {currentView === "sms" && (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">Phone Number *</Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+1 (555) 000-0000"
+                placeholder="+447939009911"
                 value={phoneInput}
-                onChange={(e) => setPhoneInput(e.target.value)}
+                onChange={(e) => {
+                  setPhoneInput(e.target.value);
+                  setPhoneError("");
+                }}
                 disabled={isLoading}
+                className={phoneError ? "border-destructive" : ""}
               />
+              {phoneError && (
+                <Alert variant="destructive" className="py-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">{phoneError}</AlertDescription>
+                </Alert>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Include country code (e.g., +44 for UK, +1 for US)
+              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sms-message">Custom Message (Optional)</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="sms-message">Custom Message (Optional)</Label>
+                <span className={`text-xs ${
+                  customMessage.length > SMS_CHAR_LIMIT 
+                    ? "text-destructive font-semibold" 
+                    : "text-muted-foreground"
+                }`}>
+                  {customMessage.length}/{SMS_CHAR_LIMIT}
+                </span>
+              </div>
               <Textarea
                 id="sms-message"
-                placeholder="Add a personal message..."
+                placeholder="Add a brief message..."
                 value={customMessage}
                 onChange={(e) => setCustomMessage(e.target.value)}
                 rows={3}
                 disabled={isLoading}
+                maxLength={SMS_CHAR_LIMIT}
+                className={customMessage.length > SMS_CHAR_LIMIT ? "border-destructive" : ""}
               />
+              <p className="text-xs text-muted-foreground">
+                Keep it brief - SMS messages have a {SMS_CHAR_LIMIT} character limit
+              </p>
             </div>
 
             <Button
               onClick={handleSendSMS}
-              disabled={isLoading || !phoneInput}
-              className="w-full bg-gradient-water"
+              disabled={isLoading || !phoneInput || customMessage.length > SMS_CHAR_LIMIT}
+              className="w-full"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
+                  Sending SMS...
                 </>
               ) : (
-                "Send SMS"
+                <>
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  Send SMS
+                </>
               )}
             </Button>
           </div>
