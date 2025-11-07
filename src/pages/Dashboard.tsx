@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Fish, LogOut, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon, Fish, LogOut, AlertCircle, ArrowRight, Clock } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +16,8 @@ import { getWeatherForecast } from "@/services/weatherService";
 import { getFishingAdvice, AdviceServiceError } from "@/services/adviceService";
 import type { FishingAdvice } from "@/services/adviceService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getRecentQueries, getQueryById, QueryServiceError } from "@/services/queryService";
+import type { QuerySummary } from "@/services/queryService";
 
 const VENUES = [
   "Grafham Water",
@@ -37,6 +39,29 @@ const Dashboard = () => {
     venue: string;
     date: string;
   } | null>(null);
+  const [recentQueries, setRecentQueries] = useState<QuerySummary[]>([]);
+  const [isLoadingQueries, setIsLoadingQueries] = useState(true);
+  const [isLoadingQuery, setIsLoadingQuery] = useState(false);
+
+  // Fetch recent queries on mount
+  useEffect(() => {
+    const fetchRecentQueries = async () => {
+      try {
+        setIsLoadingQueries(true);
+        const queries = await getRecentQueries(5);
+        setRecentQueries(queries);
+      } catch (err) {
+        console.error('Error loading recent queries:', err);
+        // Don't show error toast for queries loading failure
+      } finally {
+        setIsLoadingQueries(false);
+      }
+    };
+
+    if (user) {
+      fetchRecentQueries();
+    }
+  }, [user]);
 
   // Get user initials for avatar
   const getUserInitials = () => {
@@ -114,6 +139,43 @@ const Dashboard = () => {
       setError(null);
       // Automatically retry
       setTimeout(() => handleGetAdvice(), 100);
+    }
+  };
+
+  const handleViewQuery = async (queryId: string) => {
+    try {
+      setIsLoadingQuery(true);
+      const query = await getQueryById(queryId);
+      
+      // Navigate to results with the query data
+      navigate("/results", {
+        state: {
+          venue: query.venue,
+          date: format(new Date(query.query_date), "PPP"),
+          advice: query.advice_text,
+          locations: query.recommended_locations,
+          weatherData: query.weather_data,
+          queryId: query.id,
+        },
+      });
+    } catch (err) {
+      console.error("Error loading query:", err);
+      
+      if (err instanceof QueryServiceError) {
+        toast({
+          variant: "destructive",
+          title: "Failed to Load Query",
+          description: err.message,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load query details. Please try again.",
+        });
+      }
+    } finally {
+      setIsLoadingQuery(false);
     }
   };
 
@@ -257,9 +319,72 @@ const Dashboard = () => {
         {/* Recent Queries */}
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4 text-foreground">Recent Queries</h2>
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No recent queries yet. Create your first fishing advice request above!</p>
-          </div>
+          
+          {isLoadingQueries ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="p-6">
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-muted rounded w-3/4 mb-3"></div>
+                    <div className="h-3 bg-muted rounded w-1/2 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-1/3"></div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : recentQueries.length === 0 ? (
+            <Card className="p-12">
+              <div className="text-center text-muted-foreground">
+                <Fish className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg mb-2">No queries yet</p>
+                <p className="text-sm">Select a venue and date above to get started!</p>
+              </div>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {recentQueries.map((query) => (
+                <Card 
+                  key={query.id} 
+                  className="p-6 hover:shadow-medium transition-shadow cursor-pointer group"
+                  onClick={() => handleViewQuery(query.id)}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Fish className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate">
+                        {query.venue}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(query.query_date), "MMM d, yyyy")}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      <span>
+                        {formatDistanceToNow(new Date(query.created_at), { 
+                          addSuffix: true 
+                        })}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-primary group-hover:translate-x-1 transition-transform"
+                      disabled={isLoadingQuery}
+                    >
+                      View
+                      <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
