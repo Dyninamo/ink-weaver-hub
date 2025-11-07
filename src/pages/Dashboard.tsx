@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [weatherWarning, setWeatherWarning] = useState(false);
   const [lastFailedRequest, setLastFailedRequest] = useState<{
     venue: string;
     date: string;
@@ -73,13 +74,28 @@ const Dashboard = () => {
     if (!venue || !date) return;
     
     setError(null);
+    setWeatherWarning(false);
     setIsLoading(true);
     const dateString = format(date, "yyyy-MM-dd");
     
     try {
       // Step 1: Fetch weather forecast
       setLoadingMessage("Fetching weather forecast...");
-      const weatherData = await getWeatherForecast(venue, dateString);
+      let weatherData;
+      
+      try {
+        weatherData = await getWeatherForecast(venue, dateString);
+        
+        // Check if we got fallback data (basic heuristic - no precipitation or pressure data suggests mock data)
+        if (weatherData.humidity === 0 || weatherData.pressure === 0) {
+          setWeatherWarning(true);
+        }
+      } catch (weatherError) {
+        console.warn("Weather API failed, using fallback data:", weatherError);
+        setWeatherWarning(true);
+        // getWeatherForecast already returns fallback data on error
+        weatherData = await getWeatherForecast(venue, dateString);
+      }
       
       // Step 2: Get fishing advice
       setLoadingMessage("Analyzing fishing conditions...");
@@ -137,6 +153,7 @@ const Dashboard = () => {
       setVenue(lastFailedRequest.venue);
       setDate(retryDate);
       setError(null);
+      setWeatherWarning(false);
       // Automatically retry
       setTimeout(() => handleGetAdvice(), 100);
     }
@@ -234,6 +251,16 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Weather Warning */}
+            {weatherWarning && (
+              <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <AlertDescription className="text-amber-800 dark:text-amber-300">
+                  Using estimated weather conditions. Real-time data unavailable.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Error Alert */}
             {error && (
               <Alert variant="destructive">
