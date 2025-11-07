@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Fish, Wind, Thermometer, Cloud, Mail, ArrowLeft, LogOut, RefreshCw, MapPin } from "lucide-react";
+import { Fish, Mail, ArrowLeft, LogOut, RefreshCw, MapPin } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
 import type { Location, WeatherData } from "@/services/adviceService";
 import { cn } from "@/lib/utils";
 import FishingMap from "@/components/FishingMap";
+import { WeatherBadge } from "@/components/WeatherBadge";
 
 interface ResultsState {
   venue: string;
@@ -82,29 +83,12 @@ const Results = () => {
           <p className="text-lg text-muted-foreground">{date}</p>
         </div>
 
-        {/* Compact Weather Bar */}
-        <Card className="p-4 mb-6 shadow-soft bg-gradient-to-r from-primary/5 to-secondary/5">
-          <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <Cloud className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground">{weatherData.conditions}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Wind className="w-5 h-5 text-accent" />
-              <span className="font-medium text-foreground">
-                {weatherData.windDirection} {weatherData.windSpeed}mph
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Thermometer className="w-5 h-5 text-secondary" />
-              <span className="font-medium text-foreground">{weatherData.temperature}°C</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Cloud className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground">{weatherData.precipitationProbability}% rain</span>
-            </div>
-          </div>
-        </Card>
+        {/* Weather Information */}
+        <WeatherBadge 
+          weather={weatherData} 
+          showDetailed={true}
+          className="mb-6 shadow-soft bg-gradient-to-r from-primary/5 to-secondary/5"
+        />
 
         {/* Two Column Layout */}
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
