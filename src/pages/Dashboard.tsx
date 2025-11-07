@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Fish, LogOut, AlertCircle, ArrowRight, Clock } from "lucide-react";
+import { CalendarIcon, Fish, LogOut, AlertCircle, ArrowRight, Clock, Share2, CheckSquare, Square } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -43,6 +44,8 @@ const Dashboard = () => {
   const [recentQueries, setRecentQueries] = useState<QuerySummary[]>([]);
   const [isLoadingQueries, setIsLoadingQueries] = useState(true);
   const [isLoadingQuery, setIsLoadingQuery] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedQueryIds, setSelectedQueryIds] = useState<Set<string>>(new Set());
 
   // Fetch recent queries on mount
   useEffect(() => {
@@ -202,6 +205,42 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const handleToggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedQueryIds(new Set());
+  };
+
+  const handleSelectQuery = (queryId: string, checked: boolean) => {
+    const newSelected = new Set(selectedQueryIds);
+    if (checked) {
+      newSelected.add(queryId);
+    } else {
+      newSelected.delete(queryId);
+    }
+    setSelectedQueryIds(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedQueryIds.size === recentQueries.length) {
+      setSelectedQueryIds(new Set());
+    } else {
+      setSelectedQueryIds(new Set(recentQueries.map(q => q.id)));
+    }
+  };
+
+  const handleShareSelected = () => {
+    // TODO: Implement sharing functionality
+    toast({
+      title: "Sharing feature",
+      description: `Ready to share ${selectedQueryIds.size} report(s)`,
+    });
+  };
+
+  const handleCancelSelection = () => {
+    setIsSelectionMode(false);
+    setSelectedQueryIds(new Set());
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -345,7 +384,20 @@ const Dashboard = () => {
 
         {/* Recent Queries */}
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4 text-foreground">Recent Queries</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-foreground">Recent Queries</h2>
+            {recentQueries.length > 0 && (
+              <Button
+                variant={isSelectionMode ? "default" : "outline"}
+                size="sm"
+                onClick={handleToggleSelectionMode}
+                className="gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                {isSelectionMode ? "Selecting..." : "Select to Share"}
+              </Button>
+            )}
+          </div>
           
           {isLoadingQueries ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -368,49 +420,115 @@ const Dashboard = () => {
               </div>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {recentQueries.map((query) => (
-                <Card 
-                  key={query.id} 
-                  className="p-6 hover:shadow-medium transition-shadow cursor-pointer group"
-                  onClick={() => handleViewQuery(query.id)}
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Fish className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">
-                        {query.venue}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(query.query_date), "MMM d, yyyy")}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      <span>
-                        {formatDistanceToNow(new Date(query.created_at), { 
-                          addSuffix: true 
-                        })}
-                      </span>
-                    </div>
+            <>
+              {isSelectionMode && (
+                <div className="mb-4 flex items-center justify-between gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-4">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="text-primary group-hover:translate-x-1 transition-transform"
-                      disabled={isLoadingQuery}
+                      onClick={handleSelectAll}
+                      className="gap-2"
                     >
-                      View
-                      <ArrowRight className="w-4 h-4 ml-1" />
+                      {selectedQueryIds.size === recentQueries.length ? (
+                        <CheckSquare className="w-4 h-4" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                      {selectedQueryIds.size === recentQueries.length ? "Deselect All" : "Select All"}
+                    </Button>
+                    <span className="text-sm font-medium">
+                      {selectedQueryIds.size} {selectedQueryIds.size === 1 ? "report" : "reports"} selected
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleShareSelected}
+                      disabled={selectedQueryIds.size === 0}
+                      className="gap-2"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share Selected
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelSelection}
+                    >
+                      Cancel
                     </Button>
                   </div>
-                </Card>
-              ))}
-            </div>
+                </div>
+              )}
+              
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {recentQueries.map((query) => {
+                  const isSelected = selectedQueryIds.has(query.id);
+                  
+                  return (
+                    <Card 
+                      key={query.id} 
+                      className={cn(
+                        "p-6 transition-all",
+                        !isSelectionMode && "hover:shadow-medium cursor-pointer group",
+                        isSelectionMode && "cursor-default",
+                        isSelected && "ring-2 ring-primary"
+                      )}
+                      onClick={() => {
+                        if (!isSelectionMode) {
+                          handleViewQuery(query.id);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        {isSelectionMode && (
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => handleSelectQuery(query.id, checked as boolean)}
+                            className="mt-1"
+                          />
+                        )}
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Fish className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground truncate">
+                            {query.venue}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(query.query_date), "MMM d, yyyy")}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {!isSelectionMode && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            <span>
+                              {formatDistanceToNow(new Date(query.created_at), { 
+                                addSuffix: true 
+                              })}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary group-hover:translate-x-1 transition-transform"
+                            disabled={isLoadingQuery}
+                          >
+                            View
+                            <ArrowRight className="w-4 h-4 ml-1" />
+                          </Button>
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </main>
