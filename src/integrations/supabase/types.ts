@@ -95,6 +95,79 @@ export type Database = {
         }
         Relationships: []
       }
+      share_views: {
+        Row: {
+          id: string
+          shared_report_id: string
+          viewed_at: string | null
+          viewer_email: string | null
+          viewer_ip: string | null
+        }
+        Insert: {
+          id?: string
+          shared_report_id: string
+          viewed_at?: string | null
+          viewer_email?: string | null
+          viewer_ip?: string | null
+        }
+        Update: {
+          id?: string
+          shared_report_id?: string
+          viewed_at?: string | null
+          viewer_email?: string | null
+          viewer_ip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_views_shared_report_id_fkey"
+            columns: ["shared_report_id"]
+            isOneToOne: false
+            referencedRelation: "shared_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_reports: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          expires_at: string | null
+          id: string
+          query_id: string
+          share_token: string
+          short_url: string | null
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          query_id: string
+          share_token: string
+          short_url?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          query_id?: string
+          share_token?: string
+          short_url?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_reports_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           created_at: string | null
