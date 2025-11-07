@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Location } from "@/services/adviceService";
@@ -47,22 +47,6 @@ const getMarkerIcon = (type: Location["type"]) => {
   }
 };
 
-// Component to fit bounds to markers
-function FitBounds({ locations }: { locations: Location[] }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (locations.length === 0) return;
-
-    const bounds = L.latLngBounds(
-      locations.map((loc) => [loc.coordinates[0], loc.coordinates[1]])
-    );
-
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
-  }, [locations, map]);
-
-  return null;
-}
 
 interface FishingMapProps {
   locations: Location[];
@@ -94,17 +78,70 @@ class MapErrorBoundary extends React.Component<{ fallback?: React.ReactNode; chi
 
 
 const FishingMap = ({ locations, venueName }: FishingMapProps) => {
-  // Filter out locations with invalid coordinates
-  const validLocations = locations.filter(
-    (loc) => 
-      loc.coordinates && 
-      Array.isArray(loc.coordinates) && 
-      loc.coordinates.length === 2 &&
-      typeof loc.coordinates[0] === 'number' && 
-      typeof loc.coordinates[1] === 'number' &&
-      !isNaN(loc.coordinates[0]) &&
-      !isNaN(loc.coordinates[1])
-  );
+  const [mounted, setMounted] = useState(false);
+  const mapRef = useRef<L.Map | null>(null);
+
+  // Client-only rendering guard
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Filter out locations with invalid coordinates with stronger validation
+  const validLocations = useMemo(() => {
+    const filtered = (locations || []).filter(
+      (loc) => 
+        loc.coordinates && 
+        Array.isArray(loc.coordinates) && 
+        loc.coordinates.length === 2 &&
+        typeof loc.coordinates[0] === 'number' && 
+        Number.isFinite(loc.coordinates[0]) &&
+        typeof loc.coordinates[1] === 'number' && 
+        Number.isFinite(loc.coordinates[1])
+    );
+    
+    if (filtered.length !== (locations || []).length) {
+      console.warn(`FishingMap: Filtered ${(locations || []).length - filtered.length} invalid locations`);
+    }
+    
+    return filtered;
+  }, [locations]);
+
+  // Log locations on mount
+  useEffect(() => {
+    if (mounted && validLocations.length > 0) {
+      console.log(`FishingMap mounted: ${validLocations.length} valid locations`, validLocations.slice(0, 3));
+    }
+  }, [mounted, validLocations]);
+
+  // Handle map bounds after map is created
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || validLocations.length === 0) return;
+
+    try {
+      if (validLocations.length === 1) {
+        const [lat, lng] = validLocations[0].coordinates;
+        map.setView([lat, lng], 13, { animate: false });
+      } else {
+        const bounds = L.latLngBounds(
+          validLocations.map((loc) => [loc.coordinates[0], loc.coordinates[1]])
+        );
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+      }
+      map.invalidateSize();
+    } catch (error) {
+      console.error("Error setting map bounds:", error);
+    }
+  }, [validLocations]);
+
+  // Show loading state before mount
+  if (!mounted) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
+        <p className="text-muted-foreground">Loading map...</p>
+      </div>
+    );
+  }
 
   if (validLocations.length === 0) {
     return (
@@ -131,12 +168,16 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
         zoom={12}
         className="w-full h-full rounded-lg shadow-soft"
         style={{ minHeight: "400px" }}
+        ref={(mapInstance) => {
+          if (mapInstance) {
+            mapRef.current = mapInstance;
+          }
+        }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitBounds locations={validLocations} />
         {validLocations.map((location, index) => (
           <Marker
             key={index}

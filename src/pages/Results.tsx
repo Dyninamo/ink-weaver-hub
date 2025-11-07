@@ -45,6 +45,10 @@ const Results = () => {
 
   const { venue, date, advice, locations, weatherData } = state;
 
+  // Debug logging
+  console.log("Results: weatherData", weatherData);
+  console.log("Results: locations count", locations?.length);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
