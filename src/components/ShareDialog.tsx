@@ -12,7 +12,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, MessageSquare, Link2, Share2, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { generateShareToken, buildShareUrl } from "@/utils/shareTokens";
+import {
+  copyShareLink,
+  nativeShare,
+  shareViaEmail,
+  shareViaSMS,
+  isNativeShareSupported,
+  createShareLinks,
+} from "@/services/shareService";
 
 interface ShareDialogProps {
   open: boolean;
@@ -38,54 +45,52 @@ export function ShareDialog({
 
   const handleCopyLink = async () => {
     try {
-      // Generate a share token for the selected reports
-      const token = generateShareToken();
-      const shareUrl = buildShareUrl(token);
-      
-      await navigator.clipboard.writeText(shareUrl);
+      setIsLoading(true);
+      const url = await copyShareLink(selectedQueryIds);
       
       toast({
         title: "Link copied!",
-        description: "Share link has been copied to clipboard",
+        description: selectedQueryIds.length === 1 
+          ? "Share link has been copied to clipboard"
+          : `${selectedQueryIds.length} share links copied to clipboard`,
       });
       
       onShareComplete();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Copy link error:', error);
       toast({
         title: "Failed to copy",
-        description: "Could not copy link to clipboard",
+        description: error.message || "Could not copy link to clipboard",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleNativeShare = async () => {
     try {
-      const token = generateShareToken();
-      const shareUrl = buildShareUrl(token);
+      setIsLoading(true);
+      await nativeShare(selectedQueryIds);
       
-      if (navigator.share) {
-        await navigator.share({
-          title: "Fishing Reports",
-          text: `Check out ${selectedQueryIds.length} fishing ${
-            selectedQueryIds.length === 1 ? "report" : "reports"
-          }`,
-          url: shareUrl,
-        });
-        
-        onShareComplete();
-      } else {
-        // Fallback to copy if native share not available
-        await handleCopyLink();
-      }
-    } catch (error) {
-      if ((error as Error).name !== "AbortError") {
+      toast({
+        title: "Shared successfully!",
+        description: "Reports have been shared",
+      });
+      
+      onShareComplete();
+    } catch (error: any) {
+      // Don't show error if user cancelled
+      if (error.message && !error.message.includes('cancelled')) {
+        console.error('Native share error:', error);
         toast({
           title: "Share failed",
-          description: "Could not share the reports",
+          description: error.message || "Could not share the reports",
           variant: "destructive",
         });
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -101,8 +106,12 @@ export function ShareDialog({
 
     setIsLoading(true);
     try {
-      // TODO: Call edge function to send email
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+      // Create share links first
+      const links = await createShareLinks(selectedQueryIds);
+      const shareTokens = links.map(link => link.shareToken);
+      
+      // Send via email
+      await shareViaEmail(shareTokens, emailInput, customMessage || undefined);
       
       toast({
         title: "Email sent!",
@@ -113,10 +122,11 @@ export function ShareDialog({
       setCustomMessage("");
       setCurrentView("options");
       onShareComplete();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Email share error:', error);
       toast({
         title: "Failed to send",
-        description: "Could not send email. Please try again.",
+        description: error.message || "Could not send email. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -128,7 +138,7 @@ export function ShareDialog({
     if (!phoneInput || phoneInput.length < 10) {
       toast({
         title: "Invalid phone number",
-        description: "Please enter a valid phone number",
+        description: "Please enter a valid phone number with country code (e.g., +447XXX)",
         variant: "destructive",
       });
       return;
@@ -136,8 +146,12 @@ export function ShareDialog({
 
     setIsLoading(true);
     try {
-      // TODO: Call edge function to send SMS
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+      // Create share links first
+      const links = await createShareLinks(selectedQueryIds);
+      const shareTokens = links.map(link => link.shareToken);
+      
+      // Send via SMS
+      await shareViaSMS(shareTokens, phoneInput, customMessage || undefined);
       
       toast({
         title: "SMS sent!",
@@ -148,10 +162,11 @@ export function ShareDialog({
       setCustomMessage("");
       setCurrentView("options");
       onShareComplete();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('SMS share error:', error);
       toast({
         title: "Failed to send",
-        description: "Could not send SMS. Please try again.",
+        description: error.message || "Could not send SMS. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -226,25 +241,37 @@ export function ShareDialog({
               variant="outline"
               className="h-auto flex-col gap-2 p-6 hover:bg-primary/5 hover:border-primary"
               onClick={handleCopyLink}
+              disabled={isLoading}
             >
-              <Link2 className="h-6 w-6 text-primary" />
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 text-primary animate-spin" />
+              ) : (
+                <Link2 className="h-6 w-6 text-primary" />
+              )}
               <div className="text-center">
                 <div className="font-semibold">Copy Link</div>
                 <div className="text-xs text-muted-foreground">Copy to clipboard</div>
               </div>
             </Button>
 
-            <Button
-              variant="outline"
-              className="h-auto flex-col gap-2 p-6 hover:bg-primary/5 hover:border-primary"
-              onClick={handleNativeShare}
-            >
-              <Share2 className="h-6 w-6 text-primary" />
-              <div className="text-center">
-                <div className="font-semibold">Share</div>
-                <div className="text-xs text-muted-foreground">Native share menu</div>
-              </div>
-            </Button>
+            {isNativeShareSupported() && (
+              <Button
+                variant="outline"
+                className="h-auto flex-col gap-2 p-6 hover:bg-primary/5 hover:border-primary"
+                onClick={handleNativeShare}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                ) : (
+                  <Share2 className="h-6 w-6 text-primary" />
+                )}
+                <div className="text-center">
+                  <div className="font-semibold">Share</div>
+                  <div className="text-xs text-muted-foreground">Native share menu</div>
+                </div>
+              </Button>
+            )}
           </div>
         )}
 
