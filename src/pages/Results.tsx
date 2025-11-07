@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Fish, Mail, ArrowLeft, LogOut, RefreshCw, MapPin } from "lucide-react";
+import { Fish, Mail, ArrowLeft, LogOut, RefreshCw, MapPin, Share2 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Location, WeatherData } from "@/services/adviceService";
 import { cn } from "@/lib/utils";
 import FishingMap from "@/components/FishingMap";
 import { WeatherBadge } from "@/components/WeatherBadge";
 import ResultsErrorBoundary from "@/components/ResultsErrorBoundary";
+import { ShareDialog } from "@/components/ShareDialog";
 
 interface ResultsState {
   venue: string;
@@ -23,6 +24,7 @@ const Results = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut: authSignOut } = useAuth();
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const state = location.state as ResultsState | null;
 
@@ -180,12 +182,21 @@ const Results = () => {
             size="lg"
             variant="outline"
             className="shadow-soft"
+            onClick={() => setShareDialogOpen(true)}
           >
-            <Mail className="w-5 h-5 mr-2" />
-            Email This Advice
+            <Share2 className="w-5 h-5 mr-2" />
+            Share This Advice
           </Button>
         </div>
       </main>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        open={shareDialogOpen}
+        selectedQueryIds={state?.queryId ? [state.queryId] : []}
+        onClose={() => setShareDialogOpen(false)}
+        onShareComplete={() => setShareDialogOpen(false)}
+      />
     </div>
     </ResultsErrorBoundary>
   );
