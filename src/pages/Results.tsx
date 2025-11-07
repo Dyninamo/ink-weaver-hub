@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Fish, Wind, Thermometer, Cloud, Mail, ArrowLeft, LogOut, AlertCircle } from "lucide-react";
+import { Fish, Wind, Thermometer, Cloud, Mail, ArrowLeft, LogOut, RefreshCw, MapPin } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
 import type { Location, WeatherData } from "@/services/adviceService";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import FishingMap from "@/components/FishingMap";
 
 interface ResultsState {
   venue: string;
@@ -48,7 +48,7 @@ const Results = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-water text-white py-4 px-4 shadow-medium">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={() => navigate("/dashboard")}
@@ -60,94 +60,88 @@ const Results = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Fish className="w-6 h-6" />
-              <span className="font-semibold">Fishing Advice</span>
+              <span className="font-semibold hidden sm:inline">Fishing Advice</span>
             </div>
             <Button
               variant="ghost"
               onClick={handleSignOut}
               className="text-white hover:bg-white/10"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              <LogOut className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto p-4 md:p-8">
-        {/* Venue and Date */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">{venue}</h1>
+      <main className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+        {/* Venue and Date Header */}
+        <div className="mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">{venue}</h1>
           <p className="text-lg text-muted-foreground">{date}</p>
         </div>
 
-        {/* Weather Bar */}
-        <Card className="p-6 mb-6 shadow-soft bg-gradient-to-r from-primary/5 to-secondary/5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Cloud className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Conditions</p>
-                <p className="font-semibold text-foreground">{weatherData.conditions}</p>
-              </div>
+        {/* Compact Weather Bar */}
+        <Card className="p-4 mb-6 shadow-soft bg-gradient-to-r from-primary/5 to-secondary/5">
+          <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <Cloud className="w-5 h-5 text-primary" />
+              <span className="font-medium text-foreground">{weatherData.conditions}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
-                <Thermometer className="w-5 h-5 text-secondary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Temperature</p>
-                <p className="font-semibold text-foreground">{weatherData.temperature}°C</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <Wind className="w-5 h-5 text-accent" />
+              <span className="font-medium text-foreground">
+                {weatherData.windDirection} {weatherData.windSpeed}mph
+              </span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-                <Wind className="w-5 h-5 text-accent" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Wind</p>
-                <p className="font-semibold text-foreground">
-                  {weatherData.windDirection} {weatherData.windSpeed}mph
-                </p>
-              </div>
+            <div className="flex items-center gap-2">
+              <Thermometer className="w-5 h-5 text-secondary" />
+              <span className="font-medium text-foreground">{weatherData.temperature}°C</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Cloud className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Rain Chance</p>
-                <p className="font-semibold text-foreground">{weatherData.precipitationProbability}%</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <Cloud className="w-5 h-5 text-primary" />
+              <span className="font-medium text-foreground">{weatherData.precipitationProbability}% rain</span>
             </div>
           </div>
         </Card>
 
-        {/* Results Grid */}
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
-          {/* AI Advice */}
-          <Card className="p-6 shadow-medium">
-            <h2 className="text-2xl font-bold mb-4 text-foreground flex items-center gap-2">
+        {/* Two Column Layout */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-6">
+          {/* AI Advice Section */}
+          <Card className="p-6 shadow-medium overflow-hidden flex flex-col">
+            <div className="flex items-center gap-2 mb-4">
               <Fish className="w-6 h-6 text-primary" />
-              AI Fishing Advice
-            </h2>
-            <div className="prose prose-sm max-w-none text-foreground whitespace-pre-line">
-              {advice}
+              <h2 className="text-2xl font-bold text-foreground">Fishing Advice</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              <div 
+                className="prose prose-sm max-w-none text-foreground"
+                style={{
+                  fontSize: "16px",
+                  lineHeight: "1.6",
+                  whiteSpace: "pre-line"
+                }}
+              >
+                {advice}
+              </div>
             </div>
           </Card>
 
-          {/* Map */}
-          <Card className="p-6 shadow-medium">
-            <h2 className="text-2xl font-bold mb-4 text-foreground">Recommended Locations</h2>
-            <div className="aspect-square bg-muted rounded-lg flex items-center justify-center mb-4">
-              <p className="text-muted-foreground">Map will be displayed here</p>
+          {/* Map Section */}
+          <Card className="p-6 shadow-medium flex flex-col">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin className="w-6 h-6 text-primary" />
+              <h2 className="text-2xl font-bold text-foreground">Recommended Locations</h2>
+            </div>
+            
+            {/* Map */}
+            <div className="flex-1 mb-4" style={{ minHeight: "400px" }}>
+              <FishingMap locations={locations} venueName={venue} />
             </div>
             
             {/* Location List */}
-            <div className="space-y-3 mb-4">
+            <div className="space-y-2 mb-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
               {locations.map((loc, index) => (
                 <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                   <div className={cn(
@@ -157,8 +151,8 @@ const Results = () => {
                     loc.type === "entryPoint" && "bg-secondary"
                   )}></div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground">{loc.name}</p>
-                    <p className="text-sm text-muted-foreground">{loc.description}</p>
+                    <p className="font-semibold text-sm text-foreground">{loc.name}</p>
+                    <p className="text-xs text-muted-foreground">{loc.description}</p>
                   </div>
                 </div>
               ))}
@@ -182,11 +176,20 @@ const Results = () => {
           </Card>
         </div>
 
-        {/* Email Button */}
-        <div className="text-center">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             size="lg"
+            onClick={() => navigate("/dashboard")}
             className="bg-gradient-water text-white hover:opacity-90 shadow-medium"
+          >
+            <RefreshCw className="w-5 h-5 mr-2" />
+            New Query
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="shadow-soft"
           >
             <Mail className="w-5 h-5 mr-2" />
             Email This Advice
