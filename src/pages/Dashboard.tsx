@@ -5,12 +5,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Fish, LogOut } from "lucide-react";
+import { CalendarIcon, Fish, LogOut, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import DebugPanel from "@/components/DebugPanel";
+import { getWeatherForecast } from "@/services/weatherService";
+import { getFishingAdvice, AdviceServiceError } from "@/services/adviceService";
+import type { FishingAdvice } from "@/services/adviceService";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const VENUES = [
   "Grafham Water",
@@ -22,9 +27,16 @@ const VENUES = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, signOut: authSignOut } = useAuth();
+  const { toast } = useToast();
   const [venue, setVenue] = useState<string>("");
   const [date, setDate] = useState<Date>();
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [lastFailedRequest, setLastFailedRequest] = useState<{
+    venue: string;
+    date: string;
+  } | null>(null);
 
   // Get user initials for avatar
   const getUserInitials = () => {
@@ -35,12 +47,74 @@ const Dashboard = () => {
   const handleGetAdvice = async () => {
     if (!venue || !date) return;
     
+    setError(null);
     setIsLoading(true);
-    // TODO: Implement API call to get advice
-    setTimeout(() => {
+    const dateString = format(date, "yyyy-MM-dd");
+    
+    try {
+      // Step 1: Fetch weather forecast
+      setLoadingMessage("Fetching weather forecast...");
+      const weatherData = await getWeatherForecast(venue, dateString);
+      
+      // Step 2: Get fishing advice
+      setLoadingMessage("Analyzing fishing conditions...");
+      const adviceData: FishingAdvice = await getFishingAdvice(venue, dateString, weatherData);
+      
+      // Step 3: Navigate to results
+      navigate("/results", {
+        state: {
+          venue,
+          date: format(date, "PPP"),
+          advice: adviceData.advice,
+          locations: adviceData.locations,
+          weatherData: adviceData.weatherData,
+          queryId: adviceData.queryId,
+        },
+      });
+    } catch (err) {
+      console.error("Error getting fishing advice:", err);
+      
+      setLastFailedRequest({ venue, date: dateString });
+      
+      if (err instanceof AdviceServiceError) {
+        if (err.code === "NOT_AUTHENTICATED") {
+          setError("You need to be logged in to get fishing advice.");
+          toast({
+            variant: "destructive",
+            title: "Authentication Required",
+            description: "Please log in to continue.",
+          });
+        } else {
+          setError(err.message);
+          toast({
+            variant: "destructive",
+            title: "Failed to Get Advice",
+            description: err.message,
+          });
+        }
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to get fishing advice. Please try again.",
+        });
+      }
+    } finally {
       setIsLoading(false);
-      navigate("/results");
-    }, 2000);
+      setLoadingMessage("");
+    }
+  };
+
+  const handleRetry = () => {
+    if (lastFailedRequest) {
+      const retryDate = new Date(lastFailedRequest.date);
+      setVenue(lastFailedRequest.venue);
+      setDate(retryDate);
+      setError(null);
+      // Automatically retry
+      setTimeout(() => handleGetAdvice(), 100);
+    }
   };
 
   const handleSignOut = async () => {
@@ -98,6 +172,27 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Error Alert */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span>{error}</span>
+                  {lastFailedRequest && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRetry}
+                      disabled={isLoading}
+                      className="ml-4"
+                    >
+                      Retry
+                    </Button>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Venue Selection */}
             <div className="space-y-2">
               <Label htmlFor="venue">Fishing Venue</Label>
@@ -148,8 +243,14 @@ const Dashboard = () => {
               disabled={!venue || !date || isLoading}
               className="w-full bg-gradient-water text-white hover:opacity-90 text-lg py-6"
             >
-              {isLoading ? "Analyzing conditions..." : "Get Fishing Advice"}
+              {isLoading ? loadingMessage || "Processing..." : "Get Fishing Advice"}
             </Button>
+            
+            {isLoading && (
+              <p className="text-sm text-muted-foreground text-center">
+                This typically takes 2-5 seconds...
+              </p>
+            )}
           </CardContent>
         </Card>
 
