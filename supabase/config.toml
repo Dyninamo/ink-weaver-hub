@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.get-weather-forecast]
 verify_jwt = false
+
+[functions.create-share-link]
+verify_jwt = true
