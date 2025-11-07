@@ -70,19 +70,31 @@ interface FishingMapProps {
 }
 
 const FishingMap = ({ locations, venueName }: FishingMapProps) => {
-  if (locations.length === 0) {
+  // Filter out locations with invalid coordinates
+  const validLocations = locations.filter(
+    (loc) => 
+      loc.coordinates && 
+      Array.isArray(loc.coordinates) && 
+      loc.coordinates.length === 2 &&
+      typeof loc.coordinates[0] === 'number' && 
+      typeof loc.coordinates[1] === 'number' &&
+      !isNaN(loc.coordinates[0]) &&
+      !isNaN(loc.coordinates[1])
+  );
+
+  if (validLocations.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
-        <p className="text-muted-foreground">No locations available</p>
+        <p className="text-muted-foreground">No valid locations available</p>
       </div>
     );
   }
 
-  // Calculate center point from all locations
+  // Calculate center point from all valid locations
   const centerLat =
-    locations.reduce((sum, loc) => sum + loc.coordinates[0], 0) / locations.length;
+    validLocations.reduce((sum, loc) => sum + loc.coordinates[0], 0) / validLocations.length;
   const centerLng =
-    locations.reduce((sum, loc) => sum + loc.coordinates[1], 0) / locations.length;
+    validLocations.reduce((sum, loc) => sum + loc.coordinates[1], 0) / validLocations.length;
 
   return (
     <MapContainer
@@ -95,8 +107,8 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <FitBounds locations={locations} />
-      {locations.map((location, index) => (
+      <FitBounds locations={validLocations} />
+      {validLocations.map((location, index) => (
         <Marker
           key={index}
           position={[location.coordinates[0], location.coordinates[1]]}
