@@ -52,29 +52,48 @@ function MapBoundsHandler({ locations }: { locations: Location[] }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!map || locations.length === 0) return;
+    if (!map || !map.whenReady || locations.length === 0) return;
 
-    try {
-      if (locations.length === 1) {
-        const [lat, lng] = locations[0].coordinates;
-        map.setView([lat, lng], 13, { animate: false });
-      } else {
-        const bounds = L.latLngBounds(
-          locations.map((loc) => [loc.coordinates[0], loc.coordinates[1]])
-        );
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+    // Use whenReady to ensure map is fully initialized
+    map.whenReady(() => {
+      try {
+        if (locations.length === 1) {
+          const [lat, lng] = locations[0].coordinates;
+          map.setView([lat, lng], 13, { animate: false });
+        } else {
+          const bounds = L.latLngBounds(
+            locations.map((loc) => [loc.coordinates[0], loc.coordinates[1]])
+          );
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+        }
+        
+        // Small delay to ensure tiles are loaded
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 100);
+        
+        console.log("Map bounds set successfully");
+      } catch (error) {
+        console.error("Error setting map bounds:", error);
       }
-      
-      // Small delay to ensure tiles are loaded
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 100);
-    } catch (error) {
-      console.error("Error setting map bounds:", error);
-    }
+    });
   }, [map, locations]);
 
   return null;
+}
+
+// Delayed wrapper to ensure map context is ready
+function DelayedMapBoundsHandler({ locations }: { locations: Location[] }) {
+  const [ready, setReady] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setReady(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  if (!ready) return null;
+  
+  return <MapBoundsHandler locations={locations} />;
 }
 
 interface FishingMapProps {
@@ -171,9 +190,9 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
       </div>
     }>
       <MapContainer
-        key={venueName}
         center={[centerLat, centerLng]}
         zoom={12}
+        whenReady={() => console.log("Map ready for:", venueName)}
         className="w-full h-full rounded-lg shadow-soft"
         style={{ minHeight: "400px" }}
       >
@@ -181,7 +200,7 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapBoundsHandler locations={validLocations} />
+        <DelayedMapBoundsHandler locations={validLocations} />
         {validLocations.map((location, index) => (
           <Marker
             key={index}
