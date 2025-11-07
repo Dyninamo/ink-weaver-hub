@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.create-share-link]
 verify_jwt = true
+
+[functions.share-via-email]
+verify_jwt = true
