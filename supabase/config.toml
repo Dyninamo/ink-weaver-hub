@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.share-via-email]
 verify_jwt = true
+
+[functions.get-shared-report]
+verify_jwt = false

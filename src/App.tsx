@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Results from "./pages/Results";
 import PasswordReset from "./pages/PasswordReset";
 import ResetPassword from "./pages/ResetPassword";
+import ShareView from "./pages/ShareView";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -43,6 +44,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route path="/share/:token" element={<ShareView />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

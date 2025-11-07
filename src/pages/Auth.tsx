@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Fish } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -27,6 +27,8 @@ const signInSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -51,9 +53,8 @@ const Auth = () => {
           setCurrentUserId(session.user.id);
           setShowMobileModal(true);
         } else {
-          // Check for redirect parameter
-          const params = new URLSearchParams(window.location.search);
-          const redirectTo = params.get("redirect") || "/dashboard";
+          // Redirect to specified page or dashboard
+          const redirectTo = redirect || "/dashboard";
           navigate(redirectTo);
         }
       }
@@ -130,9 +131,8 @@ const Auth = () => {
         description: "Welcome to Fishing Advice. Redirecting...",
       });
 
-      // Check for redirect parameter
-      const params = new URLSearchParams(window.location.search);
-      const redirectTo = params.get("redirect") || "/dashboard";
+      // Redirect to specified page or dashboard
+      const redirectTo = redirect || "/dashboard";
       
       setTimeout(() => {
         navigate(redirectTo);
@@ -198,9 +198,8 @@ const Auth = () => {
         description: "Redirecting...",
       });
 
-      // Check for redirect parameter
-      const params = new URLSearchParams(window.location.search);
-      const redirectTo = params.get("redirect") || "/dashboard";
+      // Redirect to specified page or dashboard
+      const redirectTo = redirect || "/dashboard";
 
       setTimeout(() => {
         navigate(redirectTo);
