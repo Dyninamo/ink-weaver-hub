@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -69,6 +69,30 @@ interface FishingMapProps {
   venueName: string;
 }
 
+class MapErrorBoundary extends React.Component<{ fallback?: React.ReactNode; children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any, info: any) {
+    console.error('Map render error:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback ?? (
+        <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
+          <p className="text-muted-foreground">Map unavailable</p>
+        </div>
+      );
+    }
+    return this.props.children as any;
+  }
+}
+
+
 const FishingMap = ({ locations, venueName }: FishingMapProps) => {
   // Filter out locations with invalid coordinates
   const validLocations = locations.filter(
@@ -97,54 +121,60 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
     validLocations.reduce((sum, loc) => sum + loc.coordinates[1], 0) / validLocations.length;
 
   return (
-    <MapContainer
-      center={[centerLat, centerLng]}
-      zoom={12}
-      className="w-full h-full rounded-lg shadow-soft"
-      style={{ minHeight: "400px" }}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <FitBounds locations={validLocations} />
-      {validLocations.map((location, index) => (
-        <Marker
-          key={index}
-          position={[location.coordinates[0], location.coordinates[1]]}
-          icon={getMarkerIcon(location.type)}
-        >
-          <Popup>
-            <div className="p-2">
-              <h3 className="font-semibold text-base mb-1">{location.name}</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                {location.description}
-              </p>
-              <div className="flex items-center gap-2 text-xs">
-                <span
-                  className="w-3 h-3 rounded-full"
-                  style={{
-                    backgroundColor:
-                      location.type === "hotSpot"
-                        ? "hsl(var(--primary))"
-                        : location.type === "goodArea"
-                        ? "hsl(var(--accent))"
-                        : "hsl(var(--secondary))",
-                  }}
-                />
-                <span className="capitalize">
-                  {location.type === "hotSpot"
-                    ? "Hot Spot"
-                    : location.type === "goodArea"
-                    ? "Good Area"
-                    : "Entry Point"}
-                </span>
+    <MapErrorBoundary fallback={
+      <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
+        <p className="text-muted-foreground">Map failed to load</p>
+      </div>
+    }>
+      <MapContainer
+        center={[centerLat, centerLng]}
+        zoom={12}
+        className="w-full h-full rounded-lg shadow-soft"
+        style={{ minHeight: "400px" }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <FitBounds locations={validLocations} />
+        {validLocations.map((location, index) => (
+          <Marker
+            key={index}
+            position={[location.coordinates[0], location.coordinates[1]]}
+            icon={getMarkerIcon(location.type)}
+          >
+            <Popup>
+              <div className="p-2">
+                <h3 className="font-semibold text-base mb-1">{location.name}</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {location.description}
+                </p>
+                <div className="flex items-center gap-2 text-xs">
+                  <span
+                    className="w-3 h-3 rounded-full"
+                    style={{
+                      backgroundColor:
+                        location.type === "hotSpot"
+                          ? "hsl(var(--primary))"
+                          : location.type === "goodArea"
+                          ? "hsl(var(--accent))"
+                          : "hsl(var(--secondary))",
+                    }}
+                  />
+                  <span className="capitalize">
+                    {location.type === "hotSpot"
+                      ? "Hot Spot"
+                      : location.type === "goodArea"
+                      ? "Good Area"
+                      : "Entry Point"}
+                  </span>
+                </div>
               </div>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </MapErrorBoundary>
   );
 };
 
