@@ -182,6 +182,83 @@ export type Database = {
         }
         Relationships: []
       }
+      diary_fish: {
+        Row: {
+          created_at: string | null
+          depth: string | null
+          diary_entry_id: string
+          fish_number: number
+          fly: string | null
+          fly_colour: string | null
+          fly_size: number | null
+          id: string
+          kept_or_released: string | null
+          length_inches: number | null
+          line: string | null
+          method: string | null
+          notes: string | null
+          retrieve: string | null
+          species: string | null
+          spot: string | null
+          time_caught: string | null
+          user_id: string
+          weight_lb: number | null
+          weight_oz: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          depth?: string | null
+          diary_entry_id: string
+          fish_number: number
+          fly?: string | null
+          fly_colour?: string | null
+          fly_size?: number | null
+          id?: string
+          kept_or_released?: string | null
+          length_inches?: number | null
+          line?: string | null
+          method?: string | null
+          notes?: string | null
+          retrieve?: string | null
+          species?: string | null
+          spot?: string | null
+          time_caught?: string | null
+          user_id: string
+          weight_lb?: number | null
+          weight_oz?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          depth?: string | null
+          diary_entry_id?: string
+          fish_number?: number
+          fly?: string | null
+          fly_colour?: string | null
+          fly_size?: number | null
+          id?: string
+          kept_or_released?: string | null
+          length_inches?: number | null
+          line?: string | null
+          method?: string | null
+          notes?: string | null
+          retrieve?: string | null
+          species?: string | null
+          spot?: string | null
+          time_caught?: string | null
+          user_id?: string
+          weight_lb?: number | null
+          weight_oz?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diary_fish_diary_entry_id_fkey"
+            columns: ["diary_entry_id"]
+            isOneToOne: false
+            referencedRelation: "diary_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fishing_reports: {
         Row: {
           best_spots: string[] | null
