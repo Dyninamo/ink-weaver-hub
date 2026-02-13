@@ -1,0 +1,1 @@
+ALTER TABLE fishing_reports RENAME COLUMN pressure_mean_hpa_week TO pressure_mean_week;
