@@ -1,0 +1,2 @@
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS humidity_mean_week DOUBLE PRECISION;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS water_temp_week DOUBLE PRECISION;

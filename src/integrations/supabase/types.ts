@@ -22,6 +22,7 @@ export type Database = {
           fish_released: string | null
           flies: string[] | null
           headers: string | null
+          humidity_mean_week: number | null
           id: string
           methods: string[] | null
           precip_total_mm_week: number | null
@@ -35,6 +36,7 @@ export type Database = {
           t_mean_week: number | null
           venue: string
           water_level: string | null
+          water_temp_week: number | null
           weather: string[] | null
           wind_dir_deg_week: number | null
           wind_speed_mean_week: number | null
@@ -47,6 +49,7 @@ export type Database = {
           fish_released?: string | null
           flies?: string[] | null
           headers?: string | null
+          humidity_mean_week?: number | null
           id?: string
           methods?: string[] | null
           precip_total_mm_week?: number | null
@@ -60,6 +63,7 @@ export type Database = {
           t_mean_week?: number | null
           venue: string
           water_level?: string | null
+          water_temp_week?: number | null
           weather?: string[] | null
           wind_dir_deg_week?: number | null
           wind_speed_mean_week?: number | null
@@ -72,6 +76,7 @@ export type Database = {
           fish_released?: string | null
           flies?: string[] | null
           headers?: string | null
+          humidity_mean_week?: number | null
           id?: string
           methods?: string[] | null
           precip_total_mm_week?: number | null
@@ -85,6 +90,7 @@ export type Database = {
           t_mean_week?: number | null
           venue?: string
           water_level?: string | null
+          water_temp_week?: number | null
           weather?: string[] | null
           wind_dir_deg_week?: number | null
           wind_speed_mean_week?: number | null
