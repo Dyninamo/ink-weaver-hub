@@ -1,0 +1,76 @@
+
+CREATE TABLE IF NOT EXISTS reference_data (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  category TEXT NOT NULL CHECK (category IN ('method', 'fly', 'spot', 'line', 'species', 'retrieve', 'depth')),
+  value TEXT NOT NULL,
+  venue TEXT,
+  usage_count INTEGER DEFAULT 0,
+  UNIQUE(category, value, venue)
+);
+
+ALTER TABLE reference_data ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read reference data"
+  ON reference_data FOR SELECT
+  USING (true);
+
+INSERT INTO reference_data (category, value, venue, usage_count) VALUES
+  ('method', 'Buzzer', NULL, 314),
+  ('method', 'Lure', NULL, 321),
+  ('method', 'Nymph', NULL, 262),
+  ('method', 'Washing Line', NULL, 258),
+  ('method', 'Floating Line', NULL, 221),
+  ('method', 'Blob', NULL, 176),
+  ('method', 'Sinking Line', NULL, 95),
+  ('method', 'Intermediate', NULL, 87),
+  ('method', 'Booby', NULL, 85),
+  ('method', 'Dry Fly', NULL, 67),
+  ('fly', 'Shrimp', NULL, 388),
+  ('fly', 'Buzzer', NULL, 314),
+  ('fly', 'Snake', NULL, 203),
+  ('fly', 'Diawl Bach', NULL, 182),
+  ('fly', 'Blob', NULL, 176),
+  ('fly', 'Hares Ear', NULL, 172),
+  ('fly', 'Damsel', NULL, 100),
+  ('fly', 'Booby', NULL, 85),
+  ('fly', 'CDC', NULL, 77),
+  ('fly', 'Hopper', NULL, 53),
+  ('fly', 'Daddy', NULL, 52),
+  ('fly', 'Cormorant', NULL, 39),
+  ('fly', 'Pheasant Tail', NULL, 16),
+  ('fly', 'Bloodworm', NULL, 15),
+  ('fly', 'Humongous', NULL, 13),
+  ('spot', 'Dam', 'Grafham Water', 196),
+  ('spot', 'Lodge', 'Grafham Water', 99),
+  ('spot', 'Seat', 'Grafham Water', 90),
+  ('spot', 'Willows', 'Grafham Water', 77),
+  ('spot', 'Gaynes', 'Grafham Water', 73),
+  ('spot', 'G Buoy', 'Grafham Water', 70),
+  ('spot', 'Harbour Arms', 'Grafham Water', 51),
+  ('spot', 'Plummers', 'Grafham Water', 48),
+  ('spot', 'Stumps', 'Grafham Water', 37),
+  ('spot', 'Sanctuary Bay', 'Grafham Water', 23),
+  ('spot', 'Normanton', 'Rutland Water', 112),
+  ('spot', 'South Arm', 'Rutland Water', 66),
+  ('spot', 'Sykes Lane', 'Rutland Water', 64),
+  ('spot', 'North Arm', 'Rutland Water', 58),
+  ('spot', 'Barnsdale', 'Rutland Water', 58),
+  ('line', 'Floating', NULL, 200),
+  ('line', 'Intermediate', NULL, 150),
+  ('line', 'Di-3', NULL, 50),
+  ('line', 'Di-5', NULL, 40),
+  ('line', 'Di-7', NULL, 20),
+  ('line', 'Fast Sinking', NULL, 30),
+  ('line', 'Midge Tip', NULL, 60),
+  ('retrieve', 'Figure-of-eight', NULL, 100),
+  ('retrieve', 'Slow strip', NULL, 80),
+  ('retrieve', 'Fast strip', NULL, 60),
+  ('retrieve', 'Static', NULL, 90),
+  ('retrieve', 'Roly-poly', NULL, 40),
+  ('retrieve', 'Hang', NULL, 50),
+  ('depth', 'Surface', NULL, 100),
+  ('depth', 'Sub-surface', NULL, 80),
+  ('depth', 'Mid-water', NULL, 70),
+  ('depth', 'Deep', NULL, 50),
+  ('depth', 'On the drop', NULL, 40)
+ON CONFLICT DO NOTHING;
