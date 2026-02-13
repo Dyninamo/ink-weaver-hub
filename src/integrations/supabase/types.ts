@@ -83,6 +83,105 @@ export type Database = {
         }
         Relationships: []
       }
+      diary_entries: {
+        Row: {
+          arrival_time: string | null
+          best_fly: string | null
+          best_method: string | null
+          best_spot: string | null
+          competition_name: string | null
+          created_at: string | null
+          departure_time: string | null
+          fishing_type: string | null
+          flies_used: Json | null
+          humidity_mean_week: number | null
+          id: string
+          is_competition: boolean | null
+          lines_used: Json | null
+          methods_used: Json | null
+          notes: string | null
+          photo_urls: Json | null
+          precip_total_mm_week: number | null
+          pressure_mean_week: number | null
+          spots_fished: Json | null
+          t_mean_week: number | null
+          total_fish: number | null
+          total_kept: number | null
+          total_released: number | null
+          trip_date: string
+          updated_at: string | null
+          user_id: string
+          venue: string
+          weather_auto: Json | null
+          weather_override: Json | null
+          wind_speed_mean_week: number | null
+        }
+        Insert: {
+          arrival_time?: string | null
+          best_fly?: string | null
+          best_method?: string | null
+          best_spot?: string | null
+          competition_name?: string | null
+          created_at?: string | null
+          departure_time?: string | null
+          fishing_type?: string | null
+          flies_used?: Json | null
+          humidity_mean_week?: number | null
+          id?: string
+          is_competition?: boolean | null
+          lines_used?: Json | null
+          methods_used?: Json | null
+          notes?: string | null
+          photo_urls?: Json | null
+          precip_total_mm_week?: number | null
+          pressure_mean_week?: number | null
+          spots_fished?: Json | null
+          t_mean_week?: number | null
+          total_fish?: number | null
+          total_kept?: number | null
+          total_released?: number | null
+          trip_date: string
+          updated_at?: string | null
+          user_id: string
+          venue: string
+          weather_auto?: Json | null
+          weather_override?: Json | null
+          wind_speed_mean_week?: number | null
+        }
+        Update: {
+          arrival_time?: string | null
+          best_fly?: string | null
+          best_method?: string | null
+          best_spot?: string | null
+          competition_name?: string | null
+          created_at?: string | null
+          departure_time?: string | null
+          fishing_type?: string | null
+          flies_used?: Json | null
+          humidity_mean_week?: number | null
+          id?: string
+          is_competition?: boolean | null
+          lines_used?: Json | null
+          methods_used?: Json | null
+          notes?: string | null
+          photo_urls?: Json | null
+          precip_total_mm_week?: number | null
+          pressure_mean_week?: number | null
+          spots_fished?: Json | null
+          t_mean_week?: number | null
+          total_fish?: number | null
+          total_kept?: number | null
+          total_released?: number | null
+          trip_date?: string
+          updated_at?: string | null
+          user_id?: string
+          venue?: string
+          weather_auto?: Json | null
+          weather_override?: Json | null
+          wind_speed_mean_week?: number | null
+        }
+        Relationships: []
+      }
       fishing_reports: {
         Row: {
           best_spots: string[] | null
