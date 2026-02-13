@@ -64,6 +64,13 @@ const DiaryNew = () => {
 
   const selectedVenue = venue === "__other__" ? customVenue : venue;
 
+  // Debounced venue for weather fetching (avoids calling API on every keystroke)
+  const [debouncedVenue, setDebouncedVenue] = useState(selectedVenue);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedVenue(selectedVenue), 600);
+    return () => clearTimeout(timer);
+  }, [selectedVenue]);
+
   // Load venues and reference data
   useEffect(() => {
     const loadVenues = async () => {
@@ -74,13 +81,13 @@ const DiaryNew = () => {
   }, []);
 
 
-  // Auto-fill weather
+  // Auto-fill weather (uses debounced venue to avoid per-keystroke calls)
   const fetchWeather = useCallback(async () => {
-    if (!selectedVenue || !tripDate) return;
+    if (!debouncedVenue || !tripDate) return;
     setIsLoadingWeather(true);
     try {
       const dateStr = format(tripDate, "yyyy-MM-dd");
-      const weather = await getWeatherForecast(selectedVenue, dateStr);
+      const weather = await getWeatherForecast(debouncedVenue, dateStr);
       setWeatherTemp(String(weather.temperature));
       setWeatherWind(String(weather.windSpeed));
       setWeatherDirection(weather.windDirection || "");
@@ -91,13 +98,13 @@ const DiaryNew = () => {
     } finally {
       setIsLoadingWeather(false);
     }
-  }, [selectedVenue, tripDate]);
+  }, [debouncedVenue, tripDate]);
 
   useEffect(() => {
-    if (selectedVenue && tripDate) {
+    if (debouncedVenue && tripDate) {
       fetchWeather();
     }
-  }, [selectedVenue, tripDate, fetchWeather]);
+  }, [debouncedVenue, tripDate, fetchWeather]);
 
   const handleSave = async (continueToFish: boolean) => {
     if (!selectedVenue) {
