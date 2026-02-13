@@ -90,38 +90,24 @@ function BasicAdviceSection() {
       const records: any[] = JSON.parse(text);
       if (!Array.isArray(records)) throw new Error("JSON must be an array");
 
-      const ALLOWED_KEYS = [
-        "venue","season","weather_category","temp_range_min","temp_range_max",
-        "temp_label","report_count","expected_rod_average","rod_average_range",
-        "methods_ranked","flies_ranked","spots_ranked","latest_similar","advice_text",
-      ];
-      const cleaned = records.map(r => {
-        const out: any = {};
-        for (const k of ALLOWED_KEYS) { if (k in r) out[k] = r[k]; }
-        return out;
-      });
-
-      let inserted = 0, failed = 0;
+      let totalInserted = 0, totalFailed = 0;
       const batchSize = 25;
-      const totalBatches = Math.ceil(cleaned.length / batchSize);
+      const totalBatches = Math.ceil(records.length / batchSize);
 
       for (let i = 0; i < totalBatches; i++) {
-        const batch = cleaned.slice(i * batchSize, (i + 1) * batchSize);
-        setStatus({ state: "loading", message: `Upserting batch ${i + 1}/${totalBatches}... (${inserted} inserted, ${failed} failed)` });
+        const batch = records.slice(i * batchSize, (i + 1) * batchSize);
+        setStatus({ state: "loading", message: `Upserting batch ${i + 1}/${totalBatches}... (${totalInserted} inserted, ${totalFailed} failed)` });
 
-        const { error } = await supabase.from("basic_advice").upsert(batch, {
-          onConflict: "venue,season,weather_category",
+        const { data, error } = await supabase.functions.invoke("upload-basic-advice", {
+          body: { records: batch },
         });
 
-        if (error) {
-          failed += batch.length;
-          console.error("Batch error:", error);
-        } else {
-          inserted += batch.length;
-        }
+        if (error) throw new Error(error.message);
+        totalInserted += data.inserted ?? 0;
+        totalFailed += data.failed ?? 0;
       }
 
-      setStatus({ state: "done", message: `Done! ${inserted} upserted, ${failed} failed out of ${cleaned.length} records.` });
+      setStatus({ state: "done", message: `Done! ${totalInserted} upserted, ${totalFailed} failed out of ${records.length} records.` });
     } catch (err: any) {
       setStatus({ state: "error", message: err.message });
     }
@@ -137,7 +123,7 @@ function BasicAdviceSection() {
           <Input ref={fileRef} type="file" accept=".json" className="max-w-xs" />
           <Button onClick={upload} disabled={status.state === "loading"}>Upload</Button>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">Upserts into basic_advice on (venue, season, weather_category)</p>
+        <p className="mt-2 text-xs text-muted-foreground">Calls upload-basic-advice edge function in batches of 25</p>
         <StatusBadge status={status} />
       </CardContent>
     </Card>
