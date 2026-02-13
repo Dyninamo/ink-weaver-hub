@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Fish, LogOut, AlertCircle, ArrowRight, Clock, Share2, CheckSquare, Square } from "lucide-react";
+import { CalendarIcon, Fish, LogOut, AlertCircle, ArrowRight, Clock, Share2, CheckSquare, Square, BookOpen } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -292,6 +292,27 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* Navigation */}
+      <nav className="bg-card border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 flex gap-1 overflow-x-auto">
+          <Button
+            variant="ghost"
+            className="text-foreground font-semibold border-b-2 border-primary rounded-none"
+          >
+            <Fish className="w-4 h-4 mr-2" />
+            Dashboard
+          </Button>
+          <Button
+            variant="ghost"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => navigate("/diary")}
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            My Diary
+          </Button>
+        </div>
+      </nav>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto p-4 md:p-8">

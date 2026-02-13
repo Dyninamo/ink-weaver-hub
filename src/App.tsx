@@ -11,6 +11,9 @@ import Results from "./pages/Results";
 import PasswordReset from "./pages/PasswordReset";
 import ResetPassword from "./pages/ResetPassword";
 import ShareView from "./pages/ShareView";
+import Diary from "./pages/Diary";
+import DiaryNew from "./pages/DiaryNew";
+import DiaryEntry from "./pages/DiaryEntry";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -41,6 +44,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Results />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/diary" 
+              element={
+                <ProtectedRoute>
+                  <Diary />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/diary/new" 
+              element={
+                <ProtectedRoute>
+                  <DiaryNew />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/diary/:id" 
+              element={
+                <ProtectedRoute>
+                  <DiaryEntry />
                 </ProtectedRoute>
               } 
             />
