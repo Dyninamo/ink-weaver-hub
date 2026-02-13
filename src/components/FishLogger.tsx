@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import AutocompleteInput from "@/components/AutocompleteInput";
+import AutocompleteTagInput from "@/components/AutocompleteTagInput";
 
 interface FishRecord {
   id: string;
@@ -38,7 +38,7 @@ interface FishLoggerProps {
 
 const SPECIES = ["Rainbow", "Brown", "Brook", "Tiger", "Other"];
 const FLY_SIZES = ["8", "10", "12", "14", "16", "18"];
-const FLY_COLOURS = ["Black", "Olive", "Orange", "Green", "Claret", "White"];
+
 const DEPTHS = ["Surface", "Sub-surface", "Mid-water", "Deep", "On the drop"];
 
 const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
@@ -72,36 +72,7 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
   const stickyLine = useRef("");
   const stickySpot = useRef("");
 
-  // Reference data
-  const [methodSuggestions, setMethodSuggestions] = useState<string[]>([]);
-  const [flySuggestions, setFlySuggestions] = useState<string[]>([]);
-  const [lineSuggestions, setLineSuggestions] = useState<string[]>([]);
-  const [retrieveSuggestions, setRetrieveSuggestions] = useState<string[]>([]);
-  const [spotSuggestions, setSpotSuggestions] = useState<string[]>([]);
-
-  // Load reference data
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from("reference_data")
-        .select("value, category, venue")
-        .order("usage_count", { ascending: false });
-
-      if (data) {
-        const refs = data as { value: string; category: string; venue: string | null }[];
-        setMethodSuggestions(refs.filter((r) => r.category === "method").map((r) => r.value));
-        setFlySuggestions(refs.filter((r) => r.category === "fly").map((r) => r.value));
-        setLineSuggestions(refs.filter((r) => r.category === "line").map((r) => r.value));
-        setRetrieveSuggestions(refs.filter((r) => r.category === "retrieve").map((r) => r.value));
-        setSpotSuggestions(
-          refs
-            .filter((r) => r.category === "spot" && (!r.venue || r.venue === venue))
-            .map((r) => r.value)
-        );
-      }
-    };
-    load();
-  }, [venue]);
+  // Reference data is now handled by AutocompleteTagInput
 
   // Load existing fish
   const fetchFish = useCallback(async () => {
@@ -412,11 +383,11 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Method</Label>
-                <AutocompleteInput value={method} onChange={setMethod} suggestions={methodSuggestions} placeholder="Buzzer..." />
+                <AutocompleteTagInput category="method" singleSelect value={method ? [method] : []} onChange={(v) => setMethod(v[0] || "")} placeholder="Buzzer..." />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Fly</Label>
-                <AutocompleteInput value={fly} onChange={setFly} suggestions={flySuggestions} placeholder="Diawl Bach..." />
+                <AutocompleteTagInput category="fly" singleSelect value={fly ? [fly] : []} onChange={(v) => setFly(v[0] || "")} placeholder="Diawl Bach..." />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Size</Label>
@@ -433,7 +404,18 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Colour</Label>
-                <AutocompleteInput value={flyColour} onChange={setFlyColour} suggestions={FLY_COLOURS} placeholder="Black..." />
+                <Input
+                  value={flyColour}
+                  onChange={(e) => setFlyColour(e.target.value)}
+                  placeholder="Black..."
+                  className="h-10"
+                  list="fly-colours"
+                />
+                <datalist id="fly-colours">
+                  {["Black", "Olive", "Orange", "Green", "Claret", "White"].map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </div>
             </div>
 
@@ -441,7 +423,7 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Line</Label>
-                <AutocompleteInput value={line} onChange={setLine} suggestions={lineSuggestions} placeholder="Floating..." />
+                <AutocompleteTagInput category="line" singleSelect value={line ? [line] : []} onChange={(v) => setLine(v[0] || "")} placeholder="Floating..." />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Depth</Label>
@@ -458,11 +440,11 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Retrieve</Label>
-                <AutocompleteInput value={retrieve} onChange={setRetrieve} suggestions={retrieveSuggestions} placeholder="Fig-of-8..." />
+                <AutocompleteTagInput category="retrieve" singleSelect value={retrieve ? [retrieve] : []} onChange={(v) => setRetrieve(v[0] || "")} placeholder="Fig-of-8..." />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Spot</Label>
-                <AutocompleteInput value={spot} onChange={setSpot} suggestions={spotSuggestions} placeholder="Dam..." />
+                <AutocompleteTagInput category="spot" venue={venue} singleSelect value={spot ? [spot] : []} onChange={(v) => setSpot(v[0] || "")} placeholder="Dam..." />
               </div>
             </div>
 
