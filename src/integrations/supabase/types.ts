@@ -18,38 +18,77 @@ export type Database = {
         Row: {
           best_spots: string[] | null
           created_at: string | null
+          fish_killed: string | null
+          fish_released: string | null
           flies: string[] | null
+          headers: string | null
           id: string
           methods: string[] | null
+          precip_total_mm_week: number | null
+          pressure_mean_hpa_week: number | null
           report_date: string
           report_text: string | null
+          report_url: string | null
+          returns: number | null
           rod_average: number | null
+          summary: string | null
+          t_mean_week: number | null
           venue: string
+          water_level: string | null
           weather: string[] | null
+          wind_dir_deg_week: number | null
+          wind_speed_mean_week: number | null
+          year: number | null
         }
         Insert: {
           best_spots?: string[] | null
           created_at?: string | null
+          fish_killed?: string | null
+          fish_released?: string | null
           flies?: string[] | null
+          headers?: string | null
           id?: string
           methods?: string[] | null
+          precip_total_mm_week?: number | null
+          pressure_mean_hpa_week?: number | null
           report_date: string
           report_text?: string | null
+          report_url?: string | null
+          returns?: number | null
           rod_average?: number | null
+          summary?: string | null
+          t_mean_week?: number | null
           venue: string
+          water_level?: string | null
           weather?: string[] | null
+          wind_dir_deg_week?: number | null
+          wind_speed_mean_week?: number | null
+          year?: number | null
         }
         Update: {
           best_spots?: string[] | null
           created_at?: string | null
+          fish_killed?: string | null
+          fish_released?: string | null
           flies?: string[] | null
+          headers?: string | null
           id?: string
           methods?: string[] | null
+          precip_total_mm_week?: number | null
+          pressure_mean_hpa_week?: number | null
           report_date?: string
           report_text?: string | null
+          report_url?: string | null
+          returns?: number | null
           rod_average?: number | null
+          summary?: string | null
+          t_mean_week?: number | null
           venue?: string
+          water_level?: string | null
           weather?: string[] | null
+          wind_dir_deg_week?: number | null
+          wind_speed_mean_week?: number | null
+          year?: number | null
         }
         Relationships: []
       }

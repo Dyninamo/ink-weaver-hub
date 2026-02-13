@@ -1,0 +1,13 @@
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS report_url TEXT;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS year INTEGER;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS returns DOUBLE PRECISION;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS fish_killed TEXT;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS fish_released TEXT;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS water_level TEXT;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS summary TEXT;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS headers TEXT;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS t_mean_week DOUBLE PRECISION;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS wind_speed_mean_week DOUBLE PRECISION;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS wind_dir_deg_week DOUBLE PRECISION;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS precip_total_mm_week DOUBLE PRECISION;
+ALTER TABLE fishing_reports ADD COLUMN IF NOT EXISTS pressure_mean_hpa_week DOUBLE PRECISION;
