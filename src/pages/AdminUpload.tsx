@@ -90,12 +90,23 @@ function BasicAdviceSection() {
       const records: any[] = JSON.parse(text);
       if (!Array.isArray(records)) throw new Error("JSON must be an array");
 
+      const ALLOWED_KEYS = [
+        "venue","season","weather_category","temp_range_min","temp_range_max",
+        "temp_label","report_count","expected_rod_average","rod_average_range",
+        "methods_ranked","flies_ranked","spots_ranked","latest_similar","advice_text",
+      ];
+      const cleaned = records.map(r => {
+        const out: any = {};
+        for (const k of ALLOWED_KEYS) { if (k in r) out[k] = r[k]; }
+        return out;
+      });
+
       let inserted = 0, failed = 0;
       const batchSize = 25;
-      const totalBatches = Math.ceil(records.length / batchSize);
+      const totalBatches = Math.ceil(cleaned.length / batchSize);
 
       for (let i = 0; i < totalBatches; i++) {
-        const batch = records.slice(i * batchSize, (i + 1) * batchSize);
+        const batch = cleaned.slice(i * batchSize, (i + 1) * batchSize);
         setStatus({ state: "loading", message: `Upserting batch ${i + 1}/${totalBatches}... (${inserted} inserted, ${failed} failed)` });
 
         const { error } = await supabase.from("basic_advice").upsert(batch, {
@@ -110,7 +121,7 @@ function BasicAdviceSection() {
         }
       }
 
-      setStatus({ state: "done", message: `Done! ${inserted} upserted, ${failed} failed out of ${records.length} records.` });
+      setStatus({ state: "done", message: `Done! ${inserted} upserted, ${failed} failed out of ${cleaned.length} records.` });
     } catch (err: any) {
       setStatus({ state: "error", message: err.message });
     }
