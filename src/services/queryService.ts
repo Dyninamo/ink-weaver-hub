@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { FishingAdvice } from "./adviceService";
+import type { FishingAdviceResponse } from "./adviceService";
 
 export interface QuerySummary {
   id: string;

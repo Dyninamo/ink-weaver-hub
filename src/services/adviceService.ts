@@ -1,28 +1,22 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client'
 
+// Legacy types kept for backward compatibility with existing components
 export interface WeatherData {
-  temperature: number;
-  windSpeed: number;
-  windDirection: string;
-  conditions: string;
-  precipitation: number;
-  precipitationProbability: number;
-  humidity: number;
-  pressure: number;
+  temperature: number
+  windSpeed: number
+  windDirection: string
+  conditions: string
+  precipitation: number
+  precipitationProbability: number
+  humidity: number
+  pressure: number
 }
 
 export interface Location {
-  name: string;
-  coordinates: [number, number];
-  type: 'hotSpot' | 'goodArea' | 'entryPoint';
-  description: string;
-}
-
-export interface FishingAdvice {
-  advice: string;
-  locations: Location[];
-  queryId: string;
-  weatherData: WeatherData;
+  name: string
+  coordinates: [number, number]
+  type: 'hotSpot' | 'goodArea' | 'entryPoint'
+  description: string
 }
 
 export class AdviceServiceError extends Error {
@@ -31,93 +25,79 @@ export class AdviceServiceError extends Error {
     public readonly code?: string,
     public readonly originalError?: unknown
   ) {
-    super(message);
-    this.name = 'AdviceServiceError';
+    super(message)
+    this.name = 'AdviceServiceError'
   }
 }
 
+export interface PredictionData {
+  rod_average: {
+    predicted: number
+    range: [number, number]
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW'
+  }
+  methods: { method: string; frequency?: number; score?: number }[]
+  flies: { fly: string; frequency?: number; score?: number }[]
+  spots: { spot: string; frequency?: number; score?: number }[]
+}
+
+export interface FishingAdviceResponse {
+  advice: string
+  prediction: PredictionData
+  locations?: { name: string; type: string }[]
+  weatherData?: any
+  queryId?: string
+  tier: 'free' | 'premium'
+  season?: string
+  weatherCategory?: string
+  reportCount?: number
+}
+
+// Free tier: instant lookup from pre-computed table
+export async function getBasicAdvice(
+  venue: string,
+  date: string,
+  weatherData?: { temperature: number; windSpeed: number; precipitation: number }
+): Promise<FishingAdviceResponse> {
+  const { data, error } = await supabase.functions.invoke('get-basic-advice', {
+    body: { venue, date, weatherData }
+  })
+  
+  if (error) throw new Error(error.message || 'Failed to get advice')
+  return data as FishingAdviceResponse
+}
+
+// Premium tier: AI-powered with ML model + Claude
+export async function getPremiumAdvice(
+  venue: string,
+  date: string,
+  weatherData: { temperature: number; windSpeed: number; precipitation: number; pressure?: number; humidity?: number }
+): Promise<FishingAdviceResponse> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  
+  const { data, error } = await supabase.functions.invoke('get-fishing-advice', {
+    body: { venue, date, userId: user.id, weatherData }
+  })
+  
+  if (error) throw new Error(error.message || 'Failed to get advice')
+  return data as FishingAdviceResponse
+}
+
+// Smart router: tries premium first, falls back to free
 export async function getFishingAdvice(
   venue: string,
   date: string,
-  weatherData: WeatherData
-): Promise<FishingAdvice> {
-  try {
-    // Validate inputs
-    if (!venue || !date || !weatherData) {
-      throw new AdviceServiceError(
-        'Missing required parameters',
-        'INVALID_INPUT'
-      );
+  weatherData: { temperature: number; windSpeed: number; precipitation: number; pressure?: number; humidity?: number },
+  isPremium: boolean = false
+): Promise<FishingAdviceResponse> {
+  if (isPremium) {
+    try {
+      return await getPremiumAdvice(venue, date, weatherData)
+    } catch (err) {
+      console.warn('Premium advice failed, falling back to basic:', err)
+      return await getBasicAdvice(venue, date, weatherData)
     }
-
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError) {
-      throw new AdviceServiceError(
-        'Authentication error',
-        'AUTH_ERROR',
-        authError
-      );
-    }
-
-    if (!user) {
-      throw new AdviceServiceError(
-        'User not authenticated. Please log in to get fishing advice.',
-        'NOT_AUTHENTICATED'
-      );
-    }
-
-    // Call edge function
-    const { data, error: functionError } = await supabase.functions.invoke(
-      'get-fishing-advice-mock',
-      {
-        body: {
-          venue,
-          date,
-          userId: user.id,
-          weatherData
-        }
-      }
-    );
-
-    if (functionError) {
-      console.error('Edge function error:', functionError);
-      throw new AdviceServiceError(
-        'Failed to get fishing advice from server',
-        'FUNCTION_ERROR',
-        functionError
-      );
-    }
-
-    if (!data) {
-      throw new AdviceServiceError(
-        'No data returned from server',
-        'NO_DATA'
-      );
-    }
-
-    // Validate response structure
-    if (!data.advice || !data.locations || !data.queryId) {
-      throw new AdviceServiceError(
-        'Invalid response format from server',
-        'INVALID_RESPONSE'
-      );
-    }
-
-    return data as FishingAdvice;
-  } catch (error) {
-    // Re-throw AdviceServiceError as-is
-    if (error instanceof AdviceServiceError) {
-      throw error;
-    }
-
-    // Wrap unknown errors
-    console.error('Unexpected error in getFishingAdvice:', error);
-    throw new AdviceServiceError(
-      'An unexpected error occurred while getting fishing advice',
-      'UNKNOWN_ERROR',
-      error
-    );
   }
+  return await getBasicAdvice(venue, date, weatherData)
 }

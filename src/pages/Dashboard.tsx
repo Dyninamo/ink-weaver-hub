@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import DebugPanel from "@/components/DebugPanel";
 import { getWeatherForecast } from "@/services/weatherService";
 import { getFishingAdvice, AdviceServiceError } from "@/services/adviceService";
-import type { FishingAdvice } from "@/services/adviceService";
+import type { FishingAdviceResponse } from "@/services/adviceService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getRecentQueries, getQueryById, QueryServiceError } from "@/services/queryService";
 import type { QuerySummary } from "@/services/queryService";
@@ -104,7 +104,7 @@ const Dashboard = () => {
       
       // Step 2: Get fishing advice
       setLoadingMessage("Analyzing fishing conditions...");
-      const adviceData: FishingAdvice = await getFishingAdvice(venue, dateString, weatherData);
+      const adviceData: FishingAdviceResponse = await getFishingAdvice(venue, dateString, weatherData);
       
       // Step 3: Navigate to results
       navigate("/results", {
