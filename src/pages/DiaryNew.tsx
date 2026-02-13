@@ -81,9 +81,13 @@ const DiaryNew = () => {
   }, []);
 
 
-  // Auto-fill weather (uses debounced venue to avoid per-keystroke calls)
+  // Auto-fill weather — only for known venues (not custom text input)
   const fetchWeather = useCallback(async () => {
     if (!debouncedVenue || !tripDate) return;
+    // Skip weather fetch for custom venues not in our known list
+    const isKnownVenue = venues.some(v => v.name === debouncedVenue);
+    if (!isKnownVenue) return;
+
     setIsLoadingWeather(true);
     try {
       const dateStr = format(tripDate, "yyyy-MM-dd");
@@ -98,7 +102,7 @@ const DiaryNew = () => {
     } finally {
       setIsLoadingWeather(false);
     }
-  }, [debouncedVenue, tripDate]);
+  }, [debouncedVenue, tripDate, venues]);
 
   useEffect(() => {
     if (debouncedVenue && tripDate) {
