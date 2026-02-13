@@ -18,16 +18,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getWeatherForecast } from "@/services/weatherService";
-import TagInput from "@/components/TagInput";
+import AutocompleteTagInput from "@/components/AutocompleteTagInput";
 
 interface VenueOption {
   name: string;
 }
 
-interface ReferenceItem {
-  value: string;
-  category: string;
-}
 
 const DiaryNew = () => {
   const navigate = useNavigate();
@@ -61,12 +57,8 @@ const DiaryNew = () => {
   const [isCompetition, setIsCompetition] = useState(false);
   const [competitionName, setCompetitionName] = useState("");
 
-  // Reference data
+  // Reference data - venues only (autocomplete handles the rest)
   const [venues, setVenues] = useState<VenueOption[]>([]);
-  const [methodSuggestions, setMethodSuggestions] = useState<string[]>([]);
-  const [flySuggestions, setFlySuggestions] = useState<string[]>([]);
-  const [spotSuggestions, setSpotSuggestions] = useState<string[]>([]);
-  const [lineSuggestions, setLineSuggestions] = useState<string[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -74,50 +66,13 @@ const DiaryNew = () => {
 
   // Load venues and reference data
   useEffect(() => {
-    const loadData = async () => {
-      const [venueRes, refRes] = await Promise.all([
-        supabase.from("venue_metadata").select("name").order("name"),
-        supabase.from("reference_data").select("value, category, venue").order("usage_count", { ascending: false }),
-      ]);
-
-      if (venueRes.data) {
-        setVenues(venueRes.data as VenueOption[]);
-      }
-
-      if (refRes.data) {
-        const refs = refRes.data as (ReferenceItem & { venue: string | null })[];
-        setMethodSuggestions(refs.filter((r) => r.category === "method").map((r) => r.value));
-        setFlySuggestions(refs.filter((r) => r.category === "fly").map((r) => r.value));
-        setLineSuggestions(refs.filter((r) => r.category === "line").map((r) => r.value));
-        // Spots will be filtered by venue
-        setSpotSuggestions(
-          refs
-            .filter((r) => r.category === "spot")
-            .map((r) => r.value)
-        );
-      }
+    const loadVenues = async () => {
+      const { data } = await supabase.from("venue_metadata").select("name").order("name");
+      if (data) setVenues(data as VenueOption[]);
     };
-
-    loadData();
+    loadVenues();
   }, []);
 
-  // Update spot suggestions when venue changes
-  useEffect(() => {
-    if (!selectedVenue) return;
-    const loadSpots = async () => {
-      const { data } = await supabase
-        .from("reference_data")
-        .select("value")
-        .eq("category", "spot")
-        .or(`venue.eq.${selectedVenue},venue.is.null`)
-        .order("usage_count", { ascending: false });
-
-      if (data) {
-        setSpotSuggestions(data.map((r: { value: string }) => r.value));
-      }
-    };
-    loadSpots();
-  }, [selectedVenue]);
 
   // Auto-fill weather
   const fetchWeather = useCallback(async () => {
@@ -387,19 +342,19 @@ const DiaryNew = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Methods used</Label>
-              <TagInput values={methods} onChange={setMethods} suggestions={methodSuggestions} placeholder="e.g. Buzzer, Lure..." />
+              <AutocompleteTagInput category="method" value={methods} onChange={setMethods} placeholder="e.g. Buzzer, Lure..." />
             </div>
             <div className="space-y-2">
               <Label>Flies used</Label>
-              <TagInput values={flies} onChange={setFlies} suggestions={flySuggestions} placeholder="e.g. Diawl Bach, Snake..." />
+              <AutocompleteTagInput category="fly" value={flies} onChange={setFlies} placeholder="e.g. Diawl Bach, Snake..." />
             </div>
             <div className="space-y-2">
               <Label>Spots fished</Label>
-              <TagInput values={spots} onChange={setSpots} suggestions={spotSuggestions} placeholder="e.g. Dam, Lodge..." />
+              <AutocompleteTagInput category="spot" venue={selectedVenue} value={spots} onChange={setSpots} placeholder="e.g. Dam, Lodge..." />
             </div>
             <div className="space-y-2">
               <Label>Lines used</Label>
-              <TagInput values={lines} onChange={setLines} suggestions={lineSuggestions} placeholder="e.g. Floating, Intermediate..." />
+              <AutocompleteTagInput category="line" value={lines} onChange={setLines} placeholder="e.g. Floating, Intermediate..." />
             </div>
             <div className="space-y-2">
               <Label>Notes</Label>
