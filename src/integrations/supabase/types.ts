@@ -25,7 +25,7 @@ export type Database = {
           id: string
           methods: string[] | null
           precip_total_mm_week: number | null
-          pressure_mean_hpa_week: number | null
+          pressure_mean_week: number | null
           report_date: string
           report_text: string | null
           report_url: string | null
@@ -50,7 +50,7 @@ export type Database = {
           id?: string
           methods?: string[] | null
           precip_total_mm_week?: number | null
-          pressure_mean_hpa_week?: number | null
+          pressure_mean_week?: number | null
           report_date: string
           report_text?: string | null
           report_url?: string | null
@@ -75,7 +75,7 @@ export type Database = {
           id?: string
           methods?: string[] | null
           precip_total_mm_week?: number | null
-          pressure_mean_hpa_week?: number | null
+          pressure_mean_week?: number | null
           report_date?: string
           report_text?: string | null
           report_url?: string | null
