@@ -565,7 +565,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      diary_as_reports: {
+        Row: {
+          best_spots: Json | null
+          content: string | null
+          date: string | null
+          flies: Json | null
+          humidity_mean_week: number | null
+          methods: Json | null
+          precip_total_mm_week: number | null
+          pressure_mean_week: number | null
+          rod_average: number | null
+          summary: string | null
+          t_mean_week: number | null
+          user_id: string | null
+          venue: string | null
+          week_num: number | null
+          wind_speed_mean_week: number | null
+          year: number | null
+        }
+        Insert: {
+          best_spots?: Json | null
+          content?: never
+          date?: string | null
+          flies?: Json | null
+          humidity_mean_week?: number | null
+          methods?: Json | null
+          precip_total_mm_week?: number | null
+          pressure_mean_week?: number | null
+          rod_average?: never
+          summary?: never
+          t_mean_week?: number | null
+          user_id?: string | null
+          venue?: string | null
+          week_num?: never
+          wind_speed_mean_week?: number | null
+          year?: never
+        }
+        Update: {
+          best_spots?: Json | null
+          content?: never
+          date?: string | null
+          flies?: Json | null
+          humidity_mean_week?: number | null
+          methods?: Json | null
+          precip_total_mm_week?: number | null
+          pressure_mean_week?: number | null
+          rod_average?: never
+          summary?: never
+          t_mean_week?: number | null
+          user_id?: string | null
+          venue?: string | null
+          week_num?: never
+          wind_speed_mean_week?: number | null
+          year?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
