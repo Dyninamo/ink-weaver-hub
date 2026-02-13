@@ -123,7 +123,7 @@ function BasicAdviceSection() {
           <Input ref={fileRef} type="file" accept=".json" className="max-w-xs" />
           <Button onClick={upload} disabled={status.state === "loading"}>Upload</Button>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">Calls upload-basic-advice edge function in batches of 25</p>
+        <p className="mt-2 text-xs text-muted-foreground">Calls upload-basic-advice edge function in batches of 25 records</p>
         <StatusBadge status={status} />
       </CardContent>
     </Card>
