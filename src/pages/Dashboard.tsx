@@ -102,9 +102,10 @@ const Dashboard = () => {
         weatherData = await getWeatherForecast(venue, dateString);
       }
       
-      // Step 2: Get fishing advice
-      setLoadingMessage("Analyzing fishing conditions...");
-      const adviceData: FishingAdviceResponse = await getFishingAdvice(venue, dateString, weatherData);
+      // Step 2: Get fishing advice (free tier for now)
+      setLoadingMessage("Analysing conditions...");
+      const isPremium = false;
+      const adviceData: FishingAdviceResponse = await getFishingAdvice(venue, dateString, weatherData, isPremium);
       
       // Step 3: Navigate to results
       navigate("/results", {
@@ -112,9 +113,13 @@ const Dashboard = () => {
           venue,
           date: format(date, "PPP"),
           advice: adviceData.advice,
+          prediction: adviceData.prediction,
           locations: adviceData.locations,
-          weatherData: adviceData.weatherData,
+          weatherData: weatherData,
           queryId: adviceData.queryId,
+          tier: adviceData.tier,
+          season: adviceData.season,
+          weatherCategory: adviceData.weatherCategory,
         },
       });
     } catch (err) {
