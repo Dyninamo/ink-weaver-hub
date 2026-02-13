@@ -6,26 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// Temperature bands per season (from ML analysis of 671 reports)
+// Matches the CHECK constraint: 'COLD', 'MILD', 'WARM'
+const TEMP_BANDS: Record<string, Record<string, [number, number]>> = {
+  Winter: { COLD: [-99, 4], MILD: [4, 6], WARM: [6, 99] },
+  Spring: { COLD: [-99, 8], MILD: [8, 11], WARM: [11, 99] },
+  Summer: { COLD: [-99, 16], MILD: [16, 18], WARM: [18, 99] },
+  Autumn: { COLD: [-99, 11], MILD: [11, 14], WARM: [14, 99] },
+};
+
+// Matches the CHECK constraint: 'Winter', 'Spring', 'Summer', 'Autumn'
 function getSeason(dateStr: string): string {
   const month = new Date(dateStr).getMonth() + 1;
-  if (month >= 3 && month <= 5) return 'spring';
-  if (month >= 6 && month <= 8) return 'summer';
-  if (month >= 9 && month <= 11) return 'autumn';
-  return 'winter';
+  if (month >= 3 && month <= 5) return 'Spring';
+  if (month >= 6 && month <= 8) return 'Summer';
+  if (month >= 9 && month <= 11) return 'Autumn';
+  return 'Winter';
 }
 
-function getWeatherCategory(weather?: { temperature?: number; windSpeed?: number; precipitation?: number }): string {
-  if (!weather) return 'mild_calm_dry';
-  
-  const temp = weather.temperature ?? 12;
-  const wind = weather.windSpeed ?? 10;
-  const precip = weather.precipitation ?? 0;
-  
-  const tempLabel = temp < 8 ? 'cold' : temp < 16 ? 'mild' : 'warm';
-  const windLabel = wind < 10 ? 'calm' : wind < 20 ? 'moderate' : 'strong';
-  const precipLabel = precip > 2 ? 'wet' : 'dry';
-  
-  return `${tempLabel}_${windLabel}_${precipLabel}`;
+function getWeatherCategory(season: string, temperature?: number | null): string {
+  if (temperature == null) return 'MILD';
+  const bands = TEMP_BANDS[season];
+  if (!bands) return 'MILD';
+  for (const [cat, [lo, hi]] of Object.entries(bands)) {
+    if (temperature >= lo && temperature < hi) return cat;
+  }
+  return 'MILD';
 }
 
 serve(async (req) => {
@@ -49,7 +55,7 @@ serve(async (req) => {
     );
 
     const season = getSeason(date);
-    const weatherCategory = getWeatherCategory(weatherData);
+    const weatherCategory = getWeatherCategory(season, weatherData?.temperature);
 
     // Look up pre-computed advice
     const { data: advice, error } = await supabase
@@ -65,7 +71,7 @@ serve(async (req) => {
       throw new Error('Failed to query advice');
     }
 
-    // Fallback: try same season, any weather
+    // Fallback: try MILD for same venue + season
     let result = advice;
     if (!result) {
       const { data: fallback } = await supabase
@@ -73,15 +79,26 @@ serve(async (req) => {
         .select('*')
         .eq('venue', venue)
         .eq('season', season)
-        .limit(1)
+        .eq('weather_category', 'MILD')
         .maybeSingle();
       result = fallback;
+    }
+
+    // Second fallback: any record for this venue
+    if (!result) {
+      const { data: anyAdvice } = await supabase
+        .from('basic_advice')
+        .select('*')
+        .eq('venue', venue)
+        .limit(1)
+        .maybeSingle();
+      result = anyAdvice;
     }
 
     if (!result) {
       return new Response(
         JSON.stringify({
-          advice: `No historical data available for ${venue} in ${season}. Try logging some trips to build your personal database!`,
+          advice: `No historical data available for ${venue} in ${season}. Try a different venue or check back later.`,
           prediction: {
             rod_average: { predicted: 0, range: [0, 0], confidence: 'LOW' },
             methods: [],
@@ -97,19 +114,44 @@ serve(async (req) => {
       );
     }
 
-    // Parse ranked arrays from JSONB
-    const parseRanked = (json: unknown): { name: string; frequency: number; score: number }[] => {
-      if (!json || !Array.isArray(json)) return [];
-      return json;
-    };
-
+    // Parse rod average range from "1.7 - 7.3" string format
     const rangeMatch = result.rod_average_range?.match(/([\d.]+)\s*-\s*([\d.]+)/);
     const range: [number, number] = rangeMatch
       ? [parseFloat(rangeMatch[1]), parseFloat(rangeMatch[2])]
       : [0, 0];
 
-    const confidence = (result.report_count ?? 0) >= 10 ? 'HIGH'
-      : (result.report_count ?? 0) >= 5 ? 'MEDIUM' : 'LOW';
+    const confidence = (result.report_count ?? 0) >= 15 ? 'HIGH'
+      : (result.report_count ?? 0) >= 8 ? 'MEDIUM' : 'LOW';
+
+    // Map methods_ranked: data has {method, frequency, count}
+    const mapMethods = (arr: any[]): { method: string; frequency: number; score: number }[] => {
+      if (!arr || !Array.isArray(arr)) return [];
+      return arr.map(r => ({
+        method: r.method ?? r.name ?? '',
+        frequency: r.frequency ?? 0,
+        score: r.count ?? r.score ?? r.frequency ?? 0,
+      }));
+    };
+
+    // Map flies_ranked: data has {fly, frequency, count}
+    const mapFlies = (arr: any[]): { fly: string; frequency: number; score: number }[] => {
+      if (!arr || !Array.isArray(arr)) return [];
+      return arr.map(r => ({
+        fly: r.fly ?? r.name ?? '',
+        frequency: r.frequency ?? 0,
+        score: r.count ?? r.score ?? r.frequency ?? 0,
+      }));
+    };
+
+    // Map spots_ranked: data has {spot, frequency, count}
+    const mapSpots = (arr: any[]): { spot: string; frequency: number; score: number }[] => {
+      if (!arr || !Array.isArray(arr)) return [];
+      return arr.map(r => ({
+        spot: r.spot ?? r.name ?? '',
+        frequency: r.frequency ?? 0,
+        score: r.count ?? r.score ?? r.frequency ?? 0,
+      }));
+    };
 
     const response = {
       advice: result.advice_text,
@@ -119,14 +161,15 @@ serve(async (req) => {
           range,
           confidence,
         },
-        methods: parseRanked(result.methods_ranked).map(r => ({ method: r.name, frequency: r.frequency, score: r.score })),
-        flies: parseRanked(result.flies_ranked).map(r => ({ fly: r.name, frequency: r.frequency, score: r.score })),
-        spots: parseRanked(result.spots_ranked).map(r => ({ spot: r.name, frequency: r.frequency, score: r.score })),
+        methods: mapMethods(result.methods_ranked).slice(0, 5),
+        flies: mapFlies(result.flies_ranked).slice(0, 6),
+        spots: mapSpots(result.spots_ranked).slice(0, 5),
       },
       tier: 'free' as const,
       season,
       weatherCategory,
       reportCount: result.report_count ?? 0,
+      fallback: result.weather_category !== weatherCategory,
     };
 
     return new Response(JSON.stringify(response), {
