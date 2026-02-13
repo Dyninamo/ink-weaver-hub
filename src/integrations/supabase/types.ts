@@ -385,6 +385,30 @@ export type Database = {
         }
         Relationships: []
       }
+      reference_data: {
+        Row: {
+          category: string
+          id: string
+          usage_count: number | null
+          value: string
+          venue: string | null
+        }
+        Insert: {
+          category: string
+          id?: string
+          usage_count?: number | null
+          value: string
+          venue?: string | null
+        }
+        Update: {
+          category?: string
+          id?: string
+          usage_count?: number | null
+          value?: string
+          venue?: string | null
+        }
+        Relationships: []
+      }
       share_views: {
         Row: {
           id: string
