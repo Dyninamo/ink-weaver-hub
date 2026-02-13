@@ -1,0 +1,1 @@
+ALTER TABLE fishing_reports ADD CONSTRAINT fishing_reports_venue_report_date_key UNIQUE (venue, report_date);
