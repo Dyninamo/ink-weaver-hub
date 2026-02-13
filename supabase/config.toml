@@ -3,6 +3,12 @@ project_id = "zprlfecbvdltfpneidte"
 [functions.get-fishing-advice-mock]
 verify_jwt = false
 
+[functions.get-basic-advice]
+verify_jwt = false
+
+[functions.get-fishing-advice]
+verify_jwt = false
+
 [functions.get-weather-forecast]
 verify_jwt = false
 
