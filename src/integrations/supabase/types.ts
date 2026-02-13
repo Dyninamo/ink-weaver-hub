@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      basic_advice: {
+        Row: {
+          advice_text: string
+          avg_precip_mm: number | null
+          avg_temp: number | null
+          avg_wind_mph: number | null
+          created_at: string | null
+          expected_rod_average: number | null
+          flies_ranked: Json | null
+          id: string
+          latest_similar: Json | null
+          methods_ranked: Json | null
+          report_count: number | null
+          rod_average_range: string | null
+          season: string
+          spots_ranked: Json | null
+          temp_label: string | null
+          temp_range_max: number | null
+          temp_range_min: number | null
+          updated_at: string | null
+          venue: string
+          weather_category: string
+        }
+        Insert: {
+          advice_text: string
+          avg_precip_mm?: number | null
+          avg_temp?: number | null
+          avg_wind_mph?: number | null
+          created_at?: string | null
+          expected_rod_average?: number | null
+          flies_ranked?: Json | null
+          id?: string
+          latest_similar?: Json | null
+          methods_ranked?: Json | null
+          report_count?: number | null
+          rod_average_range?: string | null
+          season: string
+          spots_ranked?: Json | null
+          temp_label?: string | null
+          temp_range_max?: number | null
+          temp_range_min?: number | null
+          updated_at?: string | null
+          venue: string
+          weather_category: string
+        }
+        Update: {
+          advice_text?: string
+          avg_precip_mm?: number | null
+          avg_temp?: number | null
+          avg_wind_mph?: number | null
+          created_at?: string | null
+          expected_rod_average?: number | null
+          flies_ranked?: Json | null
+          id?: string
+          latest_similar?: Json | null
+          methods_ranked?: Json | null
+          report_count?: number | null
+          rod_average_range?: string | null
+          season?: string
+          spots_ranked?: Json | null
+          temp_label?: string | null
+          temp_range_max?: number | null
+          temp_range_min?: number | null
+          updated_at?: string | null
+          venue?: string
+          weather_category?: string
+        }
+        Relationships: []
+      }
       fishing_reports: {
         Row: {
           best_spots: string[] | null
