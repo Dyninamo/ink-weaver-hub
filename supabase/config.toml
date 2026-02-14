@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.get-shared-report]
 verify_jwt = false
+
+[functions.upload-terminology]
+verify_jwt = false
