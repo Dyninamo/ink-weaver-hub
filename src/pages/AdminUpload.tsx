@@ -254,12 +254,14 @@ function TerminologyUploadSection() {
       const records: any[] = JSON.parse(text);
       if (!Array.isArray(records)) throw new Error("JSON must be an array");
 
-      const table = TERM_TABLES.find(t => t.value === selectedTable)!;
-
       if (clearFirst) {
         setStatus({ state: "loading", message: `Clearing ${selectedTable}...` });
-        const { error } = await (supabase.from as any)(selectedTable).delete().neq("id", 0);
-        if (error) throw new Error(`Clear failed: ${error.message}`);
+        const { error } = await supabase.functions.invoke("upload-terminology", {
+          body: { table_name: selectedTable, records: [{ __clear: true }] },
+        });
+        // Use direct delete for clearing since edge function does upsert
+        const { error: delError } = await (supabase.from as any)(selectedTable).delete().neq("id", 0);
+        if (delError) throw new Error(`Clear failed: ${delError.message}`);
       }
 
       const batchSize = 50;
@@ -271,14 +273,16 @@ function TerminologyUploadSection() {
         setStatus({ state: "loading", message: `Uploading batch ${i + 1}/${totalBatches}...` });
         setProgress(Math.round(((i + 1) / totalBatches) * 100));
 
-        const { error } = await (supabase.from as any)(selectedTable).upsert(batch, {
-          onConflict: table.conflict,
+        const { data, error } = await supabase.functions.invoke("upload-terminology", {
+          body: { table_name: selectedTable, records: batch },
         });
 
         if (error) {
           totalFailed += batch.length;
+        } else if (data?.success === false) {
+          totalFailed += batch.length;
         } else {
-          totalInserted += batch.length;
+          totalInserted += data?.count ?? batch.length;
         }
       }
 
@@ -320,7 +324,7 @@ function TerminologyUploadSection() {
             <div className="bg-primary h-full transition-all" style={{ width: `${progress}%` }} />
           </div>
         )}
-        <p className="text-xs text-muted-foreground">Upserts JSON array into selected ref_ table in batches of 50</p>
+        <p className="text-xs text-muted-foreground">Calls upload-terminology edge function in batches of 50</p>
         <StatusBadge status={status} />
       </CardContent>
     </Card>
