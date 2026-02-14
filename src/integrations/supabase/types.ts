@@ -387,49 +387,49 @@ export type Database = {
       }
       ref_colours: {
         Row: {
-          colour: string
+          colour: string | null
           created_at: string | null
           id: number
-          mention_count: number | null
-          notes: string | null
+          mentions_in_671_reports: string | null
+          your_notes: string | null
         }
         Insert: {
-          colour: string
+          colour?: string | null
           created_at?: string | null
           id?: number
-          mention_count?: number | null
-          notes?: string | null
+          mentions_in_671_reports?: string | null
+          your_notes?: string | null
         }
         Update: {
-          colour?: string
+          colour?: string | null
           created_at?: string | null
           id?: number
-          mention_count?: number | null
-          notes?: string | null
+          mentions_in_671_reports?: string | null
+          your_notes?: string | null
         }
         Relationships: []
       }
       ref_depths: {
         Row: {
           created_at: string | null
-          depth_label: string
+          depth: string | null
           id: number
-          mention_count: number | null
-          notes: string | null
+          mentions_in_671_reports: string | null
+          your_notes: string | null
         }
         Insert: {
           created_at?: string | null
-          depth_label: string
+          depth?: string | null
           id?: number
-          mention_count?: number | null
-          notes?: string | null
+          mentions_in_671_reports?: string | null
+          your_notes?: string | null
         }
         Update: {
           created_at?: string | null
-          depth_label?: string
+          depth?: string | null
           id?: number
-          mention_count?: number | null
-          notes?: string | null
+          mentions_in_671_reports?: string | null
+          your_notes?: string | null
         }
         Relationships: []
       }
@@ -438,18 +438,18 @@ export type Database = {
           box_location: string | null
           confidence_rating: string | null
           created_at: string | null
-          hook_size_max: number | null
-          hook_size_min: number | null
+          hook_size_max: string | null
+          hook_size_min: string | null
           id: number
           imitation: string | null
           life_stage: string | null
           materials_summary: string | null
-          pattern_name: string
+          pattern_name: string | null
           primary_colours: string | null
           season_notes: string | null
           sub_category: string | null
           tactics_notes: string | null
-          top_category: string
+          top_category: string | null
           water_type: string | null
           weight_buoyancy: string | null
         }
@@ -457,18 +457,18 @@ export type Database = {
           box_location?: string | null
           confidence_rating?: string | null
           created_at?: string | null
-          hook_size_max?: number | null
-          hook_size_min?: number | null
+          hook_size_max?: string | null
+          hook_size_min?: string | null
           id?: number
           imitation?: string | null
           life_stage?: string | null
           materials_summary?: string | null
-          pattern_name: string
+          pattern_name?: string | null
           primary_colours?: string | null
           season_notes?: string | null
           sub_category?: string | null
           tactics_notes?: string | null
-          top_category: string
+          top_category?: string | null
           water_type?: string | null
           weight_buoyancy?: string | null
         }
@@ -476,18 +476,18 @@ export type Database = {
           box_location?: string | null
           confidence_rating?: string | null
           created_at?: string | null
-          hook_size_max?: number | null
-          hook_size_min?: number | null
+          hook_size_max?: string | null
+          hook_size_min?: string | null
           id?: number
           imitation?: string | null
           life_stage?: string | null
           materials_summary?: string | null
-          pattern_name?: string
+          pattern_name?: string | null
           primary_colours?: string | null
           season_notes?: string | null
           sub_category?: string | null
           tactics_notes?: string | null
-          top_category?: string
+          top_category?: string | null
           water_type?: string | null
           weight_buoyancy?: string | null
         }
@@ -496,17 +496,17 @@ export type Database = {
       ref_hook_sizes: {
         Row: {
           created_at: string | null
-          hook_size: number
+          hook_size: string | null
           id: number
         }
         Insert: {
           created_at?: string | null
-          hook_size: number
+          hook_size?: string | null
           id?: number
         }
         Update: {
           created_at?: string | null
-          hook_size?: number
+          hook_size?: string | null
           id?: number
         }
         Relationships: []
@@ -518,11 +518,12 @@ export type Database = {
           description: string | null
           id: number
           line_family: string | null
-          line_type_code: string
-          rod_weight_max: number | null
-          rod_weight_min: number | null
+          line_type_code: string | null
+          line_weight_label: string | null
           sink_rate_ips: string | null
-          typical_use: string | null
+          typical_usage: string | null
+          typical_weight_max_wt: string | null
+          typical_weight_min_wt: string | null
         }
         Insert: {
           buoyancy?: string | null
@@ -530,11 +531,12 @@ export type Database = {
           description?: string | null
           id?: number
           line_family?: string | null
-          line_type_code: string
-          rod_weight_max?: number | null
-          rod_weight_min?: number | null
+          line_type_code?: string | null
+          line_weight_label?: string | null
           sink_rate_ips?: string | null
-          typical_use?: string | null
+          typical_usage?: string | null
+          typical_weight_max_wt?: string | null
+          typical_weight_min_wt?: string | null
         }
         Update: {
           buoyancy?: string | null
@@ -542,11 +544,12 @@ export type Database = {
           description?: string | null
           id?: number
           line_family?: string | null
-          line_type_code?: string
-          rod_weight_max?: number | null
-          rod_weight_min?: number | null
+          line_type_code?: string | null
+          line_weight_label?: string | null
           sink_rate_ips?: string | null
-          typical_use?: string | null
+          typical_usage?: string | null
+          typical_weight_max_wt?: string | null
+          typical_weight_min_wt?: string | null
         }
         Relationships: []
       }
@@ -554,23 +557,26 @@ export type Database = {
         Row: {
           created_at: string | null
           id: number
-          line_type: string
-          mention_count: number | null
-          notes: string | null
+          line_type: string | null
+          mentions_in_671_reports: string | null
+          sink_rate: string | null
+          your_notes: string | null
         }
         Insert: {
           created_at?: string | null
           id?: number
-          line_type: string
-          mention_count?: number | null
-          notes?: string | null
+          line_type?: string | null
+          mentions_in_671_reports?: string | null
+          sink_rate?: string | null
+          your_notes?: string | null
         }
         Update: {
           created_at?: string | null
           id?: number
-          line_type?: string
-          mention_count?: number | null
-          notes?: string | null
+          line_type?: string | null
+          mentions_in_671_reports?: string | null
+          sink_rate?: string | null
+          your_notes?: string | null
         }
         Relationships: []
       }
@@ -581,7 +587,8 @@ export type Database = {
           description: string | null
           id: number
           pace: string | null
-          retrieve_name: string
+          retrieve_name: string | null
+          rod_position: string | null
           style: string | null
           typical_line: string | null
           water_type: string | null
@@ -593,7 +600,8 @@ export type Database = {
           description?: string | null
           id?: number
           pace?: string | null
-          retrieve_name: string
+          retrieve_name?: string | null
+          rod_position?: string | null
           style?: string | null
           typical_line?: string | null
           water_type?: string | null
@@ -605,7 +613,8 @@ export type Database = {
           description?: string | null
           id?: number
           pace?: string | null
-          retrieve_name?: string
+          retrieve_name?: string | null
+          rod_position?: string | null
           style?: string | null
           typical_line?: string | null
           water_type?: string | null
@@ -618,36 +627,48 @@ export type Database = {
           created_at: string | null
           depth_zone: string | null
           description: string | null
-          flies_on_rig: number | null
+          dropper_count: string | null
+          flies_on_rig: string | null
           id: number
-          rig_name: string
+          leader_length_ft: string | null
+          point_fly_role: string | null
+          rig_name: string | null
           style: string | null
-          typical_flies: string | null
-          typical_line: string | null
+          tippet_strength_lb: string | null
+          typical_dropper_flies: string | null
+          typical_point_flies: string | null
           water_type: string | null
         }
         Insert: {
           created_at?: string | null
           depth_zone?: string | null
           description?: string | null
-          flies_on_rig?: number | null
+          dropper_count?: string | null
+          flies_on_rig?: string | null
           id?: number
-          rig_name: string
+          leader_length_ft?: string | null
+          point_fly_role?: string | null
+          rig_name?: string | null
           style?: string | null
-          typical_flies?: string | null
-          typical_line?: string | null
+          tippet_strength_lb?: string | null
+          typical_dropper_flies?: string | null
+          typical_point_flies?: string | null
           water_type?: string | null
         }
         Update: {
           created_at?: string | null
           depth_zone?: string | null
           description?: string | null
-          flies_on_rig?: number | null
+          dropper_count?: string | null
+          flies_on_rig?: string | null
           id?: number
-          rig_name?: string
+          leader_length_ft?: string | null
+          point_fly_role?: string | null
+          rig_name?: string | null
           style?: string | null
-          typical_flies?: string | null
-          typical_line?: string | null
+          tippet_strength_lb?: string | null
+          typical_dropper_flies?: string | null
+          typical_point_flies?: string | null
           water_type?: string | null
         }
         Relationships: []

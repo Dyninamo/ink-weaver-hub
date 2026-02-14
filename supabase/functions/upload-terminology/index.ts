@@ -8,7 +8,7 @@ const CONFLICT_COLUMNS: Record<string, string> = {
   ref_rigs: 'rig_name',
   ref_hook_sizes: 'hook_size',
   ref_colours: 'colour',
-  ref_depths: 'depth_label',
+  ref_depths: 'depth',
   ref_lines_from_reports: 'line_type',
 }
 
