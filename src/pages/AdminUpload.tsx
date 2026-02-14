@@ -224,6 +224,151 @@ function ReferenceDataSection() {
   );
 }
 
+// ── Section 5: Terminology Data ──
+const TERM_TABLES = [
+  { value: "ref_flies", label: "ref_flies", conflict: "pattern_name" },
+  { value: "ref_lines", label: "ref_lines", conflict: "line_type_code" },
+  { value: "ref_retrieves", label: "ref_retrieves", conflict: "retrieve_name" },
+  { value: "ref_rigs", label: "ref_rigs", conflict: "rig_name" },
+  { value: "ref_hook_sizes", label: "ref_hook_sizes", conflict: "hook_size" },
+  { value: "ref_colours", label: "ref_colours", conflict: "colour" },
+  { value: "ref_depths", label: "ref_depths", conflict: "depth_label" },
+  { value: "ref_lines_from_reports", label: "ref_lines_from_reports", conflict: "line_type" },
+] as const;
+
+function TerminologyUploadSection() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedTable, setSelectedTable] = useState<string>(TERM_TABLES[0].value);
+  const [clearFirst, setClearFirst] = useState(false);
+  const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
+  const [progress, setProgress] = useState(0);
+
+  const upload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setStatus({ state: "error", message: "Select a JSON file first" });
+    setStatus({ state: "loading", message: "Reading file..." });
+    setProgress(0);
+
+    try {
+      const text = await file.text();
+      const records: any[] = JSON.parse(text);
+      if (!Array.isArray(records)) throw new Error("JSON must be an array");
+
+      const table = TERM_TABLES.find(t => t.value === selectedTable)!;
+
+      if (clearFirst) {
+        setStatus({ state: "loading", message: `Clearing ${selectedTable}...` });
+        const { error } = await (supabase.from as any)(selectedTable).delete().neq("id", 0);
+        if (error) throw new Error(`Clear failed: ${error.message}`);
+      }
+
+      const batchSize = 50;
+      const totalBatches = Math.ceil(records.length / batchSize);
+      let totalInserted = 0, totalFailed = 0;
+
+      for (let i = 0; i < totalBatches; i++) {
+        const batch = records.slice(i * batchSize, (i + 1) * batchSize);
+        setStatus({ state: "loading", message: `Uploading batch ${i + 1}/${totalBatches}...` });
+        setProgress(Math.round(((i + 1) / totalBatches) * 100));
+
+        const { error } = await (supabase.from as any)(selectedTable).upsert(batch, {
+          onConflict: table.conflict,
+        });
+
+        if (error) {
+          totalFailed += batch.length;
+        } else {
+          totalInserted += batch.length;
+        }
+      }
+
+      setProgress(100);
+      setStatus({
+        state: totalFailed > 0 ? "error" : "done",
+        message: `Successfully uploaded ${totalInserted} records to ${selectedTable}${totalFailed > 0 ? ` (${totalFailed} failed)` : ""}`,
+      });
+    } catch (err: any) {
+      setStatus({ state: "error", message: err.message });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><Database className="h-5 w-5" /> Upload Terminology Data</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={selectedTable}
+            onChange={e => setSelectedTable(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {TERM_TABLES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <Input ref={fileRef} type="file" accept=".json" className="max-w-xs" />
+          <Button onClick={upload} disabled={status.state === "loading"}>Upload</Button>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={clearFirst} onChange={e => setClearFirst(e.target.checked)} className="h-4 w-4 rounded border-input" />
+          Clear table first
+        </label>
+        {status.state === "loading" && (
+          <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+            <div className="bg-primary h-full transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">Upserts JSON array into selected ref_ table in batches of 50</p>
+        <StatusBadge status={status} />
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Section 6: Verify Tables ──
+function VerifyTablesSection() {
+  const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
+  const [counts, setCounts] = useState<Record<string, number | string>>({});
+
+  const verify = async () => {
+    setStatus({ state: "loading", message: "Querying tables..." });
+    setCounts({});
+    const results: Record<string, number | string> = {};
+
+    for (const t of TERM_TABLES) {
+      const { count, error } = await (supabase.from as any)(t.value).select("*", { count: "exact", head: true });
+      results[t.value] = error ? `Error: ${error.message}` : (count ?? 0);
+    }
+
+    setCounts(results);
+    setStatus({ state: "done", message: "Table counts retrieved" });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><CheckCircle className="h-5 w-5" /> Verify Tables</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={verify} disabled={status.state === "loading"}>Verify Tables</Button>
+        {Object.keys(counts).length > 0 && (
+          <div className="mt-3 space-y-1 text-sm font-mono">
+            {TERM_TABLES.map(t => (
+              <div key={t.value} className="flex justify-between max-w-xs">
+                <span>{t.value}:</span>
+                <span className="text-muted-foreground">{counts[t.value] ?? "—"} rows</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <StatusBadge status={status} />
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Main Page ──
 export default function AdminUpload() {
   return (
@@ -236,6 +381,8 @@ export default function AdminUpload() {
       <BasicAdviceSection />
       <VenueMetadataSection />
       <ReferenceDataSection />
+      <TerminologyUploadSection />
+      <VerifyTablesSection />
     </div>
   );
 }
