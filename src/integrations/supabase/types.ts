@@ -385,6 +385,273 @@ export type Database = {
         }
         Relationships: []
       }
+      ref_colours: {
+        Row: {
+          colour: string
+          created_at: string | null
+          id: number
+          mention_count: number | null
+          notes: string | null
+        }
+        Insert: {
+          colour: string
+          created_at?: string | null
+          id?: number
+          mention_count?: number | null
+          notes?: string | null
+        }
+        Update: {
+          colour?: string
+          created_at?: string | null
+          id?: number
+          mention_count?: number | null
+          notes?: string | null
+        }
+        Relationships: []
+      }
+      ref_depths: {
+        Row: {
+          created_at: string | null
+          depth_label: string
+          id: number
+          mention_count: number | null
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          depth_label: string
+          id?: number
+          mention_count?: number | null
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          depth_label?: string
+          id?: number
+          mention_count?: number | null
+          notes?: string | null
+        }
+        Relationships: []
+      }
+      ref_flies: {
+        Row: {
+          box_location: string | null
+          confidence_rating: string | null
+          created_at: string | null
+          hook_size_max: number | null
+          hook_size_min: number | null
+          id: number
+          imitation: string | null
+          life_stage: string | null
+          materials_summary: string | null
+          pattern_name: string
+          primary_colours: string | null
+          season_notes: string | null
+          sub_category: string | null
+          tactics_notes: string | null
+          top_category: string
+          water_type: string | null
+          weight_buoyancy: string | null
+        }
+        Insert: {
+          box_location?: string | null
+          confidence_rating?: string | null
+          created_at?: string | null
+          hook_size_max?: number | null
+          hook_size_min?: number | null
+          id?: number
+          imitation?: string | null
+          life_stage?: string | null
+          materials_summary?: string | null
+          pattern_name: string
+          primary_colours?: string | null
+          season_notes?: string | null
+          sub_category?: string | null
+          tactics_notes?: string | null
+          top_category: string
+          water_type?: string | null
+          weight_buoyancy?: string | null
+        }
+        Update: {
+          box_location?: string | null
+          confidence_rating?: string | null
+          created_at?: string | null
+          hook_size_max?: number | null
+          hook_size_min?: number | null
+          id?: number
+          imitation?: string | null
+          life_stage?: string | null
+          materials_summary?: string | null
+          pattern_name?: string
+          primary_colours?: string | null
+          season_notes?: string | null
+          sub_category?: string | null
+          tactics_notes?: string | null
+          top_category?: string
+          water_type?: string | null
+          weight_buoyancy?: string | null
+        }
+        Relationships: []
+      }
+      ref_hook_sizes: {
+        Row: {
+          created_at: string | null
+          hook_size: number
+          id: number
+        }
+        Insert: {
+          created_at?: string | null
+          hook_size: number
+          id?: number
+        }
+        Update: {
+          created_at?: string | null
+          hook_size?: number
+          id?: number
+        }
+        Relationships: []
+      }
+      ref_lines: {
+        Row: {
+          buoyancy: string | null
+          created_at: string | null
+          description: string | null
+          id: number
+          line_family: string | null
+          line_type_code: string
+          rod_weight_max: number | null
+          rod_weight_min: number | null
+          sink_rate_ips: string | null
+          typical_use: string | null
+        }
+        Insert: {
+          buoyancy?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          line_family?: string | null
+          line_type_code: string
+          rod_weight_max?: number | null
+          rod_weight_min?: number | null
+          sink_rate_ips?: string | null
+          typical_use?: string | null
+        }
+        Update: {
+          buoyancy?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          line_family?: string | null
+          line_type_code?: string
+          rod_weight_max?: number | null
+          rod_weight_min?: number | null
+          sink_rate_ips?: string | null
+          typical_use?: string | null
+        }
+        Relationships: []
+      }
+      ref_lines_from_reports: {
+        Row: {
+          created_at: string | null
+          id: number
+          line_type: string
+          mention_count: number | null
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          line_type: string
+          mention_count?: number | null
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          line_type?: string
+          mention_count?: number | null
+          notes?: string | null
+        }
+        Relationships: []
+      }
+      ref_retrieves: {
+        Row: {
+          created_at: string | null
+          depth_zone: string | null
+          description: string | null
+          id: number
+          pace: string | null
+          retrieve_name: string
+          style: string | null
+          typical_line: string | null
+          water_type: string | null
+          when_to_use: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          depth_zone?: string | null
+          description?: string | null
+          id?: number
+          pace?: string | null
+          retrieve_name: string
+          style?: string | null
+          typical_line?: string | null
+          water_type?: string | null
+          when_to_use?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          depth_zone?: string | null
+          description?: string | null
+          id?: number
+          pace?: string | null
+          retrieve_name?: string
+          style?: string | null
+          typical_line?: string | null
+          water_type?: string | null
+          when_to_use?: string | null
+        }
+        Relationships: []
+      }
+      ref_rigs: {
+        Row: {
+          created_at: string | null
+          depth_zone: string | null
+          description: string | null
+          flies_on_rig: number | null
+          id: number
+          rig_name: string
+          style: string | null
+          typical_flies: string | null
+          typical_line: string | null
+          water_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          depth_zone?: string | null
+          description?: string | null
+          flies_on_rig?: number | null
+          id?: number
+          rig_name: string
+          style?: string | null
+          typical_flies?: string | null
+          typical_line?: string | null
+          water_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          depth_zone?: string | null
+          description?: string | null
+          flies_on_rig?: number | null
+          id?: number
+          rig_name?: string
+          style?: string | null
+          typical_flies?: string | null
+          typical_line?: string | null
+          water_type?: string | null
+        }
+        Relationships: []
+      }
       reference_data: {
         Row: {
           category: string
