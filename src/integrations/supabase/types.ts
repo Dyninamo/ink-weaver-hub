@@ -562,6 +562,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ref_leaders: {
+        Row: {
+          brand: string | null
+          breaking_strain_lb: number | null
+          butt_diameter_mm: number | null
+          created_at: string | null
+          id: number
+          length_ft: number | null
+          material: string | null
+          tippet_diameter_mm: number | null
+          type: string | null
+          typical_use: string | null
+        }
+        Insert: {
+          brand?: string | null
+          breaking_strain_lb?: number | null
+          butt_diameter_mm?: number | null
+          created_at?: string | null
+          id?: never
+          length_ft?: number | null
+          material?: string | null
+          tippet_diameter_mm?: number | null
+          type?: string | null
+          typical_use?: string | null
+        }
+        Update: {
+          brand?: string | null
+          breaking_strain_lb?: number | null
+          butt_diameter_mm?: number | null
+          created_at?: string | null
+          id?: never
+          length_ft?: number | null
+          material?: string | null
+          tippet_diameter_mm?: number | null
+          type?: string | null
+          typical_use?: string | null
+        }
+        Relationships: []
+      }
       ref_lines: {
         Row: {
           buoyancy: string | null
@@ -721,6 +760,87 @@ export type Database = {
           typical_dropper_flies?: string | null
           typical_point_flies?: string | null
           water_type?: string | null
+        }
+        Relationships: []
+      }
+      ref_rods: {
+        Row: {
+          action: string | null
+          created_at: string | null
+          id: number
+          length_ft: number | null
+          line_weight: number | null
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          owner: string | null
+          pieces: number | null
+          primary_use: string | null
+          water_type: string | null
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string | null
+          id?: never
+          length_ft?: number | null
+          line_weight?: number | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          owner?: string | null
+          pieces?: number | null
+          primary_use?: string | null
+          water_type?: string | null
+        }
+        Update: {
+          action?: string | null
+          created_at?: string | null
+          id?: never
+          length_ft?: number | null
+          line_weight?: number | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          owner?: string | null
+          pieces?: number | null
+          primary_use?: string | null
+          water_type?: string | null
+        }
+        Relationships: []
+      }
+      ref_tippets: {
+        Row: {
+          brand: string | null
+          breaking_strain_lb: number | null
+          created_at: string | null
+          diameter_mm: number | null
+          id: number
+          material: string | null
+          spool_length_m: number | null
+          typical_use: string | null
+          x_rating: string | null
+        }
+        Insert: {
+          brand?: string | null
+          breaking_strain_lb?: number | null
+          created_at?: string | null
+          diameter_mm?: number | null
+          id?: never
+          material?: string | null
+          spool_length_m?: number | null
+          typical_use?: string | null
+          x_rating?: string | null
+        }
+        Update: {
+          brand?: string | null
+          breaking_strain_lb?: number | null
+          created_at?: string | null
+          diameter_mm?: number | null
+          id?: never
+          material?: string | null
+          spool_length_m?: number | null
+          typical_use?: string | null
+          x_rating?: string | null
         }
         Relationships: []
       }
@@ -920,6 +1040,8 @@ export type Database = {
           rod_mae: number | null
           rod_mae_ci_hi: number | null
           rod_mae_ci_lo: number | null
+          season_close_month: number | null
+          season_open_month: number | null
           seasonal_pattern_json: string | null
           spots_recall_at4: number | null
           temp_correlation: number | null
@@ -942,6 +1064,8 @@ export type Database = {
           rod_mae?: number | null
           rod_mae_ci_hi?: number | null
           rod_mae_ci_lo?: number | null
+          season_close_month?: number | null
+          season_open_month?: number | null
           seasonal_pattern_json?: string | null
           spots_recall_at4?: number | null
           temp_correlation?: number | null
@@ -964,6 +1088,8 @@ export type Database = {
           rod_mae?: number | null
           rod_mae_ci_hi?: number | null
           rod_mae_ci_lo?: number | null
+          season_close_month?: number | null
+          season_open_month?: number | null
           seasonal_pattern_json?: string | null
           spots_recall_at4?: number | null
           temp_correlation?: number | null
