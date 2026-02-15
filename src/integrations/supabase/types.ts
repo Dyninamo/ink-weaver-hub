@@ -1040,8 +1040,8 @@ export type Database = {
           rod_mae: number | null
           rod_mae_ci_hi: number | null
           rod_mae_ci_lo: number | null
-          season_close_month: number | null
-          season_open_month: number | null
+          season_close_date: string | null
+          season_open_date: string | null
           seasonal_pattern_json: string | null
           spots_recall_at4: number | null
           temp_correlation: number | null
@@ -1064,8 +1064,8 @@ export type Database = {
           rod_mae?: number | null
           rod_mae_ci_hi?: number | null
           rod_mae_ci_lo?: number | null
-          season_close_month?: number | null
-          season_open_month?: number | null
+          season_close_date?: string | null
+          season_open_date?: string | null
           seasonal_pattern_json?: string | null
           spots_recall_at4?: number | null
           temp_correlation?: number | null
@@ -1088,8 +1088,8 @@ export type Database = {
           rod_mae?: number | null
           rod_mae_ci_hi?: number | null
           rod_mae_ci_lo?: number | null
-          season_close_month?: number | null
-          season_open_month?: number | null
+          season_close_date?: string | null
+          season_open_date?: string | null
           seasonal_pattern_json?: string | null
           spots_recall_at4?: number | null
           temp_correlation?: number | null
