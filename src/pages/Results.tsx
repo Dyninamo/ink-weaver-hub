@@ -2,12 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Fish, ArrowLeft, LogOut, RefreshCw, MapPin, Share2, TrendingUp, Sparkles, Zap,
+  Fish, ArrowLeft, LogOut, RefreshCw, MapPin, Share2, TrendingUp, Sparkles, Zap, AlertTriangle, Info,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
-import type { Location, WeatherData, PredictionData } from "@/services/adviceService";
+import type { Location, WeatherData, PredictionData, ModelInfo } from "@/services/adviceService";
 import { cn } from "@/lib/utils";
 import FishingMap from "@/components/FishingMap";
 import { WeatherBadge } from "@/components/WeatherBadge";
@@ -27,6 +27,7 @@ interface ResultsState {
   season?: string;
   weatherCategory?: string;
   reportCount?: number;
+  model_info?: ModelInfo;
 }
 
 const confidenceConfig = {
@@ -66,11 +67,13 @@ const Results = () => {
   if (!state) return null;
 
   const {
-    venue, date, advice, prediction, locations, weatherData, tier, season, weatherCategory,
+    venue, date, advice, prediction, locations, weatherData, tier, season, weatherCategory, model_info,
   } = state;
 
   const confidence = prediction?.rod_average?.confidence ?? "LOW";
   const confCfg = confidenceConfig[confidence];
+
+  const reportCount = model_info?.report_count ?? state.reportCount;
 
   // Compute max frequency for bar scaling
   const maxMethodFreq = prediction?.methods?.length
@@ -117,13 +120,40 @@ const Results = () => {
         <main className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
           {/* TOP SECTION */}
           <div className="mb-6">
-            <div className="flex flex-wrap items-center gap-3 mb-2">
+            <div className="flex flex-wrap items-center gap-3 mb-1">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">{venue}</h1>
               <Badge variant="outline" className={cn("text-xs font-medium border", confCfg.className)}>
                 {confCfg.label}
               </Badge>
+              {/* Data quality badge from model_info */}
+              {model_info?.data_quality === "limited" && (
+                <Badge variant="outline" className="text-xs font-medium border bg-amber-500/15 text-amber-600 border-amber-500/30">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  Limited data
+                </Badge>
+              )}
+              {model_info?.data_quality === "insufficient" && (
+                <Badge variant="outline" className="text-xs font-medium border bg-destructive/15 text-destructive border-destructive/30">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  Very limited data — predictions may be unreliable
+                </Badge>
+              )}
             </div>
-            <p className="text-lg text-muted-foreground mb-4">{date}</p>
+
+            {/* Character notes from model_info */}
+            {model_info?.character_notes && (
+              <p className="text-sm italic text-muted-foreground mb-1">
+                {model_info.character_notes}
+              </p>
+            )}
+
+            <p className="text-lg text-muted-foreground mb-1">{date}</p>
+
+            {reportCount != null && (
+              <p className="text-sm text-muted-foreground mb-4">
+                Based on {reportCount} historical reports
+              </p>
+            )}
 
             <WeatherBadge
               weather={weatherData}
@@ -149,6 +179,12 @@ const Results = () => {
                     {prediction.rod_average.range && (
                       <p className="text-sm text-muted-foreground">
                         Range: {prediction.rod_average.range[0]}–{prediction.rod_average.range[1]}
+                      </p>
+                    )}
+                    {model_info?.rod_mae != null && (
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        Model accuracy: ±{model_info.rod_mae.toFixed(2)} fish per rod
                       </p>
                     )}
                   </div>

@@ -30,6 +30,15 @@ export class AdviceServiceError extends Error {
   }
 }
 
+export interface ModelInfo {
+  params_source: 'tuned' | 'global_default' | 'hardcoded_fallback'
+  data_quality: 'full' | 'limited' | 'insufficient'
+  report_count: number
+  rod_mae: number | null
+  confidence_interval: [number, number] | null
+  character_notes: string | null
+}
+
 export interface PredictionData {
   rod_average: {
     predicted: number
@@ -51,16 +60,18 @@ export interface FishingAdviceResponse {
   season?: string
   weatherCategory?: string
   reportCount?: number
+  model_info?: ModelInfo
 }
 
-// Free tier: instant lookup from pre-computed table
+// Free tier: calls get-fishing-advice without userId for unauthenticated fallback
 export async function getBasicAdvice(
   venue: string,
   date: string,
   weatherData?: { temperature: number; windSpeed: number; precipitation: number }
 ): Promise<FishingAdviceResponse> {
-  const { data, error } = await supabase.functions.invoke('get-basic-advice', {
-    body: { venue, date, weatherData }
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data, error } = await supabase.functions.invoke('get-fishing-advice', {
+    body: { venue, date, userId: user?.id, weatherData }
   })
   
   if (error) throw new Error(error.message || 'Failed to get advice')
