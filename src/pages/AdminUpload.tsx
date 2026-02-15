@@ -224,7 +224,111 @@ function ReferenceDataSection() {
   );
 }
 
-// ── Section 5: Terminology Data ──
+// ── Section 5: Reference Data Upload (JSON → edge function) ──
+const REF_UPLOAD_TABLES = [
+  { value: "ref_flies", label: "Flies (ref_flies)", expectedRows: 556 },
+  { value: "ref_rigs", label: "Rigs (ref_rigs)", expectedRows: 53 },
+  { value: "ref_retrieves", label: "Retrieves (ref_retrieves)", expectedRows: 35 },
+  { value: "ref_lines", label: "Lines (ref_lines)", expectedRows: 35 },
+  { value: "ref_leaders", label: "Leaders (ref_leaders)", expectedRows: 25 },
+  { value: "ref_tippets", label: "Tippets (ref_tippets)", expectedRows: 29 },
+  { value: "ref_rods", label: "Rods (ref_rods)", expectedRows: 82 },
+] as const;
+
+function ReferenceDataUploadSection() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedTable, setSelectedTable] = useState<string>(REF_UPLOAD_TABLES[0].value);
+  const [replaceAll, setReplaceAll] = useState(true);
+  const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
+  const [progress, setProgress] = useState(0);
+  const [tableCounts, setTableCounts] = useState<Record<string, number | string>>({});
+
+  const loadCounts = async () => {
+    const results: Record<string, number | string> = {};
+    for (const t of REF_UPLOAD_TABLES) {
+      const { count, error } = await (supabase.from as any)(t.value).select("*", { count: "exact", head: true });
+      results[t.value] = error ? `Error` : (count ?? 0);
+    }
+    setTableCounts(results);
+  };
+
+  const upload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setStatus({ state: "error", message: "Select a JSON file first" });
+    setStatus({ state: "loading", message: "Reading file..." });
+    setProgress(0);
+
+    try {
+      const text = await file.text();
+      const records: any[] = JSON.parse(text);
+      if (!Array.isArray(records)) throw new Error("JSON must be an array");
+
+      setStatus({ state: "loading", message: `Uploading ${records.length} rows to ${selectedTable}...` });
+
+      const { data, error } = await supabase.functions.invoke("upload-reference-data", {
+        body: { table: selectedTable, data: records, mode: replaceAll ? "replace" : "append" },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      setProgress(100);
+      setStatus({ state: "done", message: `${data.rows_inserted} rows inserted into ${selectedTable} (${replaceAll ? "replaced" : "appended"})` });
+      loadCounts();
+    } catch (err: any) {
+      setStatus({ state: "error", message: err.message });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><Database className="h-5 w-5" /> Reference Data Upload</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={selectedTable}
+            onChange={e => setSelectedTable(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {REF_UPLOAD_TABLES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <Input ref={fileRef} type="file" accept=".json" className="max-w-xs" />
+          <Button onClick={upload} disabled={status.state === "loading"}>Upload</Button>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={replaceAll} onChange={e => setReplaceAll(e.target.checked)} className="h-4 w-4 rounded border-input" />
+          Replace all (clear table first)
+        </label>
+        {status.state === "loading" && (
+          <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+            <div className="bg-primary h-full transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        )}
+        <div className="pt-2 border-t border-border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-muted-foreground">Current data</span>
+            <Button variant="ghost" size="sm" onClick={loadCounts} className="text-xs h-6 px-2">Refresh counts</Button>
+          </div>
+          <div className="space-y-1 text-sm font-mono">
+            {REF_UPLOAD_TABLES.map(t => (
+              <div key={t.value} className="flex justify-between max-w-xs">
+                <span>{t.value}:</span>
+                <span className="text-muted-foreground">{tableCounts[t.value] ?? "—"} rows</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <StatusBadge status={status} />
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Section 6: Terminology Data (legacy) ──
 const TERM_TABLES = [
   { value: "ref_flies", label: "ref_flies", conflict: "pattern_name" },
   { value: "ref_lines", label: "ref_lines", conflict: "line_type_code" },
@@ -331,7 +435,12 @@ function TerminologyUploadSection() {
   );
 }
 
-// ── Section 6: Verify Tables ──
+const ALL_VERIFY_TABLES = [
+  ...TERM_TABLES.map(t => t.value),
+  'ref_leaders', 'ref_tippets', 'ref_rods',
+];
+
+// ── Verify Tables ──
 function VerifyTablesSection() {
   const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
   const [counts, setCounts] = useState<Record<string, number | string>>({});
@@ -341,9 +450,9 @@ function VerifyTablesSection() {
     setCounts({});
     const results: Record<string, number | string> = {};
 
-    for (const t of TERM_TABLES) {
-      const { count, error } = await (supabase.from as any)(t.value).select("*", { count: "exact", head: true });
-      results[t.value] = error ? `Error: ${error.message}` : (count ?? 0);
+    for (const tName of ALL_VERIFY_TABLES) {
+      const { count, error } = await (supabase.from as any)(tName).select("*", { count: "exact", head: true });
+      results[tName] = error ? `Error: ${error.message}` : (count ?? 0);
     }
 
     setCounts(results);
@@ -359,10 +468,10 @@ function VerifyTablesSection() {
         <Button onClick={verify} disabled={status.state === "loading"}>Verify Tables</Button>
         {Object.keys(counts).length > 0 && (
           <div className="mt-3 space-y-1 text-sm font-mono">
-            {TERM_TABLES.map(t => (
-              <div key={t.value} className="flex justify-between max-w-xs">
-                <span>{t.value}:</span>
-                <span className="text-muted-foreground">{counts[t.value] ?? "—"} rows</span>
+            {ALL_VERIFY_TABLES.map(tName => (
+              <div key={tName} className="flex justify-between max-w-xs">
+                <span>{tName}:</span>
+                <span className="text-muted-foreground">{counts[tName] ?? "—"} rows</span>
               </div>
             ))}
           </div>
@@ -467,6 +576,7 @@ export default function AdminUpload() {
       <BasicAdviceSection />
       <VenueMetadataSection />
       <ReferenceDataSection />
+      <ReferenceDataUploadSection />
       <TerminologyUploadSection />
       <PredictionConfigSection />
       <VerifyTablesSection />
