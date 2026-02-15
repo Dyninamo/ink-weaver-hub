@@ -343,6 +343,57 @@ export type Database = {
         }
         Relationships: []
       }
+      prediction_params: {
+        Row: {
+          last_validated: string | null
+          source: string
+          target: string
+          top_n: number
+          use_cross_venue: number
+          venue: string
+          venue_weight: number
+          w_humidity: number
+          w_precipitation: number
+          w_pressure: number
+          w_temperature: number
+          w_wind_speed: number
+          week_window: number
+          year_decay: number
+        }
+        Insert: {
+          last_validated?: string | null
+          source?: string
+          target: string
+          top_n?: number
+          use_cross_venue?: number
+          venue: string
+          venue_weight?: number
+          w_humidity?: number
+          w_precipitation?: number
+          w_pressure?: number
+          w_temperature?: number
+          w_wind_speed?: number
+          week_window?: number
+          year_decay?: number
+        }
+        Update: {
+          last_validated?: string | null
+          source?: string
+          target?: string
+          top_n?: number
+          use_cross_venue?: number
+          venue?: string
+          venue_weight?: number
+          w_humidity?: number
+          w_precipitation?: number
+          w_pressure?: number
+          w_temperature?: number
+          w_wind_speed?: number
+          week_window?: number
+          year_decay?: number
+        }
+        Relationships: []
+      }
       queries: {
         Row: {
           advice_text: string | null
@@ -794,6 +845,36 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_correlations: {
+        Row: {
+          correlation: number | null
+          fly_overlap_jaccard: number | null
+          last_updated: string
+          metric: string
+          notes: string | null
+          venue_a: string
+          venue_b: string
+        }
+        Insert: {
+          correlation?: number | null
+          fly_overlap_jaccard?: number | null
+          last_updated: string
+          metric?: string
+          notes?: string | null
+          venue_a: string
+          venue_b: string
+        }
+        Update: {
+          correlation?: number | null
+          fly_overlap_jaccard?: number | null
+          last_updated?: string
+          metric?: string
+          notes?: string | null
+          venue_a?: string
+          venue_b?: string
+        }
+        Relationships: []
+      }
       venue_metadata: {
         Row: {
           created_at: string | null
@@ -818,6 +899,75 @@ export type Database = {
           latitude?: number
           longitude?: number
           name?: string
+        }
+        Relationships: []
+      }
+      venue_profiles: {
+        Row: {
+          character_notes: string | null
+          cross_venue_rule: string
+          cross_venue_warnings: string | null
+          data_quality_flag: string
+          date_range_end: string | null
+          date_range_start: string | null
+          flies_recall_at5: number | null
+          last_updated: string
+          methods_recall_at4: number | null
+          region: string
+          report_count: number
+          rod_avg_mean: number | null
+          rod_avg_std: number | null
+          rod_mae: number | null
+          rod_mae_ci_hi: number | null
+          rod_mae_ci_lo: number | null
+          seasonal_pattern_json: string | null
+          spots_recall_at4: number | null
+          temp_correlation: number | null
+          venue: string
+        }
+        Insert: {
+          character_notes?: string | null
+          cross_venue_rule?: string
+          cross_venue_warnings?: string | null
+          data_quality_flag?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          flies_recall_at5?: number | null
+          last_updated: string
+          methods_recall_at4?: number | null
+          region: string
+          report_count: number
+          rod_avg_mean?: number | null
+          rod_avg_std?: number | null
+          rod_mae?: number | null
+          rod_mae_ci_hi?: number | null
+          rod_mae_ci_lo?: number | null
+          seasonal_pattern_json?: string | null
+          spots_recall_at4?: number | null
+          temp_correlation?: number | null
+          venue: string
+        }
+        Update: {
+          character_notes?: string | null
+          cross_venue_rule?: string
+          cross_venue_warnings?: string | null
+          data_quality_flag?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          flies_recall_at5?: number | null
+          last_updated?: string
+          methods_recall_at4?: number | null
+          region?: string
+          report_count?: number
+          rod_avg_mean?: number | null
+          rod_avg_std?: number | null
+          rod_mae?: number | null
+          rod_mae_ci_hi?: number | null
+          rod_mae_ci_lo?: number | null
+          seasonal_pattern_json?: string | null
+          spots_recall_at4?: number | null
+          temp_correlation?: number | null
+          venue?: string
         }
         Relationships: []
       }

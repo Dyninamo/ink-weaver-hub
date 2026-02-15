@@ -1,13 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
+import { getPredictionParams, getVenueProfile } from "../_shared/prediction-params.ts";
+import type { PredictionParams } from "../_shared/prediction-params.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
-
-const PERSONAL_WEIGHT_BOOST = 1.5;
-const RECENCY_DECAY = 0.6;
 
 function getSeason(dateStr: string): string {
   const month = new Date(dateStr).getMonth() + 1;
@@ -38,19 +37,20 @@ function daysBetween(a: string, b: string): number {
   return Math.abs((new Date(a).getTime() - new Date(b).getTime()) / 86400000);
 }
 
-function recencyWeight(reportDate: string, targetDate: string, isPersonal: boolean): number {
+function recencyWeight(reportDate: string, targetDate: string, yearDecay: number, isPersonal: boolean): number {
+  const PERSONAL_WEIGHT_BOOST = 1.5;
   const days = daysBetween(reportDate, targetDate);
-  const decay = Math.pow(RECENCY_DECAY, days / 365);
+  const decay = Math.pow(yearDecay, days / 365);
   return isPersonal ? decay * PERSONAL_WEIGHT_BOOST : decay;
 }
 
-function rankItems(reports: ReportRow[], field: 'methods' | 'flies' | 'best_spots', targetDate: string): { name: string; frequency: number; score: number }[] {
+function rankItems(reports: ReportRow[], field: 'methods' | 'flies' | 'best_spots', targetDate: string, params: PredictionParams): { name: string; frequency: number; score: number }[] {
   const scores = new Map<string, { freq: number; score: number }>();
 
   for (const r of reports) {
     const items = r[field];
     if (!items || !Array.isArray(items)) continue;
-    const w = recencyWeight(r.date, targetDate, r.is_personal ?? false);
+    const w = recencyWeight(r.date, targetDate, params.year_decay, r.is_personal ?? false);
     for (const item of items) {
       const name = String(item).trim();
       if (!name) continue;
@@ -64,10 +64,10 @@ function rankItems(reports: ReportRow[], field: 'methods' | 'flies' | 'best_spot
   return Array.from(scores.entries())
     .map(([name, { freq, score }]) => ({ name, frequency: freq, score: Math.round(score * 100) / 100 }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
+    .slice(0, params.top_n);
 }
 
-function predictRodAverage(reports: ReportRow[], targetDate: string): { predicted: number; range: [number, number]; confidence: 'HIGH' | 'MEDIUM' | 'LOW' } {
+function predictRodAverage(reports: ReportRow[], targetDate: string, params: PredictionParams): { predicted: number; range: [number, number]; confidence: 'HIGH' | 'MEDIUM' | 'LOW' } {
   const valid = reports.filter(r => r.rod_average != null && r.rod_average > 0);
   if (valid.length === 0) return { predicted: 0, range: [0, 0], confidence: 'LOW' };
 
@@ -76,7 +76,7 @@ function predictRodAverage(reports: ReportRow[], targetDate: string): { predicte
   const values: number[] = [];
 
   for (const r of valid) {
-    const w = recencyWeight(r.date, targetDate, r.is_personal ?? false);
+    const w = recencyWeight(r.date, targetDate, params.year_decay, r.is_personal ?? false);
     weightedSum += r.rod_average! * w;
     totalWeight += w;
     values.push(r.rod_average!);
@@ -111,6 +111,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // Load prediction parameters from DB
+    const [rodAvgParams, fliesParams, methodsParams, spotsParams, venueProfile] = await Promise.all([
+      getPredictionParams(supabase, venue, 'rod_average'),
+      getPredictionParams(supabase, venue, 'flies'),
+      getPredictionParams(supabase, venue, 'methods'),
+      getPredictionParams(supabase, venue, 'spots'),
+      getVenueProfile(supabase, venue),
+    ]);
+
     // 1. Fetch fishery reports for this venue
     const { data: fisheryReports, error: frError } = await supabase
       .from('fishing_reports')
@@ -131,41 +140,25 @@ serve(async (req) => {
 
     if (drError) {
       console.error('diary_as_reports query error:', drError);
-      // Non-fatal: continue without diary data
     }
 
     // 3. Merge into unified report list
     const allReports: ReportRow[] = [
       ...(fisheryReports ?? []).map(r => ({
-        venue: r.venue,
-        date: r.report_date,
-        year: r.year,
-        rod_average: r.rod_average,
-        methods: r.methods,
-        flies: r.flies,
-        best_spots: r.best_spots,
-        summary: r.summary,
-        t_mean_week: r.t_mean_week,
-        wind_speed_mean_week: r.wind_speed_mean_week,
-        precip_total_mm_week: r.precip_total_mm_week,
-        pressure_mean_week: r.pressure_mean_week,
-        humidity_mean_week: r.humidity_mean_week,
-        is_personal: false,
+        venue: r.venue, date: r.report_date, year: r.year,
+        rod_average: r.rod_average, methods: r.methods, flies: r.flies,
+        best_spots: r.best_spots, summary: r.summary,
+        t_mean_week: r.t_mean_week, wind_speed_mean_week: r.wind_speed_mean_week,
+        precip_total_mm_week: r.precip_total_mm_week, pressure_mean_week: r.pressure_mean_week,
+        humidity_mean_week: r.humidity_mean_week, is_personal: false,
       })),
       ...(diaryReports ?? []).map(r => ({
-        venue: r.venue ?? venue,
-        date: r.date ?? date,
-        year: r.year,
-        rod_average: r.rod_average,
-        methods: r.methods as string[] | null,
-        flies: r.flies as string[] | null,
-        best_spots: r.best_spots as string[] | null,
-        summary: r.summary,
-        t_mean_week: r.t_mean_week,
-        wind_speed_mean_week: r.wind_speed_mean_week,
-        precip_total_mm_week: r.precip_total_mm_week,
-        pressure_mean_week: r.pressure_mean_week,
-        humidity_mean_week: r.humidity_mean_week,
+        venue: r.venue ?? venue, date: r.date ?? date, year: r.year,
+        rod_average: r.rod_average, methods: r.methods as string[] | null,
+        flies: r.flies as string[] | null, best_spots: r.best_spots as string[] | null,
+        summary: r.summary, t_mean_week: r.t_mean_week,
+        wind_speed_mean_week: r.wind_speed_mean_week, precip_total_mm_week: r.precip_total_mm_week,
+        pressure_mean_week: r.pressure_mean_week, humidity_mean_week: r.humidity_mean_week,
         is_personal: true,
       })),
     ];
@@ -174,13 +167,23 @@ serve(async (req) => {
     const totalReports = allReports.length;
     const personalCount = allReports.filter(r => r.is_personal).length;
 
-    // 4. Compute weighted predictions
-    const rodAvg = predictRodAverage(allReports, date);
-    const methods = rankItems(allReports, 'methods', date);
-    const flies = rankItems(allReports, 'flies', date);
-    const spots = rankItems(allReports, 'best_spots', date);
+    // 4. Compute weighted predictions using DB params
+    const rodAvg = predictRodAverage(allReports, date, rodAvgParams);
+    const methods = rankItems(allReports, 'methods', date, methodsParams);
+    const flies = rankItems(allReports, 'flies', date, fliesParams);
+    const spots = rankItems(allReports, 'best_spots', date, spotsParams);
 
     // 5. Generate AI advice using Lovable AI Gateway
+    const dataQualityNote = venueProfile?.data_quality_flag === 'insufficient'
+      ? '\nNote: This venue has limited data — predictions may be less accurate.'
+      : venueProfile?.data_quality_flag === 'limited'
+      ? '\nNote: This venue has moderate data coverage.'
+      : '';
+
+    const characterContext = venueProfile?.character_notes
+      ? `\nVenue character: ${venueProfile.character_notes}`
+      : '';
+
     const aiPrompt = `You are a fly fishing expert. Generate personalised advice for fishing at ${venue} on ${date} (${season}).
 
 Weather: ${weatherData ? JSON.stringify(weatherData) : 'not available'}
@@ -190,6 +193,7 @@ Based on ${totalReports} historical reports (${personalCount} personal diary ent
 - Top methods: ${methods.slice(0, 5).map(m => m.name).join(', ') || 'none recorded'}
 - Top flies: ${flies.slice(0, 5).map(f => f.name).join(', ') || 'none recorded'}
 - Best spots: ${spots.slice(0, 5).map(s => s.name).join(', ') || 'none recorded'}
+${characterContext}${dataQualityNote}
 
 Write 3-4 paragraphs of practical advice. Reference the weather conditions and how they affect fly/method selection. Be specific about fly sizes, line choices, and retrieve styles. Keep it conversational but expert.`;
 
@@ -251,6 +255,16 @@ Write 3-4 paragraphs of practical advice. Reference the weather conditions and h
       personalReportCount: personalCount,
       queryId: queryData?.id,
       weatherData,
+      model_info: {
+        params_source: rodAvgParams.source,
+        data_quality: venueProfile?.data_quality_flag ?? 'unknown',
+        report_count: venueProfile?.report_count ?? 0,
+        rod_mae: venueProfile?.rod_mae ?? null,
+        confidence_interval: venueProfile
+          ? [venueProfile.rod_mae_ci_lo, venueProfile.rod_mae_ci_hi]
+          : null,
+        character_notes: venueProfile?.character_notes ?? null,
+      },
     };
 
     return new Response(JSON.stringify(response), {
