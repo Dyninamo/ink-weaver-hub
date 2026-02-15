@@ -373,6 +373,88 @@ function VerifyTablesSection() {
   );
 }
 
+// ── Section 7: Prediction Model Configuration ──
+const PREDICTION_TABLES = [
+  { value: "prediction_params", label: "prediction_params" },
+  { value: "venue_profiles", label: "venue_profiles" },
+  { value: "venue_correlations", label: "venue_correlations" },
+] as const;
+
+function PredictionConfigSection() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedTable, setSelectedTable] = useState<string>(PREDICTION_TABLES[0].value);
+  const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
+  const [preview, setPreview] = useState<any[] | null>(null);
+
+  const handleFileChange = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setPreview(null);
+    try {
+      const text = await file.text();
+      const records = JSON.parse(text);
+      if (Array.isArray(records)) {
+        setPreview(records.slice(0, 3));
+      }
+    } catch {
+      setPreview(null);
+    }
+  };
+
+  const upload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setStatus({ state: "error", message: "Select a JSON file first" });
+    setStatus({ state: "loading", message: "Reading file..." });
+
+    try {
+      const text = await file.text();
+      const records: any[] = JSON.parse(text);
+      if (!Array.isArray(records)) throw new Error("JSON must be an array");
+
+      const { data, error } = await supabase.functions.invoke("upload-prediction-config", {
+        body: { table: selectedTable, data: records },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      setStatus({ state: "done", message: data?.message ?? `Uploaded ${records.length} rows to ${selectedTable}` });
+    } catch (err: any) {
+      setStatus({ state: "error", message: err.message });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><Database className="h-5 w-5" /> Prediction Model Configuration</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={selectedTable}
+            onChange={e => setSelectedTable(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {PREDICTION_TABLES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <Input ref={fileRef} type="file" accept=".json" onChange={handleFileChange} className="max-w-xs" />
+          <Button onClick={upload} disabled={status.state === "loading"}>Upload</Button>
+        </div>
+        {preview && preview.length > 0 && (
+          <div className="bg-muted rounded-md p-3 text-xs font-mono overflow-x-auto max-h-40">
+            <p className="text-muted-foreground mb-1">Preview (first {preview.length} rows):</p>
+            <pre>{JSON.stringify(preview, null, 2)}</pre>
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">Calls upload-prediction-config edge function</p>
+        <StatusBadge status={status} />
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Main Page ──
 export default function AdminUpload() {
   return (
@@ -386,6 +468,7 @@ export default function AdminUpload() {
       <VenueMetadataSection />
       <ReferenceDataSection />
       <TerminologyUploadSection />
+      <PredictionConfigSection />
       <VerifyTablesSection />
     </div>
   );

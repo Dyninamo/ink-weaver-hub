@@ -64,17 +64,17 @@ serve(async (req) => {
         } else {
           inserted++
         }
-      } catch (e) {
+      } catch (e: unknown) {
         failed++
-        errors.push(`Row ${i}: ${e.message}`)
+        errors.push(`Row ${i}: ${e instanceof Error ? e.message : String(e)}`)
       }
     }
 
     return new Response(JSON.stringify({ inserted, failed, errors: errors.slice(0, 10) }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
-  } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
+  } catch (e: unknown) {
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }

@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.upload-terminology]
 verify_jwt = false
+
+[functions.upload-prediction-config]
+verify_jwt = false
