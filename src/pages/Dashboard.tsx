@@ -120,6 +120,7 @@ const Dashboard = () => {
           tier: adviceData.tier,
           season: adviceData.season,
           weatherCategory: adviceData.weatherCategory,
+          model_info: adviceData.model_info,
         },
       });
     } catch (err) {
