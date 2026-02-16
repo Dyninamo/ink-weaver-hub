@@ -568,9 +568,12 @@ function PredictionConfigSection() {
 export default function AdminUpload() {
   return (
     <div className="min-h-screen bg-background p-6 max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Admin Upload</h1>
-        <p className="text-sm text-muted-foreground">Temporary admin tool — not linked from navigation</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Admin Upload</h1>
+          <p className="text-sm text-muted-foreground">Temporary admin tool — not linked from navigation</p>
+        </div>
+        <a href="/admin/db-status" className="text-sm text-primary underline hover:no-underline">DB Status →</a>
       </div>
       <FishingReportsSection />
       <BasicAdviceSection />
