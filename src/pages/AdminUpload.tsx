@@ -619,6 +619,81 @@ function PredictionConfigSection() {
   );
 }
 
+// ── Section: Taxonomy Data ──
+const TAXONOMY_TABLES = [
+  { value: "fly_types", label: "Fly Types (9 rows)" },
+  { value: "water_types", label: "Water Types (10 rows)" },
+  { value: "regions", label: "Regions (7 rows)" },
+  { value: "fly_species", label: "Fly Species (49 rows)" },
+  { value: "species_hatch_calendar", label: "Species Hatch Calendar (509 rows)" },
+  { value: "fly_monthly_availability", label: "Fly Monthly Availability (1234 rows)" },
+  { value: "fly_species_link", label: "Fly Species Link (663 rows)" },
+] as const;
+
+function TaxonomyUploadSection() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedTable, setSelectedTable] = useState<string>(TAXONOMY_TABLES[0].value);
+  const [clearFirst, setClearFirst] = useState(true);
+  const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
+
+  const upload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setStatus({ state: "error", message: "Select a JSON file first" });
+    setStatus({ state: "loading", message: "Reading file..." });
+
+    try {
+      const text = await file.text();
+      const records: any[] = JSON.parse(text);
+      if (!Array.isArray(records)) throw new Error("JSON must be an array");
+
+      setStatus({ state: "loading", message: `Uploading ${records.length} rows to ${selectedTable}...` });
+
+      const { data, error } = await supabase.functions.invoke("upload-taxonomy", {
+        body: { table: selectedTable, data: records, clear_first: clearFirst },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      const inserted = data.inserted ?? 0;
+      const failed = data.failed ?? 0;
+      const errMsgs = data.errors?.length ? `\nErrors: ${data.errors.join('; ')}` : '';
+      setStatus({ state: failed > 0 ? "error" : "done", message: `${inserted} inserted, ${failed} failed into ${selectedTable}.${errMsgs}` });
+    } catch (err: any) {
+      setStatus({ state: "error", message: err.message });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><Database className="h-5 w-5" /> Upload Taxonomy Data</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={selectedTable}
+            onChange={e => setSelectedTable(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {TAXONOMY_TABLES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <Input ref={fileRef} type="file" accept=".json" className="max-w-xs" />
+          <Button onClick={upload} disabled={status.state === "loading"}>Upload</Button>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={clearFirst} onChange={e => setClearFirst(e.target.checked)} className="h-4 w-4 rounded border-input" />
+          Clear table first (default: checked)
+        </label>
+        <p className="text-xs text-muted-foreground">Calls upload-taxonomy edge function. Upload parent tables (fly_types, water_types, regions) before child tables.</p>
+        <StatusBadge status={status} />
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Main Page ──
 export default function AdminUpload() {
   return (
@@ -637,6 +712,7 @@ export default function AdminUpload() {
       <ReferenceDataSection />
       <ReferenceDataUploadSection />
       <TerminologyUploadSection />
+      <TaxonomyUploadSection />
       <PredictionConfigSection />
       <VerifyTablesSection />
     </div>

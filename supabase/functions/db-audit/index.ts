@@ -35,6 +35,8 @@ serve(async (req) => {
       'ref_leaders', 'ref_tippets', 'ref_rods', 'ref_colours', 'ref_depths', 'ref_hook_sizes',
       'prediction_params', 'venue_profiles', 'venue_correlations', 'venue_metadata', 'venue_spots',
       'reference_data', 'shared_reports', 'share_views', 'user_profiles', 'verification_codes',
+      'fly_types', 'water_types', 'regions', 'fly_species',
+      'species_hatch_calendar', 'fly_monthly_availability', 'fly_species_link',
     ];
 
     const results = [];

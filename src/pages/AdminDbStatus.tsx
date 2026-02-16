@@ -20,13 +20,14 @@ interface AuditResult {
   queried_at: string;
 }
 
-type SectionKey = 'core' | 'reference' | 'model' | 'infrastructure' | 'other';
+type SectionKey = 'core' | 'reference' | 'model' | 'infrastructure' | 'taxonomy' | 'other';
 
 function categorize(name: string): SectionKey {
   if (['fishing_reports', 'basic_advice', 'queries', 'diary_entries', 'diary_fish', 'diary_as_reports (view)'].includes(name)) return 'core';
   if (name.startsWith('ref_') || name === 'reference_data') return 'reference';
   if (['prediction_params', 'venue_profiles', 'venue_correlations', 'venue_metadata'].includes(name)) return 'model';
   if (['user_profiles', 'verification_codes', 'shared_reports', 'share_views'].includes(name)) return 'infrastructure';
+  if (['fly_types', 'water_types', 'regions', 'fly_species', 'species_hatch_calendar', 'fly_monthly_availability', 'fly_species_link'].includes(name)) return 'taxonomy';
   return 'other';
 }
 
@@ -34,11 +35,12 @@ const sectionLabels: Record<SectionKey, string> = {
   core: 'Core Data',
   reference: 'Reference / Terminology',
   model: 'Model / Prediction',
+  taxonomy: 'Fly Taxonomy',
   infrastructure: 'Infrastructure',
   other: 'Other',
 };
 
-const sectionOrder: SectionKey[] = ['core', 'reference', 'model', 'infrastructure', 'other'];
+const sectionOrder: SectionKey[] = ['core', 'reference', 'taxonomy', 'model', 'infrastructure', 'other'];
 
 export default function AdminDbStatus() {
   const [data, setData] = useState<AuditResult | null>(null);
