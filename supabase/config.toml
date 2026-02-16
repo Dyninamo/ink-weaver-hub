@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.upload-venue-spots]
 verify_jwt = false
+
+[functions.upload-taxonomy]
+verify_jwt = false

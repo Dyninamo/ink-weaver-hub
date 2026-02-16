@@ -343,6 +343,135 @@ export type Database = {
         }
         Relationships: []
       }
+      fly_monthly_availability: {
+        Row: {
+          id: number
+          month: number
+          notes: string | null
+          pattern_name: string
+          relevance: string | null
+          source: string | null
+          water_type_id: number | null
+        }
+        Insert: {
+          id: number
+          month: number
+          notes?: string | null
+          pattern_name: string
+          relevance?: string | null
+          source?: string | null
+          water_type_id?: number | null
+        }
+        Update: {
+          id?: number
+          month?: number
+          notes?: string | null
+          pattern_name?: string
+          relevance?: string | null
+          source?: string | null
+          water_type_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fly_monthly_availability_water_type_id_fkey"
+            columns: ["water_type_id"]
+            isOneToOne: false
+            referencedRelation: "water_types"
+            referencedColumns: ["water_type_id"]
+          },
+        ]
+      }
+      fly_species: {
+        Row: {
+          common_name: string
+          description: string | null
+          family_group: string | null
+          fly_type_id: number | null
+          latin_name: string | null
+          order_name: string | null
+          species_id: number
+        }
+        Insert: {
+          common_name: string
+          description?: string | null
+          family_group?: string | null
+          fly_type_id?: number | null
+          latin_name?: string | null
+          order_name?: string | null
+          species_id: number
+        }
+        Update: {
+          common_name?: string
+          description?: string | null
+          family_group?: string | null
+          fly_type_id?: number | null
+          latin_name?: string | null
+          order_name?: string | null
+          species_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fly_species_fly_type_id_fkey"
+            columns: ["fly_type_id"]
+            isOneToOne: false
+            referencedRelation: "fly_types"
+            referencedColumns: ["fly_type_id"]
+          },
+        ]
+      }
+      fly_species_link: {
+        Row: {
+          id: number
+          is_primary: number | null
+          life_stage: string | null
+          notes: string | null
+          pattern_name: string
+          species_id: number | null
+        }
+        Insert: {
+          id: number
+          is_primary?: number | null
+          life_stage?: string | null
+          notes?: string | null
+          pattern_name: string
+          species_id?: number | null
+        }
+        Update: {
+          id?: number
+          is_primary?: number | null
+          life_stage?: string | null
+          notes?: string | null
+          pattern_name?: string
+          species_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fly_species_link_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "fly_species"
+            referencedColumns: ["species_id"]
+          },
+        ]
+      }
+      fly_types: {
+        Row: {
+          description: string | null
+          fly_type: string
+          fly_type_id: number
+        }
+        Insert: {
+          description?: string | null
+          fly_type: string
+          fly_type_id: number
+        }
+        Update: {
+          description?: string | null
+          fly_type?: string
+          fly_type_id?: number
+        }
+        Relationships: []
+      }
       prediction_params: {
         Row: {
           last_validated: string | null
@@ -868,6 +997,27 @@ export type Database = {
         }
         Relationships: []
       }
+      regions: {
+        Row: {
+          description: string | null
+          essential_fly_mapping: string | null
+          region_id: number
+          region_name: string
+        }
+        Insert: {
+          description?: string | null
+          essential_fly_mapping?: string | null
+          region_id: number
+          region_name: string
+        }
+        Update: {
+          description?: string | null
+          essential_fly_mapping?: string | null
+          region_id?: number
+          region_name?: string
+        }
+        Relationships: []
+      }
       share_views: {
         Row: {
           id: string
@@ -938,6 +1088,64 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "queries"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      species_hatch_calendar: {
+        Row: {
+          hatch_intensity: string | null
+          hatch_time_of_day: string | null
+          id: number
+          month: number
+          notes: string | null
+          region_id: number | null
+          source: string | null
+          species_id: number | null
+          water_type_id: number | null
+        }
+        Insert: {
+          hatch_intensity?: string | null
+          hatch_time_of_day?: string | null
+          id: number
+          month: number
+          notes?: string | null
+          region_id?: number | null
+          source?: string | null
+          species_id?: number | null
+          water_type_id?: number | null
+        }
+        Update: {
+          hatch_intensity?: string | null
+          hatch_time_of_day?: string | null
+          id?: number
+          month?: number
+          notes?: string | null
+          region_id?: number | null
+          source?: string | null
+          species_id?: number | null
+          water_type_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "species_hatch_calendar_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["region_id"]
+          },
+          {
+            foreignKeyName: "species_hatch_calendar_species_id_fkey"
+            columns: ["species_id"]
+            isOneToOne: false
+            referencedRelation: "fly_species"
+            referencedColumns: ["species_id"]
+          },
+          {
+            foreignKeyName: "species_hatch_calendar_water_type_id_fkey"
+            columns: ["water_type_id"]
+            isOneToOne: false
+            referencedRelation: "water_types"
+            referencedColumns: ["water_type_id"]
           },
         ]
       }
@@ -1154,6 +1362,24 @@ export type Database = {
           mobile_number?: string
           user_id?: string
           verified?: boolean | null
+        }
+        Relationships: []
+      }
+      water_types: {
+        Row: {
+          description: string | null
+          water_type: string
+          water_type_id: number
+        }
+        Insert: {
+          description?: string | null
+          water_type: string
+          water_type_id: number
+        }
+        Update: {
+          description?: string | null
+          water_type?: string
+          water_type_id?: number
         }
         Relationships: []
       }
