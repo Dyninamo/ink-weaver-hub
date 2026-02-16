@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.upload-prediction-config]
 verify_jwt = false
+
+[functions.upload-venue-spots]
+verify_jwt = false

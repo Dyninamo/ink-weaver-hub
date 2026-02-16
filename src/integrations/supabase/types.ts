@@ -1097,6 +1097,36 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_spots: {
+        Row: {
+          access_type: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          spot_id: number
+          spot_name: string
+          venue_name: string
+        }
+        Insert: {
+          access_type?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          spot_id: number
+          spot_name: string
+          venue_name: string
+        }
+        Update: {
+          access_type?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          spot_id?: number
+          spot_name?: string
+          venue_name?: string
+        }
+        Relationships: []
+      }
       verification_codes: {
         Row: {
           code: string

@@ -482,6 +482,61 @@ function VerifyTablesSection() {
   );
 }
 
+// ── Section: Venue Spots ──
+function VenueSpotsSection() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
+
+  const upload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setStatus({ state: "error", message: "Select a JSON file first" });
+    setStatus({ state: "loading", message: "Reading file..." });
+
+    try {
+      const text = await file.text();
+      const records: any[] = JSON.parse(text);
+      if (!Array.isArray(records)) throw new Error("JSON must be an array");
+
+      const batchSize = 50;
+      const totalBatches = Math.ceil(records.length / batchSize);
+      let totalUpserted = 0, totalFailed = 0;
+
+      for (let i = 0; i < totalBatches; i++) {
+        const batch = records.slice(i * batchSize, (i + 1) * batchSize);
+        setStatus({ state: "loading", message: `Uploading batch ${i + 1}/${totalBatches}... (${totalUpserted} upserted)` });
+
+        const { data, error } = await supabase.functions.invoke("upload-venue-spots", {
+          body: { spots: batch },
+        });
+
+        if (error) throw new Error(error.message);
+        totalUpserted += data.upserted ?? 0;
+        totalFailed += data.failed ?? 0;
+      }
+
+      setStatus({ state: "done", message: `Done! ${totalUpserted} upserted, ${totalFailed} failed out of ${records.length} records.` });
+    } catch (err: any) {
+      setStatus({ state: "error", message: err.message });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><MapPin className="h-5 w-5" /> Upload Venue Spots</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center gap-3">
+          <Input ref={fileRef} type="file" accept=".json" className="max-w-xs" />
+          <Button onClick={upload} disabled={status.state === "loading"}>Upload</Button>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">Upserts into venue_spots (on conflict venue_name, spot_name)</p>
+        <StatusBadge status={status} />
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Section 7: Prediction Model Configuration ──
 const PREDICTION_TABLES = [
   { value: "prediction_params", label: "prediction_params" },
@@ -581,6 +636,7 @@ export default function AdminUpload() {
       <ReferenceDataSection />
       <ReferenceDataUploadSection />
       <TerminologyUploadSection />
+      <VenueSpotsSection />
       <PredictionConfigSection />
       <VerifyTablesSection />
     </div>
