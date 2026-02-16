@@ -631,12 +631,12 @@ export default function AdminUpload() {
         <a href="/admin/db-status" className="text-sm text-primary underline hover:no-underline">DB Status →</a>
       </div>
       <FishingReportsSection />
+      <VenueSpotsSection />
       <BasicAdviceSection />
       <VenueMetadataSection />
       <ReferenceDataSection />
       <ReferenceDataUploadSection />
       <TerminologyUploadSection />
-      <VenueSpotsSection />
       <PredictionConfigSection />
       <VerifyTablesSection />
     </div>
