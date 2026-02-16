@@ -71,8 +71,8 @@ serve(async (req) => {
               .select(dc)
               .order(dc, { ascending: false })
               .limit(1);
-            if (latest && latest.length > 0 && latest[0][dc]) {
-              latestDate = latest[0][dc];
+            if (latest && latest.length > 0 && (latest[0] as Record<string, unknown>)[dc]) {
+              latestDate = (latest[0] as Record<string, unknown>)[dc] as string;
               break;
             }
           }
