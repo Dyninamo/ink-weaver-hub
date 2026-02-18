@@ -22,6 +22,7 @@ import AutocompleteTagInput from "@/components/AutocompleteTagInput";
 
 interface VenueOption {
   name: string;
+  venue_type?: string;
 }
 
 
@@ -32,6 +33,7 @@ const DiaryNew = () => {
 
   // Form state
   const [venue, setVenue] = useState("");
+  const [venueType, setVenueType] = useState<string>("stillwater");
   const [customVenue, setCustomVenue] = useState("");
   const [tripDate, setTripDate] = useState<Date>(new Date());
   const [arrivalTime, setArrivalTime] = useState("");
@@ -71,11 +73,21 @@ const DiaryNew = () => {
     return () => clearTimeout(timer);
   }, [selectedVenue]);
 
-  // Load venues and reference data
+  // Load venues from fishing_reports (source of truth per spec)
   useEffect(() => {
     const loadVenues = async () => {
-      const { data } = await supabase.from("venue_metadata").select("name").order("name");
-      if (data) setVenues(data as VenueOption[]);
+      const { data } = await supabase
+        .from("fishing_reports")
+        .select("venue, venue_type")
+        .order("venue");
+      if (data) {
+        // Deduplicate, keep venue_type from first occurrence
+        const seen = new Map<string, string>();
+        data.forEach((r: any) => {
+          if (!seen.has(r.venue)) seen.set(r.venue, r.venue_type || "stillwater");
+        });
+        setVenues(Array.from(seen.entries()).map(([name, venue_type]) => ({ name, venue_type })));
+      }
     };
     loadVenues();
   }, []);
@@ -133,6 +145,7 @@ const DiaryNew = () => {
         .insert({
           user_id: user.id,
           venue: selectedVenue,
+          venue_type: venueType,
           trip_date: format(tripDate, "yyyy-MM-dd"),
           arrival_time: arrivalTime || null,
           departure_time: departureTime || null,
@@ -209,7 +222,7 @@ const DiaryNew = () => {
             {/* Venue */}
             <div className="space-y-2">
               <Label>Venue</Label>
-              <Select value={venue} onValueChange={setVenue}>
+              <Select value={venue} onValueChange={(v) => { setVenue(v); const found = venues.find(x => x.name === v); setVenueType(found?.venue_type || "stillwater"); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a venue..." />
                 </SelectTrigger>
