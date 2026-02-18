@@ -443,8 +443,10 @@ export const FRIENDLY_LINE_NAMES = [
   'Intermediate',
   'Di-3',
   'Di-5',
+  'Di-6',
   'Di-7',
   'Fast Sink',
   'Shooting Head',
+  'Switch Sink-Tip',
   'Euro Mono',
 ];
