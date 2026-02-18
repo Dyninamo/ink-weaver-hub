@@ -96,8 +96,26 @@ const AutocompleteTagInput = ({
     setInput("");
     setHighlightIndex(-1);
 
-    // Upsert into reference_data (fire-and-forget)
-    if (!suggestions.includes(trimmed)) {
+    const isExisting = suggestions.includes(trimmed);
+
+    if (isExisting) {
+      // Increment usage_count for existing suggestions so popular choices rise to the top
+      supabase
+        .from("reference_data")
+        .select("id, usage_count")
+        .eq("category", category)
+        .eq("value", trimmed)
+        .then(({ data: rows }) => {
+          if (rows && rows.length > 0) {
+            supabase
+              .from("reference_data")
+              .update({ usage_count: (rows[0].usage_count ?? 0) + 1 })
+              .eq("id", rows[0].id)
+              .then(() => {});
+          }
+        });
+    } else {
+      // Upsert new custom value with usage_count=1, or bump if conflict
       supabase
         .from("reference_data")
         .upsert(
