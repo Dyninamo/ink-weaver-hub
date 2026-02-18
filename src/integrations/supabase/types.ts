@@ -112,6 +112,7 @@ export type Database = {
           updated_at: string | null
           user_id: string
           venue: string
+          venue_type: string | null
           weather_auto: Json | null
           weather_override: Json | null
           wind_speed_mean_week: number | null
@@ -144,6 +145,7 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           venue: string
+          venue_type?: string | null
           weather_auto?: Json | null
           weather_override?: Json | null
           wind_speed_mean_week?: number | null
@@ -176,6 +178,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           venue?: string
+          venue_type?: string | null
           weather_auto?: Json | null
           weather_override?: Json | null
           wind_speed_mean_week?: number | null
@@ -280,6 +283,7 @@ export type Database = {
           summary: string | null
           t_mean_week: number | null
           venue: string
+          venue_type: string | null
           water_level: string | null
           water_temp_week: number | null
           weather: string[] | null
@@ -307,6 +311,7 @@ export type Database = {
           summary?: string | null
           t_mean_week?: number | null
           venue: string
+          venue_type?: string | null
           water_level?: string | null
           water_temp_week?: number | null
           weather?: string[] | null
@@ -334,6 +339,7 @@ export type Database = {
           summary?: string | null
           t_mean_week?: number | null
           venue?: string
+          venue_type?: string | null
           water_level?: string | null
           water_temp_week?: number | null
           weather?: string[] | null
@@ -1406,7 +1412,7 @@ export type Database = {
         }
         Insert: {
           best_spots?: Json | null
-          content?: never
+          content?: string | null
           date?: string | null
           flies?: Json | null
           humidity_mean_week?: number | null
@@ -1414,7 +1420,7 @@ export type Database = {
           precip_total_mm_week?: number | null
           pressure_mean_week?: number | null
           rod_average?: never
-          summary?: never
+          summary?: string | null
           t_mean_week?: number | null
           user_id?: string | null
           venue?: string | null
@@ -1424,7 +1430,7 @@ export type Database = {
         }
         Update: {
           best_spots?: Json | null
-          content?: never
+          content?: string | null
           date?: string | null
           flies?: Json | null
           humidity_mean_week?: number | null
@@ -1432,7 +1438,7 @@ export type Database = {
           precip_total_mm_week?: number | null
           pressure_mean_week?: number | null
           rod_average?: never
-          summary?: never
+          summary?: string | null
           t_mean_week?: number | null
           user_id?: string | null
           venue?: string | null
