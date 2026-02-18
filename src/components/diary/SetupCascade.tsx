@@ -11,6 +11,21 @@ import {
   type CurrentSetup,
 } from "@/services/diaryService";
 
+// Maps fishing style → retrieve style categories that are relevant
+// Retrieve table uses its own "style" vocabulary (retrieve categories),
+// not fishing styles. This mapping bridges the two.
+const STYLE_TO_RETRIEVE_STYLE: Record<string, string[]> = {
+  'Buzzer':      ['Static', 'Slow Retrieve', 'Drift', 'Pause/Trigger', 'Passive/Slow', 'Vertical Movement'],
+  'Dry':         ['Dry', 'Surface', 'Drift'],
+  'Dry-Dropper': ['Dry-Dropper', 'Dry', 'Nymph'],
+  'Euro Nymph':  ['Nymph', 'Dry/Fly First'],
+  'Lure':        ['Aggressive Retrieve', 'Strip Retrieve', 'Very Fast Retrieve', 'Medium Retrieve', 'Slow Retrieve', 'Stop-Start'],
+  'Lure + Nymph':['Strip Retrieve', 'Medium Retrieve', 'Stop-Start', 'Passive/Slow', 'Pause/Trigger'],
+  'Nymph':       ['Nymph', 'Passive/Slow', 'Stop-Start', 'Vertical Movement'],
+  'Nymph/Buzzer':['Static', 'Slow Retrieve', 'Passive/Slow', 'Pause/Trigger', 'Nymph'],
+  'Wet':         ['Wet/Spider', 'Subsurface', 'Stop-Start', 'Coverage', 'Drift'],
+};
+
 interface SetupCascadeProps {
   venueType: 'stillwater' | 'river';
   value: CurrentSetup;
@@ -69,15 +84,19 @@ export default function SetupCascade({
     []
   );
 
-  // === RIG OPTIONS (tree-guided by style + water type) ===
+  // === RIG OPTIONS (filtered by water type, tree-guided by style) ===
   const rigOptions: AutocompleteOption[] = useMemo(() => {
     const waterTypeLabel = venueType === 'stillwater' ? 'Stillwater' : 'River';
-    return refData.rigs.map(r => ({
+
+    // Filter: only show rigs for this water type (or "Both")
+    const filtered = refData.rigs.filter(
+      r => r.water_type === waterTypeLabel || r.water_type === 'Both'
+    );
+
+    return filtered.map(r => ({
       value: r.rig_name,
       label: r.rig_name,
-      matched: value.style
-        ? r.style === value.style && (r.water_type === waterTypeLabel || r.water_type === 'Both')
-        : undefined,
+      matched: value.style ? r.style === value.style : undefined,
       category: r.style,
       meta: [r.flies_on_rig ? `${r.flies_on_rig} flies` : null, r.depth_zone].filter(Boolean).join(' · ') || undefined,
     }));
@@ -107,19 +126,30 @@ export default function SetupCascade({
     }));
   }, [refData.lines, value.style]);
 
-  // === RETRIEVE OPTIONS (tree-guided by style) ===
-  const retrieveOptions: AutocompleteOption[] = useMemo(() =>
-    refData.retrieves.map(r => ({
+  // === RETRIEVE OPTIONS (filtered by water type, guided by style→retrieve-style mapping) ===
+  const retrieveOptions: AutocompleteOption[] = useMemo(() => {
+    const waterTypeLabel = venueType === 'stillwater' ? 'Stillwater' : 'River';
+
+    // Filter: only show retrieves for this water type (or "Stillwater or River")
+    const filtered = refData.retrieves.filter(
+      r => r.water_type === waterTypeLabel || r.water_type === 'Stillwater or River'
+    );
+
+    // Get the retrieve-style categories that match the selected fishing style
+    const matchedRetrieveStyles = value.style
+      ? (STYLE_TO_RETRIEVE_STYLE[value.style] || [])
+      : [];
+
+    return filtered.map(r => ({
       value: r.retrieve_name,
       label: r.retrieve_name,
-      matched: value.style
-        ? r.style === value.style
+      matched: matchedRetrieveStyles.length > 0
+        ? matchedRetrieveStyles.includes(r.style || '')
         : undefined,
       category: r.style || undefined,
       meta: [r.pace, r.depth_zone].filter(Boolean).join(' · ') || undefined,
-    })),
-    [refData.retrieves, value.style]
-  );
+    }));
+  }, [refData.retrieves, value.style, venueType]);
 
   // === DEPTH ZONE OPTIONS (guided by rig selection) ===
   const depthOptions: AutocompleteOption[] = useMemo(() => {
