@@ -33,15 +33,16 @@ interface FishRecord {
 interface FishLoggerProps {
   diaryEntryId: string;
   venue: string;
+  venueType?: string;
   onUpdate?: () => void;
 }
 
-const SPECIES = ["Rainbow", "Brown", "Brook", "Tiger", "Other"];
-const FLY_SIZES = ["8", "10", "12", "14", "16", "18"];
-
+const SPECIES = ["Rainbow", "Brown", "Brook", "Tiger", "Blue", "Grayling", "Other"];
+const FLY_SIZES = ["2", "4", "6", "8", "10", "12", "14", "16", "18", "20", "22"];
+const FLY_COLOURS = ["Black", "Olive", "Orange", "Green", "Claret", "White", "Brown", "Red"];
 const DEPTHS = ["Surface", "Sub-surface", "Mid-water", "Deep", "On the drop"];
 
-const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
+const FishLogger = ({ diaryEntryId, venue, venueType = "stillwater", onUpdate }: FishLoggerProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -51,8 +52,11 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const defaultSpecies = venueType === "river" ? "Brown" : "Rainbow";
+  const stickySpecies = useRef(defaultSpecies);
+
   // Form state
-  const [species, setSpecies] = useState("Rainbow");
+  const [species, setSpecies] = useState(defaultSpecies);
   const [weightLb, setWeightLb] = useState("");
   const [weightOz, setWeightOz] = useState("");
   const [method, setMethod] = useState("");
@@ -71,6 +75,7 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
   const stickyMethod = useRef("");
   const stickyLine = useRef("");
   const stickySpot = useRef("");
+  const stickyDepth = useRef("");
 
   // Reference data is now handled by AutocompleteTagInput
 
@@ -91,13 +96,12 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
   }, [fetchFish]);
 
   const resetForm = (keepSticky = true) => {
-    setSpecies("Rainbow");
+    setSpecies(keepSticky ? stickySpecies.current : defaultSpecies);
     setWeightLb("");
     setWeightOz("");
     setFly("");
     setFlySize("");
     setFlyColour("");
-    setDepth("");
     setRetrieve("");
     setTimeCaught("");
     setKeptOrReleased("Released");
@@ -108,10 +112,12 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
       setMethod(stickyMethod.current);
       setLine(stickyLine.current);
       setSpot(stickySpot.current);
+      setDepth(stickyDepth.current);
     } else {
       setMethod("");
       setLine("");
       setSpot("");
+      setDepth("");
     }
   };
 
@@ -125,9 +131,11 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
     setIsSaving(true);
 
     // Remember sticky values
+    if (species) stickySpecies.current = species;
     if (method) stickyMethod.current = method;
     if (line) stickyLine.current = line;
     if (spot) stickySpot.current = spot;
+    if (depth) stickyDepth.current = depth;
 
     try {
       const payload = {
@@ -412,7 +420,7 @@ const FishLogger = ({ diaryEntryId, venue, onUpdate }: FishLoggerProps) => {
                   list="fly-colours"
                 />
                 <datalist id="fly-colours">
-                  {["Black", "Olive", "Orange", "Green", "Claret", "White"].map((c) => (
+                  {FLY_COLOURS.map((c) => (
                     <option key={c} value={c} />
                   ))}
                 </datalist>
