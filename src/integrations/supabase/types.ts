@@ -83,185 +83,6 @@ export type Database = {
         }
         Relationships: []
       }
-      diary_entries: {
-        Row: {
-          arrival_time: string | null
-          best_fly: string | null
-          best_method: string | null
-          best_spot: string | null
-          competition_name: string | null
-          created_at: string | null
-          departure_time: string | null
-          fishing_type: string | null
-          flies_used: Json | null
-          humidity_mean_week: number | null
-          id: string
-          is_competition: boolean | null
-          lines_used: Json | null
-          methods_used: Json | null
-          notes: string | null
-          photo_urls: Json | null
-          precip_total_mm_week: number | null
-          pressure_mean_week: number | null
-          spots_fished: Json | null
-          t_mean_week: number | null
-          total_fish: number | null
-          total_kept: number | null
-          total_released: number | null
-          trip_date: string
-          updated_at: string | null
-          user_id: string
-          venue: string
-          venue_type: string | null
-          weather_auto: Json | null
-          weather_override: Json | null
-          wind_speed_mean_week: number | null
-        }
-        Insert: {
-          arrival_time?: string | null
-          best_fly?: string | null
-          best_method?: string | null
-          best_spot?: string | null
-          competition_name?: string | null
-          created_at?: string | null
-          departure_time?: string | null
-          fishing_type?: string | null
-          flies_used?: Json | null
-          humidity_mean_week?: number | null
-          id?: string
-          is_competition?: boolean | null
-          lines_used?: Json | null
-          methods_used?: Json | null
-          notes?: string | null
-          photo_urls?: Json | null
-          precip_total_mm_week?: number | null
-          pressure_mean_week?: number | null
-          spots_fished?: Json | null
-          t_mean_week?: number | null
-          total_fish?: number | null
-          total_kept?: number | null
-          total_released?: number | null
-          trip_date: string
-          updated_at?: string | null
-          user_id: string
-          venue: string
-          venue_type?: string | null
-          weather_auto?: Json | null
-          weather_override?: Json | null
-          wind_speed_mean_week?: number | null
-        }
-        Update: {
-          arrival_time?: string | null
-          best_fly?: string | null
-          best_method?: string | null
-          best_spot?: string | null
-          competition_name?: string | null
-          created_at?: string | null
-          departure_time?: string | null
-          fishing_type?: string | null
-          flies_used?: Json | null
-          humidity_mean_week?: number | null
-          id?: string
-          is_competition?: boolean | null
-          lines_used?: Json | null
-          methods_used?: Json | null
-          notes?: string | null
-          photo_urls?: Json | null
-          precip_total_mm_week?: number | null
-          pressure_mean_week?: number | null
-          spots_fished?: Json | null
-          t_mean_week?: number | null
-          total_fish?: number | null
-          total_kept?: number | null
-          total_released?: number | null
-          trip_date?: string
-          updated_at?: string | null
-          user_id?: string
-          venue?: string
-          venue_type?: string | null
-          weather_auto?: Json | null
-          weather_override?: Json | null
-          wind_speed_mean_week?: number | null
-        }
-        Relationships: []
-      }
-      diary_fish: {
-        Row: {
-          created_at: string | null
-          depth: string | null
-          diary_entry_id: string
-          fish_number: number
-          fly: string | null
-          fly_colour: string | null
-          fly_size: number | null
-          id: string
-          kept_or_released: string | null
-          length_inches: number | null
-          line: string | null
-          method: string | null
-          notes: string | null
-          retrieve: string | null
-          species: string | null
-          spot: string | null
-          time_caught: string | null
-          user_id: string
-          weight_lb: number | null
-          weight_oz: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          depth?: string | null
-          diary_entry_id: string
-          fish_number: number
-          fly?: string | null
-          fly_colour?: string | null
-          fly_size?: number | null
-          id?: string
-          kept_or_released?: string | null
-          length_inches?: number | null
-          line?: string | null
-          method?: string | null
-          notes?: string | null
-          retrieve?: string | null
-          species?: string | null
-          spot?: string | null
-          time_caught?: string | null
-          user_id: string
-          weight_lb?: number | null
-          weight_oz?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          depth?: string | null
-          diary_entry_id?: string
-          fish_number?: number
-          fly?: string | null
-          fly_colour?: string | null
-          fly_size?: number | null
-          id?: string
-          kept_or_released?: string | null
-          length_inches?: number | null
-          line?: string | null
-          method?: string | null
-          notes?: string | null
-          retrieve?: string | null
-          species?: string | null
-          spot?: string | null
-          time_caught?: string | null
-          user_id?: string
-          weight_lb?: number | null
-          weight_oz?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "diary_fish_diary_entry_id_fkey"
-            columns: ["diary_entry_id"]
-            isOneToOne: false
-            referencedRelation: "diary_entries"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       fishing_reports: {
         Row: {
           best_spots: string[] | null
@@ -346,6 +167,81 @@ export type Database = {
           wind_dir_deg_week?: number | null
           wind_speed_mean_week?: number | null
           year?: number | null
+        }
+        Relationships: []
+      }
+      fishing_sessions: {
+        Row: {
+          created_at: string | null
+          duration_minutes: number | null
+          end_time: string | null
+          fishing_type: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          plan: string | null
+          rods: number | null
+          satisfaction_score: number | null
+          session_date: string
+          start_time: string | null
+          updated_at: string | null
+          user_id: string
+          venue_name: string
+          venue_type: string | null
+          weather_conditions: string | null
+          weather_pressure: number | null
+          weather_temp: number | null
+          weather_wind_dir: string | null
+          weather_wind_speed: number | null
+          would_return: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          fishing_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          plan?: string | null
+          rods?: number | null
+          satisfaction_score?: number | null
+          session_date: string
+          start_time?: string | null
+          updated_at?: string | null
+          user_id: string
+          venue_name: string
+          venue_type?: string | null
+          weather_conditions?: string | null
+          weather_pressure?: number | null
+          weather_temp?: number | null
+          weather_wind_dir?: string | null
+          weather_wind_speed?: number | null
+          would_return?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          fishing_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          plan?: string | null
+          rods?: number | null
+          satisfaction_score?: number | null
+          session_date?: string
+          start_time?: string | null
+          updated_at?: string | null
+          user_id?: string
+          venue_name?: string
+          venue_type?: string | null
+          weather_conditions?: string | null
+          weather_pressure?: number | null
+          weather_temp?: number | null
+          weather_wind_dir?: string | null
+          weather_wind_speed?: number | null
+          would_return?: boolean | null
         }
         Relationships: []
       }
@@ -741,6 +637,7 @@ export type Database = {
           buoyancy: string | null
           created_at: string | null
           description: string | null
+          friendly_name: string | null
           id: number
           line_family: string | null
           line_type_code: string | null
@@ -754,6 +651,7 @@ export type Database = {
           buoyancy?: string | null
           created_at?: string | null
           description?: string | null
+          friendly_name?: string | null
           id?: number
           line_family?: string | null
           line_type_code?: string | null
@@ -767,6 +665,7 @@ export type Database = {
           buoyancy?: string | null
           created_at?: string | null
           description?: string | null
+          friendly_name?: string | null
           id?: number
           line_family?: string | null
           line_type_code?: string | null
@@ -1024,6 +923,140 @@ export type Database = {
         }
         Relationships: []
       }
+      session_events: {
+        Row: {
+          blank_confidence: string | null
+          blank_reason: string | null
+          change_from: Json | null
+          change_reason: string | null
+          change_to: Json | null
+          depth_zone: string | null
+          event_conditions: string | null
+          event_pressure: number | null
+          event_temp: number | null
+          event_time: string
+          event_type: string
+          event_wind_dir: string | null
+          event_wind_speed: number | null
+          flies_on_cast: Json | null
+          fly_known: boolean | null
+          fly_pattern: string | null
+          fly_size: number | null
+          got_away_stage: string | null
+          id: string
+          is_best_fish: boolean | null
+          latitude: number | null
+          length_inches: number | null
+          line_type: string | null
+          longitude: number | null
+          measurement_mode: string | null
+          notes: string | null
+          photo_url: string | null
+          retrieve: string | null
+          rig: string | null
+          rig_position: string | null
+          session_id: string
+          size_estimate: string | null
+          sort_order: number
+          species: string | null
+          spot: string | null
+          style: string | null
+          weight_display: string | null
+          weight_lb: number | null
+          weight_oz: number | null
+        }
+        Insert: {
+          blank_confidence?: string | null
+          blank_reason?: string | null
+          change_from?: Json | null
+          change_reason?: string | null
+          change_to?: Json | null
+          depth_zone?: string | null
+          event_conditions?: string | null
+          event_pressure?: number | null
+          event_temp?: number | null
+          event_time?: string
+          event_type: string
+          event_wind_dir?: string | null
+          event_wind_speed?: number | null
+          flies_on_cast?: Json | null
+          fly_known?: boolean | null
+          fly_pattern?: string | null
+          fly_size?: number | null
+          got_away_stage?: string | null
+          id?: string
+          is_best_fish?: boolean | null
+          latitude?: number | null
+          length_inches?: number | null
+          line_type?: string | null
+          longitude?: number | null
+          measurement_mode?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          retrieve?: string | null
+          rig?: string | null
+          rig_position?: string | null
+          session_id: string
+          size_estimate?: string | null
+          sort_order: number
+          species?: string | null
+          spot?: string | null
+          style?: string | null
+          weight_display?: string | null
+          weight_lb?: number | null
+          weight_oz?: number | null
+        }
+        Update: {
+          blank_confidence?: string | null
+          blank_reason?: string | null
+          change_from?: Json | null
+          change_reason?: string | null
+          change_to?: Json | null
+          depth_zone?: string | null
+          event_conditions?: string | null
+          event_pressure?: number | null
+          event_temp?: number | null
+          event_time?: string
+          event_type?: string
+          event_wind_dir?: string | null
+          event_wind_speed?: number | null
+          flies_on_cast?: Json | null
+          fly_known?: boolean | null
+          fly_pattern?: string | null
+          fly_size?: number | null
+          got_away_stage?: string | null
+          id?: string
+          is_best_fish?: boolean | null
+          latitude?: number | null
+          length_inches?: number | null
+          line_type?: string | null
+          longitude?: number | null
+          measurement_mode?: string | null
+          notes?: string | null
+          photo_url?: string | null
+          retrieve?: string | null
+          rig?: string | null
+          rig_position?: string | null
+          session_id?: string
+          size_estimate?: string | null
+          sort_order?: number
+          species?: string | null
+          spot?: string | null
+          style?: string | null
+          weight_display?: string | null
+          weight_lb?: number | null
+          weight_oz?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       share_views: {
         Row: {
           id: string
@@ -1176,6 +1209,57 @@ export type Database = {
           mobile_number?: string | null
           mobile_verified?: boolean | null
           two_factor_enabled?: boolean | null
+        }
+        Relationships: []
+      }
+      user_rod_setups: {
+        Row: {
+          created_at: string | null
+          default_flies: Json | null
+          depth_zone: string | null
+          id: string
+          last_used_at: string | null
+          line_type: string | null
+          name: string
+          retrieve: string | null
+          rig: string | null
+          rod_name: string | null
+          style: string | null
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          default_flies?: Json | null
+          depth_zone?: string | null
+          id?: string
+          last_used_at?: string | null
+          line_type?: string | null
+          name: string
+          retrieve?: string | null
+          rig?: string | null
+          rod_name?: string | null
+          style?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          default_flies?: Json | null
+          depth_zone?: string | null
+          id?: string
+          last_used_at?: string | null
+          line_type?: string | null
+          name?: string
+          retrieve?: string | null
+          rig?: string | null
+          rod_name?: string | null
+          style?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1393,12 +1477,12 @@ export type Database = {
     Views: {
       diary_as_reports: {
         Row: {
-          best_spots: Json | null
+          best_spots: string[] | null
           content: string | null
           date: string | null
-          flies: Json | null
+          flies: string[] | null
           humidity_mean_week: number | null
-          methods: Json | null
+          methods: string[] | null
           precip_total_mm_week: number | null
           pressure_mean_week: number | null
           rod_average: number | null
@@ -1409,42 +1493,6 @@ export type Database = {
           week_num: number | null
           wind_speed_mean_week: number | null
           year: number | null
-        }
-        Insert: {
-          best_spots?: Json | null
-          content?: string | null
-          date?: string | null
-          flies?: Json | null
-          humidity_mean_week?: number | null
-          methods?: Json | null
-          precip_total_mm_week?: number | null
-          pressure_mean_week?: number | null
-          rod_average?: never
-          summary?: string | null
-          t_mean_week?: number | null
-          user_id?: string | null
-          venue?: string | null
-          week_num?: never
-          wind_speed_mean_week?: number | null
-          year?: never
-        }
-        Update: {
-          best_spots?: Json | null
-          content?: string | null
-          date?: string | null
-          flies?: Json | null
-          humidity_mean_week?: number | null
-          methods?: Json | null
-          precip_total_mm_week?: number | null
-          pressure_mean_week?: number | null
-          rod_average?: never
-          summary?: string | null
-          t_mean_week?: number | null
-          user_id?: string | null
-          venue?: string | null
-          week_num?: never
-          wind_speed_mean_week?: number | null
-          year?: never
         }
         Relationships: []
       }
