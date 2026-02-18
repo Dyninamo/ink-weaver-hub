@@ -205,7 +205,7 @@ const DiaryEntry = () => {
         {/* Add Fish mode */}
         {addFishMode && (
           <>
-            <FishLogger diaryEntryId={id!} venue={entry.venue} onUpdate={fetchData} />
+            <FishLogger diaryEntryId={id!} venue={entry.venue} venueType={entry.venue_type || "stillwater"} onUpdate={fetchData} />
             <Button
               onClick={() => {
                 toast({ title: "Entry saved!", description: `${entry.total_fish} fish logged.` });
