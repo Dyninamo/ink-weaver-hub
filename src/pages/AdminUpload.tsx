@@ -694,6 +694,134 @@ function TaxonomyUploadSection() {
   );
 }
 
+// ── Section: Diary Sessions Upload ──
+function DiarySessionsSection() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
+  const [progress, setProgress] = useState(0);
+
+  const upload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setStatus({ state: "error", message: "Select a JSON file first" });
+    setStatus({ state: "loading", message: "Reading file..." });
+    setProgress(0);
+
+    try {
+      const text = await file.text();
+      const records: any[] = JSON.parse(text);
+      if (!Array.isArray(records)) throw new Error("JSON must be an array");
+
+      const batchSize = 50;
+      const totalBatches = Math.ceil(records.length / batchSize);
+      let totalInserted = 0, totalFailed = 0;
+
+      for (let i = 0; i < totalBatches; i++) {
+        const batch = records.slice(i * batchSize, (i + 1) * batchSize);
+        setStatus({ state: "loading", message: `Uploading batch ${i + 1}/${totalBatches}... (${totalInserted} inserted)` });
+        setProgress(Math.round(((i + 1) / totalBatches) * 100));
+
+        const { data, error } = await supabase.functions.invoke("upload-diary-sessions", {
+          body: { sessions: batch },
+        });
+
+        if (error) { totalFailed += batch.length; continue; }
+        totalInserted += data.inserted ?? 0;
+        totalFailed += data.failed ?? 0;
+      }
+
+      setProgress(100);
+      setStatus({ state: totalFailed > 0 ? "error" : "done", message: `Done! ${totalInserted} inserted, ${totalFailed} failed out of ${records.length} records.` });
+    } catch (err: any) {
+      setStatus({ state: "error", message: err.message });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><Upload className="h-5 w-5" /> Upload Diary Sessions</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex items-center gap-3">
+          <Input ref={fileRef} type="file" accept=".json" className="max-w-xs" />
+          <Button onClick={upload} disabled={status.state === "loading"}>Upload</Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Upserts into fishing_sessions in batches of 50 (on conflict: id)</p>
+        {status.state === "loading" && (
+          <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+            <div className="bg-primary h-full transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        )}
+        <StatusBadge status={status} />
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Section: Diary Events Upload ──
+function DiaryEventsSection() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
+  const [progress, setProgress] = useState(0);
+
+  const upload = async () => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return setStatus({ state: "error", message: "Select a JSON file first" });
+    setStatus({ state: "loading", message: "Reading file..." });
+    setProgress(0);
+
+    try {
+      const text = await file.text();
+      const records: any[] = JSON.parse(text);
+      if (!Array.isArray(records)) throw new Error("JSON must be an array");
+
+      const batchSize = 100;
+      const totalBatches = Math.ceil(records.length / batchSize);
+      let totalInserted = 0, totalFailed = 0;
+
+      for (let i = 0; i < totalBatches; i++) {
+        const batch = records.slice(i * batchSize, (i + 1) * batchSize);
+        setStatus({ state: "loading", message: `Uploading batch ${i + 1}/${totalBatches}... (${totalInserted} inserted)` });
+        setProgress(Math.round(((i + 1) / totalBatches) * 100));
+
+        const { data, error } = await supabase.functions.invoke("upload-diary-events", {
+          body: { events: batch },
+        });
+
+        if (error) { totalFailed += batch.length; continue; }
+        totalInserted += data.inserted ?? 0;
+        totalFailed += data.failed ?? 0;
+      }
+
+      setProgress(100);
+      setStatus({ state: totalFailed > 0 ? "error" : "done", message: `Done! ${totalInserted} inserted, ${totalFailed} failed out of ${records.length} records.` });
+    } catch (err: any) {
+      setStatus({ state: "error", message: err.message });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><Upload className="h-5 w-5" /> Upload Diary Events</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex items-center gap-3">
+          <Input ref={fileRef} type="file" accept=".json" className="max-w-xs" />
+          <Button onClick={upload} disabled={status.state === "loading"}>Upload</Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Upserts into session_events in batches of 100 (on conflict: id)</p>
+        {status.state === "loading" && (
+          <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+            <div className="bg-primary h-full transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        )}
+        <StatusBadge status={status} />
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Main Page ──
 export default function AdminUpload() {
   return (
@@ -705,6 +833,8 @@ export default function AdminUpload() {
         </div>
         <a href="/admin/db-status" className="text-sm text-primary underline hover:no-underline">DB Status →</a>
       </div>
+      <DiarySessionsSection />
+      <DiaryEventsSection />
       <FishingReportsSection />
       <VenueSpotsSection />
       <BasicAdviceSection />
