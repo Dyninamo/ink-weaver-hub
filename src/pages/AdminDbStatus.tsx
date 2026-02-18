@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Database, ArrowLeft } from 'lucide-react';
+import { RefreshCw, Database, ArrowLeft, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface TableInfo {
@@ -63,6 +63,23 @@ export default function AdminDbStatus() {
 
   const totalRows = data?.tables.reduce((sum, t) => sum + (t.row_count ?? 0), 0) ?? 0;
 
+  const handleExport = () => {
+    if (!data) return;
+    const exportData = data.tables.map(t => ({
+      table_name: t.table_name,
+      row_count: t.row_count ?? 0,
+      columns: (t.columns || []).map(c => ({ name: c.column_name, type: c.data_type })),
+    }));
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `supabase_db_status_${dateStr}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const grouped = data?.tables.reduce<Record<SectionKey, TableInfo[]>>((acc, t) => {
     const cat = categorize(t.table_name);
     (acc[cat] ??= []).push(t);
@@ -78,10 +95,18 @@ export default function AdminDbStatus() {
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Database className="h-6 w-6" /> DB Status
         </h1>
-        <Button onClick={refresh} disabled={loading} className="ml-auto">
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          {data ? 'Refresh' : 'Load'}
-        </Button>
+        <div className="ml-auto flex gap-2">
+          {data && (
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export JSON
+            </Button>
+          )}
+          <Button onClick={refresh} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {data ? 'Refresh' : 'Load'}
+          </Button>
+        </div>
       </div>
 
       {data && (
