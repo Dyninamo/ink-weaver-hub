@@ -14,6 +14,7 @@ import ShareView from "./pages/ShareView";
 import Diary from "./pages/Diary";
 import DiaryNew from "./pages/DiaryNew";
 import DiaryEntry from "./pages/DiaryEntry";
+import DiarySetups from "./pages/DiarySetups";
 import NotFound from "./pages/NotFound";
 import AdminUpload from "./pages/AdminUpload";
 import AdminDbStatus from "./pages/AdminDbStatus";
@@ -70,6 +71,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <DiaryEntry />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/diary/settings/setups" 
+              element={
+                <ProtectedRoute>
+                  <DiarySetups />
                 </ProtectedRoute>
               } 
             />

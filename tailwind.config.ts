@@ -63,6 +63,17 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        diary: {
+          during: 'hsl(var(--diary-during-bg))',
+          catch: 'hsl(var(--diary-catch))',
+          blank: 'hsl(var(--diary-blank))',
+          change: 'hsl(var(--diary-change))',
+          gotaway: 'hsl(var(--diary-got-away))',
+        },
+      },
+      fontFamily: {
+        diary: ['DM Sans', 'sans-serif'],
+        mono: ['Space Mono', 'monospace'],
       },
       backgroundImage: {
         'gradient-water': 'var(--gradient-water)',
