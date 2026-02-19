@@ -109,7 +109,7 @@ export default function BlankModal({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[420px]">
         <DialogHeader>
-          <DialogTitle>Log Blank Period</DialogTitle>
+          <DialogTitle className="font-diary">Log Blank Period</DialogTitle>
         </DialogHeader>
 
         {/* Phase 1: Setup check */}

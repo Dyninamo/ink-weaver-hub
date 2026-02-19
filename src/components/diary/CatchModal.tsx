@@ -191,7 +191,7 @@ export default function CatchModal({
         {/* Header with species pill */}
         <div className="p-4 pb-2">
           <div className="flex items-center justify-between mb-3">
-            <DialogTitle className="text-lg">Log Catch</DialogTitle>
+            <DialogTitle className="text-lg font-diary">Log Catch</DialogTitle>
             <div className="flex gap-1 flex-wrap justify-end max-w-[260px]">
               {SPECIES_LIST.map((s) => (
                 <Button
@@ -214,7 +214,7 @@ export default function CatchModal({
                 key={i}
                 className={cn(
                   "h-1 flex-1 rounded-full transition-colors",
-                  i + 1 <= step ? "bg-primary" : "bg-muted"
+                  i + 1 <= step ? "bg-diary-catch" : "bg-muted"
                 )}
               />
             ))}
@@ -447,7 +447,7 @@ export default function CatchModal({
             </>
           ) : (
             <Button
-              className="flex-1 min-h-[52px] text-base"
+              className="flex-1 min-h-[52px] text-base bg-diary-catch hover:bg-diary-catch/90"
               onClick={handleSave}
               disabled={saving}
             >

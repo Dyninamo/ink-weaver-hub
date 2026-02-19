@@ -112,7 +112,7 @@ export default function ChangeSetupModal({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[420px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Change Setup</DialogTitle>
+          <DialogTitle className="font-diary">Change Setup</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -128,8 +128,8 @@ export default function ChangeSetupModal({
           </div>
 
           <div className="flex items-center gap-2 text-sm">
-            <ArrowRight className="h-4 w-4 text-primary" />
-            <span className="font-medium text-primary">Change to:</span>
+            <ArrowRight className="h-4 w-4 text-diary-change" />
+            <span className="font-medium text-diary-change">Change to:</span>
           </div>
 
           {/* Setup Cascade for new state */}
@@ -159,8 +159,8 @@ export default function ChangeSetupModal({
 
           {/* Diff summary */}
           {hasChanges && (
-            <div className="text-xs bg-muted/30 border border-border rounded-md p-3 space-y-1">
-              <p className="font-medium text-muted-foreground mb-1">Changes:</p>
+            <div className="text-xs bg-diary-change/10 border border-diary-change/20 rounded-md p-3 space-y-1">
+              <p className="font-medium text-diary-change mb-1">Changes:</p>
               {Object.entries(diff.to).map(([field, value]) => (
                 <p key={field}>
                   {field}: {String(diff.from[field] || "not set")} → <strong>{String(value)}</strong>
@@ -170,7 +170,7 @@ export default function ChangeSetupModal({
           )}
 
           <Button
-            className="w-full min-h-[48px]"
+            className="w-full min-h-[48px] bg-diary-change hover:bg-diary-change/90"
             onClick={handleSave}
             disabled={!hasChanges || saving}
           >
