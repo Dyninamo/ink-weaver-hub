@@ -32,3 +32,12 @@ verify_jwt = false
 
 [functions.upload-taxonomy]
 verify_jwt = false
+
+[functions.compute-session-summary]
+verify_jwt = false
+
+[functions.compute-angler-stats]
+verify_jwt = false
+
+[functions.compute-venue-stats]
+verify_jwt = false
