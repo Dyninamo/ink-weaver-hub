@@ -9,12 +9,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, Play, Bookmark, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import SetupCascade from "@/components/diary/SetupCascade";
+import FlyPicker from "@/components/diary/FlyPicker";
 import SpotPicker from "@/components/diary/SpotPicker";
 import {
   createSession,
   addEvent,
   type CurrentSetup,
   type RodSetup,
+  DEFAULT_SPECIES,
+  SPECIES_LIST,
+  formatWeight,
 } from "@/services/diaryService";
 
 type Phase = "header" | "setup";
@@ -121,7 +125,7 @@ export default function DiaryNew() {
       line_type: s.line_type || null,
       retrieve: s.retrieve || null,
       flies_on_cast: s.default_flies || null,
-      spot: null,
+      spot: null, // spot is venue-specific, not preset
       depth_zone: s.depth_zone || null,
     });
     setShowSavedSetups(false);
@@ -210,7 +214,7 @@ export default function DiaryNew() {
             <Button variant="ghost" size="icon" onClick={() => navigate("/diary")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-semibold">New Session</h1>
+            <h1 className="text-xl font-semibold font-diary">New Session</h1>
           </div>
 
           {/* Venue */}
@@ -390,7 +394,7 @@ export default function DiaryNew() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-semibold">Starting Setup</h1>
+            <h1 className="text-xl font-semibold font-diary">Starting Setup</h1>
             <p className="text-sm text-muted-foreground">{venue} · {sessionDate}</p>
           </div>
         </div>
@@ -462,7 +466,7 @@ export default function DiaryNew() {
         <Button
           onClick={handleStartSession}
           disabled={saving || !setup.style}
-          className="w-full min-h-[52px] text-base"
+          className="w-full min-h-[52px] text-base bg-diary-catch hover:bg-diary-catch/90"
         >
           {saving ? (
             "Starting..."
