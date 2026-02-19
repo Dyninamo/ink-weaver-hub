@@ -21,6 +21,13 @@ interface BlankModalProps {
   eventCount: number;
   onSaved: (event: any) => void;
   onChangeFirst: () => void; // opens ChangeSetupModal before blank
+  latestWeather?: {
+    temp: number;
+    wind_speed: number;
+    wind_dir: string;
+    pressure: number;
+    conditions?: string;
+  } | null;
 }
 
 const CONFIDENCE_LEVELS = [
@@ -47,6 +54,7 @@ export default function BlankModal({
   eventCount,
   onSaved,
   onChangeFirst,
+  latestWeather,
 }: BlankModalProps) {
   const [phase, setPhase] = useState<Phase>("setup_check");
   const [confidence, setConfidence] = useState<string | null>(null);
@@ -93,6 +101,11 @@ export default function BlankModal({
         flies_on_cast: currentSetup.flies_on_cast,
         spot: currentSetup.spot,
         depth_zone: currentSetup.depth_zone,
+        event_temp: latestWeather?.temp ?? null,
+        event_wind_speed: latestWeather?.wind_speed ?? null,
+        event_wind_dir: latestWeather?.wind_dir ?? null,
+        event_pressure: latestWeather?.pressure ?? null,
+        event_conditions: latestWeather?.conditions ?? null,
       });
 
       toast.success("Blank period logged");
