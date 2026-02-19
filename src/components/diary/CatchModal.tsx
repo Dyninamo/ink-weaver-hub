@@ -35,6 +35,13 @@ interface CatchModalProps {
   lastFlySize: number | null;
   eventCount: number;
   onSaved: (event: any, setupChanged?: boolean, newSetup?: CurrentSetup) => void;
+  latestWeather?: {
+    temp: number;
+    wind_speed: number;
+    wind_dir: string;
+    pressure: number;
+    conditions?: string;
+  } | null;
 }
 
 const HOOK_SIZES = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
@@ -54,6 +61,7 @@ export default function CatchModal({
   lastFlySize,
   eventCount,
   onSaved,
+  latestWeather,
 }: CatchModalProps) {
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -163,6 +171,11 @@ export default function CatchModal({
         flies_on_cast: currentSetup.flies_on_cast,
         spot: currentSetup.spot,
         depth_zone: currentSetup.depth_zone,
+        event_temp: latestWeather?.temp ?? null,
+        event_wind_speed: latestWeather?.wind_speed ?? null,
+        event_wind_dir: latestWeather?.wind_dir ?? null,
+        event_pressure: latestWeather?.pressure ?? null,
+        event_conditions: latestWeather?.conditions ?? null,
       });
 
       toast.success(`${weightDisplay} ${species} logged!`);

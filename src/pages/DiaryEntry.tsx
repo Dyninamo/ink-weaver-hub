@@ -28,9 +28,11 @@ import {
   deleteSession,
   calculateSessionStats,
   formatWeight,
+  pollSessionWeather,
   type FishingSession,
   type SessionEvent,
   type CurrentSetup,
+  type WeatherSnapshot,
 } from "@/services/diaryService";
 
 type ViewTab = "timeline" | "fish" | "stats";
@@ -73,6 +75,7 @@ export default function DiaryEntry() {
 
   // Expanded events
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+  const [latestWeather, setLatestWeather] = useState<WeatherSnapshot | null>(null);
 
   // Load session + events
   const loadData = useCallback(async () => {
@@ -125,6 +128,25 @@ export default function DiaryEntry() {
   const stats = calculateSessionStats(events);
   const isActive = session?.is_active === true;
 
+  // Weather polling — every 15 minutes while session is active
+  useEffect(() => {
+    if (!id || !isActive) return;
+    let mounted = true;
+
+    async function poll() {
+      const snapshot = await pollSessionWeather(id!);
+      if (mounted && snapshot) setLatestWeather(snapshot);
+    }
+
+    poll(); // immediate first poll on mount
+    const interval = setInterval(poll, 15 * 60 * 1000); // then every 15 min
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [id, isActive]);
+
   // --- Event handlers ---
 
   function handleCatchSaved(event: any, setupChanged?: boolean, newSetup?: CurrentSetup) {
@@ -137,15 +159,18 @@ export default function DiaryEntry() {
     }
 
     loadData();
+    if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
   }
 
   function handleBlankSaved() {
     loadData();
+    if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
   }
 
   function handleChangeSaved(_event: any, newSetup: CurrentSetup) {
     setCurrentSetup(newSetup);
     loadData();
+    if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
   }
 
   async function handleImplicitChangeAccept() {
@@ -237,6 +262,23 @@ export default function DiaryEntry() {
   const bgClass = isActive ? "bg-[#0F1A24] text-[#E8EFF5]" : "bg-background";
   const mutedClass = isActive ? "text-[#8BA3BB]" : "text-muted-foreground";
 
+  // Display weather: prefer live polled data for active sessions
+  const displayWeather = isActive && latestWeather
+    ? {
+        temp: latestWeather.temp,
+        windText: `${latestWeather.wind_speed}mph ${latestWeather.wind_dir}`,
+        conditions: latestWeather.conditions || null,
+        isLive: true,
+      }
+    : {
+        temp: session.weather_temp,
+        windText: session.weather_wind_speed
+          ? `${session.weather_wind_speed}mph ${session.weather_wind_dir || ""}`
+          : null,
+        conditions: session.weather_conditions,
+        isLive: false,
+      };
+
   return (
     <div className={cn("min-h-screen pb-32", bgClass)}>
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
@@ -266,24 +308,26 @@ export default function DiaryEntry() {
         </div>
 
         {/* Weather bar */}
-        {(session.weather_temp || session.weather_wind_speed) && (
+        {(displayWeather.temp != null || displayWeather.windText) && (
           <div className={cn(
             "flex items-center gap-4 text-xs px-3 py-2 rounded-md",
             isActive ? "bg-[#162230]" : "bg-muted/50"
           )}>
-            {session.weather_temp && (
+            {displayWeather.temp != null && (
               <span className="flex items-center gap-1">
-                <Thermometer className="h-3.5 w-3.5" /> {session.weather_temp}°C
+                <Thermometer className="h-3.5 w-3.5" /> {displayWeather.temp}°C
               </span>
             )}
-            {session.weather_wind_speed && (
+            {displayWeather.windText && (
               <span className="flex items-center gap-1">
-                <Wind className="h-3.5 w-3.5" />
-                {session.weather_wind_speed}mph {session.weather_wind_dir || ""}
+                <Wind className="h-3.5 w-3.5" /> {displayWeather.windText}
               </span>
             )}
-            {session.weather_conditions && (
-              <span>{session.weather_conditions}</span>
+            {displayWeather.conditions && (
+              <span>{displayWeather.conditions}</span>
+            )}
+            {displayWeather.isLive && (
+              <span className="ml-auto text-[10px] text-diary-catch/60">Live</span>
             )}
           </div>
         )}
@@ -639,6 +683,7 @@ export default function DiaryEntry() {
         lastFlySize={lastFlySize}
         eventCount={events.length}
         onSaved={handleCatchSaved}
+        latestWeather={latestWeather}
       />
 
       <BlankModal
@@ -652,6 +697,7 @@ export default function DiaryEntry() {
           setBlankOpen(false);
           setChangeOpen(true);
         }}
+        latestWeather={latestWeather}
       />
 
       <ChangeSetupModal
@@ -663,6 +709,7 @@ export default function DiaryEntry() {
         currentSetup={currentSetup}
         eventCount={events.length}
         onSaved={handleChangeSaved}
+        latestWeather={latestWeather}
       />
 
       {/* Implicit Change Prompt */}

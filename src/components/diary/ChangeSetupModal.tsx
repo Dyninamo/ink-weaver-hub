@@ -26,6 +26,13 @@ interface ChangeSetupModalProps {
   currentSetup: CurrentSetup;
   eventCount: number;
   onSaved: (event: any, newSetup: CurrentSetup) => void;
+  latestWeather?: {
+    temp: number;
+    wind_speed: number;
+    wind_dir: string;
+    pressure: number;
+    conditions?: string;
+  } | null;
 }
 
 export default function ChangeSetupModal({
@@ -37,6 +44,7 @@ export default function ChangeSetupModal({
   currentSetup,
   eventCount,
   onSaved,
+  latestWeather,
 }: ChangeSetupModalProps) {
   const [newSetup, setNewSetup] = useState<CurrentSetup>(currentSetup);
   const [reason, setReason] = useState("");
@@ -95,6 +103,11 @@ export default function ChangeSetupModal({
         flies_on_cast: newSetup.flies_on_cast,
         spot: newSetup.spot,
         depth_zone: newSetup.depth_zone,
+        event_temp: latestWeather?.temp ?? null,
+        event_wind_speed: latestWeather?.wind_speed ?? null,
+        event_wind_dir: latestWeather?.wind_dir ?? null,
+        event_pressure: latestWeather?.pressure ?? null,
+        event_conditions: latestWeather?.conditions ?? null,
       });
 
       const changedFields = Object.keys(diff.to).join(", ");

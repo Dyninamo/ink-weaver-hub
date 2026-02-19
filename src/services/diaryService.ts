@@ -155,12 +155,58 @@ export async function endSession(id: string, wrapUp: {
   const endTime = new Date();
   const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
 
-  return updateSession(id, {
+  const result = await updateSession(id, {
     ...wrapUp,
     end_time: endTime.toISOString(),
     duration_minutes: durationMinutes,
     is_active: false,
   });
+
+  // Fire-and-forget: compute session summary → cascades to angler + venue stats
+  triggerSessionSummary(id);
+
+  return result;
+}
+
+// ============================================================
+// WEATHER POLLING
+// ============================================================
+
+export interface WeatherSnapshot {
+  time: string;        // HH:MM local time
+  temp: number;        // Celsius
+  wind_speed: number;  // mph
+  wind_dir: string;    // 16-point compass (N, NNE, NE, etc.)
+  precip: number;      // mm/hr
+  pressure: number;    // hPa
+  humidity: number;    // %
+  conditions?: string; // e.g. "overcast clouds"
+}
+
+/** Poll current weather for an active session and append to its weather_log */
+export async function pollSessionWeather(sessionId: string): Promise<WeatherSnapshot | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke('poll-session-weather', {
+      body: { session_id: sessionId },
+    });
+    if (error) throw error;
+    return data?.snapshot || null;
+  } catch (err) {
+    console.error('Weather poll failed:', err);
+    return null;
+  }
+}
+
+/** Fire-and-forget: trigger compute-session-summary Edge Function */
+export async function triggerSessionSummary(sessionId: string): Promise<void> {
+  try {
+    await supabase.functions.invoke('compute-session-summary', {
+      body: { session_id: sessionId },
+    });
+  } catch (err) {
+    console.error('Session summary computation failed:', err);
+    // Non-critical — summary can be recomputed later via admin backfill
+  }
 }
 
 export async function deleteSession(id: string) {
