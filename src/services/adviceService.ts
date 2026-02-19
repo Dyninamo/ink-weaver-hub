@@ -63,7 +63,44 @@ export interface FishingAdviceResponse {
   model_info?: ModelInfo
 }
 
-// Free tier: calls get-fishing-advice without userId for unauthenticated fallback
+// v2: calls get-ai-advice-v2 which orchestrates all 4 processes internally
+export async function getAdviceV2(
+  venue: string,
+  date: string,
+): Promise<FishingAdviceResponse> {
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  const { data, error } = await supabase.functions.invoke('get-ai-advice-v2', {
+    body: { venue_name: venue, target_date: date, user_id: user?.id ?? null }
+  })
+  
+  if (error) throw new Error(error.message || 'Failed to get advice')
+
+  // Normalise the v2 response into the FishingAdviceResponse shape
+  const v2 = data as any
+  const weatherData = v2.weather ?? {}
+  return {
+    advice: v2.advice,
+    prediction: v2.prediction,
+    weatherData: {
+      temperature: weatherData.temp ?? 0,
+      windSpeed: weatherData.wind_speed ?? 0,
+      windDirection: weatherData.wind_dir ?? '',
+      conditions: weatherData.conditions ?? '',
+      precipitation: 0,
+      precipitationProbability: 0,
+      humidity: weatherData.humidity ?? 0,
+      pressure: weatherData.pressure ?? 0,
+    },
+    queryId: v2.queryId,
+    tier: 'premium',
+    season: v2.season,
+    reportCount: v2.reportCount,
+    model_info: v2.model_info,
+  } as FishingAdviceResponse
+}
+
+// Legacy: calls original get-fishing-advice
 export async function getBasicAdvice(
   venue: string,
   date: string,
@@ -78,37 +115,17 @@ export async function getBasicAdvice(
   return data as FishingAdviceResponse
 }
 
-// Premium tier: AI-powered with ML model + Claude
-export async function getPremiumAdvice(
-  venue: string,
-  date: string,
-  weatherData: { temperature: number; windSpeed: number; precipitation: number; pressure?: number; humidity?: number }
-): Promise<FishingAdviceResponse> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-  
-  const { data, error } = await supabase.functions.invoke('get-fishing-advice', {
-    body: { venue, date, userId: user.id, weatherData }
-  })
-  
-  if (error) throw new Error(error.message || 'Failed to get advice')
-  return data as FishingAdviceResponse
-}
-
-// Smart router: tries premium first, falls back to free
+// Smart router: uses v2 for all users (falls back to legacy on error)
 export async function getFishingAdvice(
   venue: string,
   date: string,
-  weatherData: { temperature: number; windSpeed: number; precipitation: number; pressure?: number; humidity?: number },
-  isPremium: boolean = false
+  _weatherData?: { temperature: number; windSpeed: number; precipitation: number; pressure?: number; humidity?: number },
+  _isPremium: boolean = false
 ): Promise<FishingAdviceResponse> {
-  if (isPremium) {
-    try {
-      return await getPremiumAdvice(venue, date, weatherData)
-    } catch (err) {
-      console.warn('Premium advice failed, falling back to basic:', err)
-      return await getBasicAdvice(venue, date, weatherData)
-    }
+  try {
+    return await getAdviceV2(venue, date)
+  } catch (err) {
+    console.warn('v2 advice failed, falling back to legacy:', err)
+    return await getBasicAdvice(venue, date, _weatherData)
   }
-  return await getBasicAdvice(venue, date, weatherData)
 }
