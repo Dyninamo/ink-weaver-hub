@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      angler_venue_stats: {
+        Row: {
+          catch_rate: number | null
+          fish_per_hour: number | null
+          general_ability: number | null
+          id: string
+          last_session_date: string | null
+          technique_stats: Json
+          total_fish: number
+          total_hours: number
+          total_sessions: number
+          updated_at: string
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          catch_rate?: number | null
+          fish_per_hour?: number | null
+          general_ability?: number | null
+          id?: string
+          last_session_date?: string | null
+          technique_stats?: Json
+          total_fish?: number
+          total_hours?: number
+          total_sessions?: number
+          updated_at?: string
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          catch_rate?: number | null
+          fish_per_hour?: number | null
+          general_ability?: number | null
+          id?: string
+          last_session_date?: string | null
+          technique_stats?: Json
+          total_fish?: number
+          total_hours?: number
+          total_sessions?: number
+          updated_at?: string
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "angler_venue_stats_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       basic_advice: {
         Row: {
           advice_text: string
@@ -189,6 +242,7 @@ export type Database = {
           venue_name: string
           venue_type: string | null
           weather_conditions: string | null
+          weather_log: Json | null
           weather_pressure: number | null
           weather_temp: number | null
           weather_wind_dir: string | null
@@ -213,6 +267,7 @@ export type Database = {
           venue_name: string
           venue_type?: string | null
           weather_conditions?: string | null
+          weather_log?: Json | null
           weather_pressure?: number | null
           weather_temp?: number | null
           weather_wind_dir?: string | null
@@ -237,6 +292,7 @@ export type Database = {
           venue_name?: string
           venue_type?: string | null
           weather_conditions?: string | null
+          weather_log?: Json | null
           weather_pressure?: number | null
           weather_temp?: number | null
           weather_wind_dir?: string | null
@@ -1057,6 +1113,78 @@ export type Database = {
           },
         ]
       }
+      session_summaries: {
+        Row: {
+          blank_confidence: string | null
+          blanked: boolean
+          created_at: string
+          fish_per_hour: number | null
+          id: string
+          is_private: boolean
+          satisfaction_score: number | null
+          session_date: string
+          session_hours: number | null
+          session_id: string
+          setup_change_log: Json
+          setup_changes_count: number
+          total_fish: number
+          user_id: string
+          venue_id: string
+          weather_periods: Json
+        }
+        Insert: {
+          blank_confidence?: string | null
+          blanked?: boolean
+          created_at?: string
+          fish_per_hour?: number | null
+          id?: string
+          is_private?: boolean
+          satisfaction_score?: number | null
+          session_date: string
+          session_hours?: number | null
+          session_id: string
+          setup_change_log?: Json
+          setup_changes_count?: number
+          total_fish?: number
+          user_id: string
+          venue_id: string
+          weather_periods?: Json
+        }
+        Update: {
+          blank_confidence?: string | null
+          blanked?: boolean
+          created_at?: string
+          fish_per_hour?: number | null
+          id?: string
+          is_private?: boolean
+          satisfaction_score?: number | null
+          session_date?: string
+          session_hours?: number | null
+          session_id?: string
+          setup_change_log?: Json
+          setup_changes_count?: number
+          total_fish?: number
+          user_id?: string
+          venue_id?: string
+          weather_periods?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_summaries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_summaries_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       share_views: {
         Row: {
           id: string
@@ -1424,6 +1552,53 @@ export type Database = {
           venue_name?: string
         }
         Relationships: []
+      }
+      venue_stats: {
+        Row: {
+          diary_date_range: string | null
+          mean_catch_rate: number | null
+          mean_fish_per_hour: number | null
+          report_date_range: string | null
+          total_anglers: number
+          total_diary_sessions: number
+          total_reports: number
+          total_sessions: number
+          updated_at: string
+          venue_id: string
+        }
+        Insert: {
+          diary_date_range?: string | null
+          mean_catch_rate?: number | null
+          mean_fish_per_hour?: number | null
+          report_date_range?: string | null
+          total_anglers?: number
+          total_diary_sessions?: number
+          total_reports?: number
+          total_sessions?: number
+          updated_at?: string
+          venue_id: string
+        }
+        Update: {
+          diary_date_range?: string | null
+          mean_catch_rate?: number | null
+          mean_fish_per_hour?: number | null
+          report_date_range?: string | null
+          total_anglers?: number
+          total_diary_sessions?: number
+          total_reports?: number
+          total_sessions?: number
+          updated_at?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_stats_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: true
+            referencedRelation: "venue_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       verification_codes: {
         Row: {
