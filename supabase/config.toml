@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.compute-venue-stats]
 verify_jwt = false
+
+[functions.get-ai-advice-v2]
+verify_jwt = false

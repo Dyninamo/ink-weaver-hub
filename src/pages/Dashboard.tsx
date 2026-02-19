@@ -13,7 +13,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import DebugPanel from "@/components/DebugPanel";
-import { getWeatherForecast } from "@/services/weatherService";
 import { getFishingAdvice, AdviceServiceError } from "@/services/adviceService";
 import type { FishingAdviceResponse } from "@/services/adviceService";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -84,30 +83,11 @@ const Dashboard = () => {
     const dateString = format(date, "yyyy-MM-dd");
     
     try {
-      // Step 1: Fetch weather forecast
-      setLoadingMessage("Fetching weather forecast...");
-      let weatherData;
+      // v2: weather fetching is handled inside the edge function
+      setLoadingMessage("Analysing conditions and fetching weather...");
+      const adviceData: FishingAdviceResponse = await getFishingAdvice(venue, dateString);
       
-      try {
-        weatherData = await getWeatherForecast(venue, dateString);
-        
-        // Check if we got fallback data (basic heuristic - no precipitation or pressure data suggests mock data)
-        if (weatherData.humidity === 0 || weatherData.pressure === 0) {
-          setWeatherWarning(true);
-        }
-      } catch (weatherError) {
-        console.warn("Weather API failed, using fallback data:", weatherError);
-        setWeatherWarning(true);
-        // getWeatherForecast already returns fallback data on error
-        weatherData = await getWeatherForecast(venue, dateString);
-      }
-      
-      // Step 2: Get fishing advice (free tier for now)
-      setLoadingMessage("Analysing conditions...");
-      const isPremium = false;
-      const adviceData: FishingAdviceResponse = await getFishingAdvice(venue, dateString, weatherData, isPremium);
-      
-      // Step 3: Navigate to results
+      // Navigate to results
       navigate("/results", {
         state: {
           venue,
@@ -115,7 +95,7 @@ const Dashboard = () => {
           advice: adviceData.advice,
           prediction: adviceData.prediction,
           locations: adviceData.locations,
-          weatherData: weatherData,
+          weatherData: adviceData.weatherData,
           queryId: adviceData.queryId,
           tier: adviceData.tier,
           season: adviceData.season,
