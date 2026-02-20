@@ -264,7 +264,7 @@ serve(async (req) => {
   }
 
   try {
-    const { venue_name, target_date, user_id, debug, forecast_override } = await req.json();
+    const { venue_name, target_date, user_id, debug, forecast_override, skip_ai } = await req.json();
 
     if (!venue_name || !target_date) {
       return new Response(
@@ -766,51 +766,60 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
 
     // ── Step 5: Call AI ────────────────────────────────────────
     let adviceText = "";
-    try {
-      const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-      if (lovableKey) {
-        const aiResponse = await fetch(
-          "https://ai.gateway.lovable.dev/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${lovableKey}`,
-            },
-            body: JSON.stringify({
-              model: "google/gemini-2.5-flash",
-              messages: [{ role: "user", content: aiPrompt }],
-              max_tokens: 2000,
-            }),
-          }
-        );
 
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json();
-          adviceText = aiData.choices?.[0]?.message?.content ?? "";
-        } else {
-          const errBody = await aiResponse.text();
-          console.error("AI gateway error:", aiResponse.status, errBody);
-        }
-      }
-    } catch (aiErr) {
-      console.error("AI call failed:", aiErr);
-    }
-
-    // Fallback if AI fails
-    if (!adviceText) {
-      adviceText = `## What to Expect\nBased on ${topReports.length} reports for ${venue_name} in ${season}, the predicted rod average is ${rodAvg.predicted} fish (${rodAvg.confidence} confidence). `;
-      adviceText += `Top methods: ${rankedMethods.slice(0, 3).map((m) => m.name).join(", ") || "none recorded"}. `;
+    if (skip_ai) {
+      // Skip AI for testing — return structured fallback only
+      adviceText = `## What to Expect\nBased on ${topReports.length} reports for ${venue_name} in ${season}, the predicted rod average is ${rodAvg.predicted} fish (${rodAvg.confidence} confidence).\n\n`;
+      adviceText += `Top methods: ${rankedMethods.slice(0, 3).map((m) => m.name).join(", ") || "none recorded"}.\n`;
       adviceText += `Top flies: ${rankedFlies.slice(0, 3).map((f) => f.name).join(", ") || "none recorded"}.\n\n`;
-      if (tacticalOutput.session_count > 0) {
-        adviceText += `## What's Been Working\nDiary data from ${tacticalOutput.session_count} sessions shows: `;
-        adviceText += tacticalOutput.techniques.slice(0, 3).map((t: any) => t.technique).join(", ") || "various techniques";
-        adviceText += ".\n\n";
+      adviceText += `[AI generation skipped — test mode]`;
+    } else {
+      try {
+        const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+        if (lovableKey) {
+          const aiResponse = await fetch(
+            "https://ai.gateway.lovable.dev/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${lovableKey}`,
+              },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash",
+                messages: [{ role: "user", content: aiPrompt }],
+                max_tokens: 2000,
+              }),
+            }
+          );
+
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            adviceText = aiData.choices?.[0]?.message?.content ?? "";
+          } else {
+            const errBody = await aiResponse.text();
+            console.error("AI gateway error:", aiResponse.status, errBody);
+          }
+        }
+      } catch (aiErr) {
+        console.error("AI call failed:", aiErr);
       }
-      if (personalOutput.has_personal) {
-        adviceText += `## For You\nYour catch rate at ${venue_name} is ${personalOutput.catch_rate} fish/session across ${personalOutput.total_sessions} sessions.\n`;
-      } else {
-        adviceText += `## For You\n${personalOutput.message || "Log sessions to unlock personalised advice."}\n`;
+
+      // Fallback if AI fails
+      if (!adviceText) {
+        adviceText = `## What to Expect\nBased on ${topReports.length} reports for ${venue_name} in ${season}, the predicted rod average is ${rodAvg.predicted} fish (${rodAvg.confidence} confidence). `;
+        adviceText += `Top methods: ${rankedMethods.slice(0, 3).map((m) => m.name).join(", ") || "none recorded"}. `;
+        adviceText += `Top flies: ${rankedFlies.slice(0, 3).map((f) => f.name).join(", ") || "none recorded"}.\n\n`;
+        if (tacticalOutput.session_count > 0) {
+          adviceText += `## What's Been Working\nDiary data from ${tacticalOutput.session_count} sessions shows: `;
+          adviceText += tacticalOutput.techniques.slice(0, 3).map((t: any) => t.technique).join(", ") || "various techniques";
+          adviceText += ".\n\n";
+        }
+        if (personalOutput.has_personal) {
+          adviceText += `## For You\nYour catch rate at ${venue_name} is ${personalOutput.catch_rate} fish/session across ${personalOutput.total_sessions} sessions.\n`;
+        } else {
+          adviceText += `## For You\n${personalOutput.message || "Log sessions to unlock personalised advice."}\n`;
+        }
       }
     }
 
