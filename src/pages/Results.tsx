@@ -202,11 +202,29 @@ const Results = () => {
                 <h2 className="text-2xl font-bold text-foreground">Fishing Advice</h2>
               </div>
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <div
-                  className="prose prose-sm max-w-none text-foreground"
-                  style={{ fontSize: "16px", lineHeight: "1.7", whiteSpace: "pre-line" }}
-                >
-                  {advice}
+                <div className="space-y-3 text-foreground" style={{ fontSize: "16px", lineHeight: "1.7" }}>
+                  {advice.split('\n').map((line, i) => {
+                    if (line.startsWith('### ')) {
+                      return <h3 key={i} className="text-lg font-bold text-foreground mt-4 mb-1">{line.replace('### ', '')}</h3>;
+                    }
+                    if (line.startsWith('## ')) {
+                      return <h2 key={i} className="text-xl font-bold text-foreground mt-4 mb-1">{line.replace('## ', '')}</h2>;
+                    }
+                    if (line.trim() === '') {
+                      return <div key={i} className="h-2" />;
+                    }
+                    // Render inline bold (**text**)
+                    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+                    return (
+                      <p key={i}>
+                        {parts.map((part, j) =>
+                          part.startsWith('**') && part.endsWith('**')
+                            ? <strong key={j}>{part.slice(2, -2)}</strong>
+                            : part
+                        )}
+                      </p>
+                    );
+                  })}
                 </div>
               </div>
             </Card>
