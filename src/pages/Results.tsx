@@ -1,22 +1,30 @@
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowLeft, Fish, MapPin, Wind, Thermometer, Clock,
-  TrendingUp, Target, User, BarChart3, Shield,
+  TrendingUp, Target, User, BarChart3, Shield, ShoppingBag, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AdviceV2Response, FishingAdviceResponse } from "@/services/adviceService";
+import FlySelector from "@/components/FlySelector";
+import { enrichFliesForSelector } from "@/utils/enrichFlies";
+import { MOCK_FLIES } from "@/data/mockFlies";
+import type { RecommendedFly } from "@/types/flySelector";
 
 export default function Results() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [showFlySelector, setShowFlySelector] = useState(false);
+  const [selectorFlies, setSelectorFlies] = useState<RecommendedFly[]>([]);
+  const [loadingFlies, setLoadingFlies] = useState(false);
+
   const state = location.state as {
     adviceV2?: AdviceV2Response;
     advice?: FishingAdviceResponse;
     venue?: string;
     date?: string;
-    // Legacy flat fields
     advice_text?: string;
     prediction?: any;
     weatherData?: any;
@@ -51,6 +59,31 @@ export default function Results() {
   const confidence = v2?.confidence;
   const season = v2?.season ?? v1?.season ?? (state as any).season ?? "";
   const reportCount = v2?.reportCount ?? v1?.reportCount ?? 0;
+
+
+  async function handleOrderFlies() {
+    setLoadingFlies(true);
+    try {
+      const tacticalFlies = tactical?.flies ?? [];
+      const predictionFlies = prediction?.flies ?? [];
+
+      let flies: RecommendedFly[];
+      if (tacticalFlies.length > 0) {
+        flies = await enrichFliesForSelector(tacticalFlies, predictionFlies);
+      } else {
+        flies = MOCK_FLIES;
+      }
+
+      setSelectorFlies(flies);
+      setShowFlySelector(true);
+    } catch (err) {
+      console.error("Failed to enrich flies:", err);
+      setSelectorFlies(MOCK_FLIES);
+      setShowFlySelector(true);
+    } finally {
+      setLoadingFlies(false);
+    }
+  }
 
   function formatDate(dateStr: string): string {
     try {
@@ -502,6 +535,31 @@ export default function Results() {
           </Card>
         )}
 
+        {/* Order Flies */}
+        <div className="text-center space-y-2">
+          <Button
+            onClick={handleOrderFlies}
+            disabled={loadingFlies}
+            className="min-h-[44px] px-8 text-base"
+            size="lg"
+          >
+            {loadingFlies ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading flies...
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="h-4 w-4 mr-2" /> Order Flies
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {(tactical?.flies?.length ?? 0) > 0
+              ? "Based on diary session data for this venue"
+              : "Demo selection — log sessions to get personalised picks"}
+          </p>
+        </div>
+
         {/* Back / New Query button */}
         <Button
           variant="outline"
@@ -510,6 +568,16 @@ export default function Results() {
         >
           <ArrowLeft className="h-4 w-4 mr-2" /> New Query
         </Button>
+
+        {/* Fly Selector Modal */}
+        {showFlySelector && selectorFlies.length > 0 && (
+          <FlySelector
+            flies={selectorFlies}
+            venueName={state.venue ?? ""}
+            tripDate={state.date ?? ""}
+            onClose={() => setShowFlySelector(false)}
+          />
+        )}
       </div>
     </div>
   );
