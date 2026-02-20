@@ -18,6 +18,7 @@ import DiarySetups from "./pages/DiarySetups";
 import NotFound from "./pages/NotFound";
 import AdminUpload from "./pages/AdminUpload";
 import AdminDbStatus from "./pages/AdminDbStatus";
+import AdminTestAdvice from "./pages/AdminTestAdvice";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -85,6 +86,7 @@ const App = () => (
             <Route path="/share/:token" element={<ShareView />} />
             <Route path="/admin/upload" element={<AdminUpload />} />
             <Route path="/admin/db-status" element={<AdminDbStatus />} />
+            <Route path="/admin/test-advice" element={<AdminTestAdvice />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
