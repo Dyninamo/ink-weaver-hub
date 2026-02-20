@@ -91,19 +91,31 @@ function getWindQuadrant(dir: string): string {
   return q[dir] || "N";
 }
 
+/** Categorise hourly precipitation rate (mm/hr) */
 function precipCatHourly(mm: number): number {
-  if (mm <= 0) return 0;
-  if (mm < 1) return 1;
-  if (mm <= 4) return 2;
-  return 3;
+  if (mm == null || mm < 0.1) return 0;  // Dry
+  if (mm < 1) return 1;                  // Light
+  if (mm < 4) return 2;                  // Moderate
+  return 3;                               // Heavy
 }
 
+/** Categorise weekly precipitation total (mm/week) */
 function precipCatWeekly(mm: number | null): number {
-  if (!mm || mm <= 0) return 0;
-  if (mm < 5) return 1;
-  if (mm <= 25) return 2;
-  return 3;
+  if (mm == null || mm < 2) return 0;    // Dry
+  if (mm < 10) return 1;                 // Light
+  if (mm < 25) return 2;                 // Moderate
+  return 3;                               // Heavy
 }
+
+/** Categorise daily precipitation total (mm/day) */
+function precipCatDaily(mm: number): number {
+  if (mm == null || mm < 0.5) return 0;  // Dry
+  if (mm < 3) return 1;                  // Light
+  if (mm < 8) return 2;                  // Moderate
+  return 3;                               // Heavy
+}
+
+const PRECIP_CAT_NAMES = ["Dry", "Light", "Moderate", "Heavy"];
 
 function degreesToCompass(deg: number): string {
   const dirs = [
@@ -252,7 +264,7 @@ serve(async (req) => {
   }
 
   try {
-    const { venue_name, target_date, user_id } = await req.json();
+    const { venue_name, target_date, user_id, debug, forecast_override } = await req.json();
 
     if (!venue_name || !target_date) {
       return new Response(
@@ -341,7 +353,22 @@ serve(async (req) => {
       };
     }
 
-    if (lat && lon && daysOut >= 0 && daysOut <= 5) {
+    // ── Override forecast for testing ─────────────────────────
+    if (forecast_override) {
+      const fo = forecast_override;
+      const windMph = fo.wind_speed_mph ?? 10;
+      forecast = {
+        temp: fo.temp ?? 10,
+        wind_speed_ms: windMph / 2.237,
+        wind_speed_mph: windMph,
+        wind_dir: fo.wind_dir ?? "W",
+        precip_mm_hr: fo.precip_mm_3h != null ? fo.precip_mm_3h / 3 : (fo.precip_mm_hr ?? 0),
+        pressure: fo.pressure ?? 1013,
+        humidity: fo.humidity ?? 70,
+        conditions: fo.conditions ?? "test override",
+        is_historical: false,
+      };
+    } else if (lat && lon && daysOut >= 0 && daysOut <= 5) {
       const apiKey = Deno.env.get("OPENWEATHER_API_KEY");
       const owmUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
       const owmRes = await fetch(owmUrl);
@@ -420,15 +447,36 @@ serve(async (req) => {
       isWithinWeekWindow(r.date, targetWeek, weekWindow)
     );
 
+    // Compute combined weight (weather distance + recency)
     const weightedReports = seasonalReports.map((r) => {
       const wDist = weatherDistanceReport(forecast, r, rodParams);
       const wRecency = recencyWeight(r.date, target_date, rodParams.year_decay);
       const weight = (1 / (0.05 + wDist)) * wRecency;
-      return { ...r, weight };
+      return { ...r, weight, _distance: wDist, _recency: wRecency };
     });
 
+    // Sort by weight descending and take top N
     weightedReports.sort((a, b) => b.weight - a.weight);
     const topReports = weightedReports.slice(0, rodParams.top_n * 3);
+
+    // Build debug candidates (sorted by distance for easier comparison)
+    const debugCandidates = debug
+      ? [...weightedReports]
+          .sort((a, b) => a._distance - b._distance)
+          .slice(0, rodParams.top_n)
+          .map((r) => ({
+            date: r.date,
+            rod_average: r.rod_average,
+            distance: Math.round(r._distance * 10000) / 10000,
+            weight: Math.round(r.weight * 1000) / 1000,
+            recency: Math.round(r._recency * 1000) / 1000,
+            precip_mm_week: r.precip_total_mm_week,
+            precip_cat: precipCatWeekly(r.precip_total_mm_week),
+            precip_cat_name: PRECIP_CAT_NAMES[precipCatWeekly(r.precip_total_mm_week)],
+            temp: r.t_mean_week,
+            wind: r.wind_speed_mean_week,
+          }))
+      : null;
 
     const rodAvg = predictRodAverage(topReports);
     const rankedMethods = rankItems(topReports, "methods", methodsParams.top_n);
@@ -841,6 +889,35 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
         data_quality: venueProfile?.data_quality_flag ?? "unknown",
         character_notes: venueProfile?.character_notes ?? null,
       },
+      // Debug data (only included when debug=true)
+      ...(debug ? {
+        debug: {
+          forecast_used: {
+            temp: forecast.temp,
+            wind_speed_ms: forecast.wind_speed_ms,
+            wind_speed_mph: forecast.wind_speed_mph,
+            wind_dir: forecast.wind_dir,
+            precip_mm_hr: forecast.precip_mm_hr,
+            precip_cat: precipCatHourly(forecast.precip_mm_hr),
+            precip_cat_name: PRECIP_CAT_NAMES[precipCatHourly(forecast.precip_mm_hr)],
+            pressure: forecast.pressure,
+            humidity: forecast.humidity,
+            is_historical: forecast.is_historical,
+            source: forecast_override ? "override" : (forecast.is_historical ? "historical" : (daysOut <= 5 ? "owm_forecast" : "owm_current")),
+          },
+          params_used: {
+            rod_average: { ...rodParams },
+            flies: { ...fliesParams },
+            methods: { ...methodsParams },
+            spots: { ...spotsParams },
+          },
+          candidate_reports: debugCandidates,
+          total_candidates_in_window: seasonalReports.length,
+          total_reports_for_venue: reports.length,
+          target_week: targetWeek,
+          week_window: weekWindow,
+        },
+      } : {}),
     };
 
     console.log(
