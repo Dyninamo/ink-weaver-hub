@@ -63,41 +63,77 @@ export interface FishingAdviceResponse {
   model_info?: ModelInfo
 }
 
+// ============================================================
+// ADVICE v2 — types and function
+// ============================================================
+
+export interface TacticalData {
+  techniques: { technique: string; weighted_catches: number; weighted_minutes: number; score: number }[];
+  flies: { fly: string; weighted_catches: number; score: number }[];
+  spots: { spot: string; weighted_catches: number; score: number }[];
+  catch_by_hour: Record<string, number>;
+  session_count: number;
+  period_count: number;
+}
+
+export interface PersonalData {
+  has_personal: boolean;
+  general_ability?: number;
+  total_sessions?: number;
+  total_fish?: number;
+  catch_rate?: number;
+  fish_per_hour?: number;
+  technique_stats?: Record<string, any>;
+  message?: string;
+}
+
+export interface ConfidenceData {
+  report_data: 'high' | 'medium' | 'low';
+  tactical_data: 'high' | 'medium' | 'low' | 'none';
+  personal_data: 'available' | 'insufficient';
+}
+
+export interface AdviceV2Response {
+  advice: string;
+  prediction: PredictionData;
+  tactical: TacticalData;
+  personal: PersonalData;
+  tier: string;
+  season: string;
+  reportCount: number;
+  matchedReportCount: number;
+  sessionCount: number;
+  queryId: string | null;
+  weather: {
+    temp: number;
+    wind_speed: number;
+    wind_dir: string;
+    conditions: string;
+    pressure: number;
+    humidity: number;
+    is_historical: boolean;
+  };
+  confidence: ConfidenceData;
+  model_info: {
+    params_source: string;
+    data_quality: string;
+    character_notes: string | null;
+  };
+}
+
 // v2: calls get-ai-advice-v2 which orchestrates all 4 processes internally
 export async function getAdviceV2(
   venue: string,
   date: string,
-): Promise<FishingAdviceResponse> {
+): Promise<AdviceV2Response> {
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   const { data, error } = await supabase.functions.invoke('get-ai-advice-v2', {
     body: { venue_name: venue, target_date: date, user_id: user?.id ?? null }
   })
-  
-  if (error) throw new Error(error.message || 'Failed to get advice')
 
-  // Normalise the v2 response into the FishingAdviceResponse shape
-  const v2 = data as any
-  const weatherData = v2.weather ?? {}
-  return {
-    advice: v2.advice,
-    prediction: v2.prediction,
-    weatherData: {
-      temperature: weatherData.temp ?? 0,
-      windSpeed: weatherData.wind_speed ?? 0,
-      windDirection: weatherData.wind_dir ?? '',
-      conditions: weatherData.conditions ?? '',
-      precipitation: 0,
-      precipitationProbability: 0,
-      humidity: weatherData.humidity ?? 0,
-      pressure: weatherData.pressure ?? 0,
-    },
-    queryId: v2.queryId,
-    tier: 'premium',
-    season: v2.season,
-    reportCount: v2.reportCount,
-    model_info: v2.model_info,
-  } as FishingAdviceResponse
+  if (error) throw new AdviceServiceError(error.message || 'Failed to get advice v2')
+  return data as AdviceV2Response
 }
 
 // Legacy: calls original get-fishing-advice
@@ -116,12 +152,13 @@ export async function getBasicAdvice(
 }
 
 // Smart router: uses v2 for all users (falls back to legacy on error)
+// Returns AdviceV2Response if v2 succeeds, FishingAdviceResponse if fallback
 export async function getFishingAdvice(
   venue: string,
   date: string,
   _weatherData?: { temperature: number; windSpeed: number; precipitation: number; pressure?: number; humidity?: number },
   _isPremium: boolean = false
-): Promise<FishingAdviceResponse> {
+): Promise<AdviceV2Response | FishingAdviceResponse> {
   try {
     return await getAdviceV2(venue, date)
   } catch (err) {

@@ -13,19 +13,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import DebugPanel from "@/components/DebugPanel";
-import { getFishingAdvice, AdviceServiceError } from "@/services/adviceService";
-import type { FishingAdviceResponse } from "@/services/adviceService";
+import { getFishingAdvice, AdviceServiceError, type AdviceV2Response, type FishingAdviceResponse } from "@/services/adviceService";
+import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getRecentQueries, getQueryById, QueryServiceError } from "@/services/queryService";
 import type { QuerySummary } from "@/services/queryService";
 import { ShareDialog } from "@/components/ShareDialog";
 
-const VENUES = [
-  "Grafham Water",
-  "Rutland Water",
-  "Pitsford Water",
-  "Ravensthorpe Reservoir",
-];
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -47,6 +41,16 @@ const Dashboard = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedQueryIds, setSelectedQueryIds] = useState<Set<string>>(new Set());
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [venues, setVenues] = useState<string[]>([]);
+
+  // Load venues from database
+  useEffect(() => {
+    async function loadVenues() {
+      const { data } = await supabase.from('venue_metadata').select('name').order('name');
+      if (data) setVenues(data.map((v: any) => v.name));
+    }
+    loadVenues();
+  }, []);
 
   // Fetch recent queries on mount
   useEffect(() => {
@@ -57,7 +61,6 @@ const Dashboard = () => {
         setRecentQueries(queries);
       } catch (err) {
         console.error('Error loading recent queries:', err);
-        // Don't show error toast for queries loading failure
       } finally {
         setIsLoadingQueries(false);
       }
@@ -83,26 +86,32 @@ const Dashboard = () => {
     const dateString = format(date, "yyyy-MM-dd");
     
     try {
-      // v2: weather fetching is handled inside the edge function
       setLoadingMessage("Analysing conditions and fetching weather...");
-      const adviceData: FishingAdviceResponse = await getFishingAdvice(venue, dateString);
-      
-      // Navigate to results
-      navigate("/results", {
-        state: {
-          venue,
-          date: format(date, "PPP"),
-          advice: adviceData.advice,
-          prediction: adviceData.prediction,
-          locations: adviceData.locations,
-          weatherData: adviceData.weatherData,
-          queryId: adviceData.queryId,
-          tier: adviceData.tier,
-          season: adviceData.season,
-          weatherCategory: adviceData.weatherCategory,
-          model_info: adviceData.model_info,
-        },
-      });
+      const result = await getFishingAdvice(venue, dateString);
+
+      // Detect if it's a v2 response (has 'weather' field) or legacy
+      if ('weather' in result && result.weather) {
+        navigate("/results", {
+          state: { adviceV2: result, venue, date: format(date, "PPP") },
+        });
+      } else {
+        const adviceData = result as FishingAdviceResponse;
+        navigate("/results", {
+          state: {
+            venue,
+            date: format(date, "PPP"),
+            advice: adviceData.advice,
+            prediction: adviceData.prediction,
+            locations: adviceData.locations,
+            weatherData: adviceData.weatherData,
+            queryId: adviceData.queryId,
+            tier: adviceData.tier,
+            season: adviceData.season,
+            weatherCategory: adviceData.weatherCategory,
+            model_info: adviceData.model_info,
+          },
+        });
+      }
     } catch (err) {
       console.error("Error getting fishing advice:", err);
       
@@ -344,7 +353,7 @@ const Dashboard = () => {
                   <SelectValue placeholder="Choose a venue..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {VENUES.map((v) => (
+                  {venues.map((v) => (
                     <SelectItem key={v} value={v}>
                       {v}
                     </SelectItem>
