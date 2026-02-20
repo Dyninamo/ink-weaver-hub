@@ -1,401 +1,516 @@
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Fish, ArrowLeft, LogOut, RefreshCw, MapPin, Share2, TrendingUp, Sparkles, Zap, AlertTriangle, Info,
+  ArrowLeft, Fish, MapPin, Wind, Thermometer, Clock,
+  TrendingUp, Target, User, BarChart3, Shield,
 } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState } from "react";
-import type { Location, WeatherData, PredictionData, ModelInfo } from "@/services/adviceService";
 import { cn } from "@/lib/utils";
-import FishingMap from "@/components/FishingMap";
-import { WeatherBadge } from "@/components/WeatherBadge";
-import ResultsErrorBoundary from "@/components/ResultsErrorBoundary";
-import { ShareDialog } from "@/components/ShareDialog";
-import { FrequencyBar } from "@/components/FrequencyBar";
+import type { AdviceV2Response, FishingAdviceResponse } from "@/services/adviceService";
 
-interface ResultsState {
-  venue: string;
-  date: string;
-  advice: string;
-  prediction?: PredictionData;
-  locations?: Location[];
-  weatherData: WeatherData;
-  queryId?: string;
-  tier?: "free" | "premium";
-  season?: string;
-  weatherCategory?: string;
-  reportCount?: number;
-  model_info?: ModelInfo;
-}
-
-const confidenceConfig = {
-  HIGH: {
-    label: "High confidence (15+ matching reports)",
-    className: "bg-success/15 text-success border-success/30",
-  },
-  MEDIUM: {
-    label: "Moderate confidence",
-    className: "bg-accent/15 text-accent border-accent/30",
-  },
-  LOW: {
-    label: "Limited data",
-    className: "bg-muted text-muted-foreground border-border",
-  },
-};
-
-const Results = () => {
-  const navigate = useNavigate();
+export default function Results() {
   const location = useLocation();
-  const { signOut: authSignOut } = useAuth();
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const state = location.state as {
+    adviceV2?: AdviceV2Response;
+    advice?: FishingAdviceResponse;
+    venue?: string;
+    date?: string;
+    // Legacy flat fields
+    advice_text?: string;
+    prediction?: any;
+    weatherData?: any;
+    locations?: any[];
+    queryId?: string;
+    tier?: string;
+    season?: string;
+    model_info?: any;
+  } | null;
 
-  const state = location.state as ResultsState | null;
+  if (!state || (!state.adviceV2 && !state.advice && !state.advice_text)) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">No advice data</p>
+          <Button onClick={() => navigate("/dashboard")}>Back to Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    if (!state) {
-      navigate("/dashboard");
+  const isV2 = !!state.adviceV2;
+  const v2 = state.adviceV2;
+  const v1 = state.advice;
+
+  // Unified accessors — support v2, v1 object, and legacy flat state
+  const advice = v2?.advice ?? v1?.advice ?? (state as any).advice_text ?? "";
+  const prediction = v2?.prediction ?? v1?.prediction ?? (state as any).prediction;
+  const weather = v2?.weather;
+  const tactical = v2?.tactical;
+  const personal = v2?.personal;
+  const confidence = v2?.confidence;
+  const season = v2?.season ?? v1?.season ?? (state as any).season ?? "";
+  const reportCount = v2?.reportCount ?? v1?.reportCount ?? 0;
+
+  function formatDate(dateStr: string): string {
+    try {
+      return new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
     }
-  }, [state, navigate]);
+  }
 
-  const handleSignOut = async () => {
-    await authSignOut();
-    navigate("/");
-  };
+  // Parse advice into sections (v2 uses ## headers)
+  function renderAdvice(text: string) {
+    if (!text) return null;
+    const sections = text.split(/^## /m).filter(Boolean);
+    if (sections.length <= 1) {
+      // No headers — render with inline bold support
+      return (
+        <div className="space-y-2">
+          {text.split('\n').map((line, i) => {
+            if (line.startsWith('### ')) {
+              return <h3 key={i} className="font-semibold text-sm mt-3 mb-1">{line.replace('### ', '')}</h3>;
+            }
+            if (line.trim() === '') return <div key={i} className="h-1" />;
+            const parts = line.split(/(\*\*[^*]+\*\*)/g);
+            return (
+              <p key={i} className="text-sm text-muted-foreground leading-relaxed">
+                {parts.map((part, j) =>
+                  part.startsWith('**') && part.endsWith('**')
+                    ? <strong key={j} className="text-foreground">{part.slice(2, -2)}</strong>
+                    : part
+                )}
+              </p>
+            );
+          })}
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-4">
+        {sections.map((section, i) => {
+          const lines = section.split("\n");
+          const title = lines[0].replace(/\*\*/g, "").trim();
+          const body = lines.slice(1).join("\n").trim();
+          return (
+            <div key={i}>
+              <h3 className="font-semibold text-sm mb-1 text-foreground">{title}</h3>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                {body}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
-  if (!state) return null;
+  // Catch-by-hour chart
+  function renderCatchByHour(data: Record<string, number>) {
+    const entries = Object.entries(data).sort(([a], [b]) => Number(a) - Number(b));
+    if (entries.length === 0) return null;
+    const maxVal = Math.max(...entries.map(([, v]) => v));
 
-  const {
-    venue, date, advice, prediction, locations, weatherData, tier, season, weatherCategory, model_info,
-  } = state;
+    return (
+      <div className="space-y-1">
+        {entries.map(([hour, val]) => (
+          <div key={hour} className="flex items-center gap-2 text-xs">
+            <span className="w-12 text-right text-muted-foreground font-mono">
+              {hour.padStart(2, "0")}:00
+            </span>
+            <div className="flex-1 h-4 bg-muted/30 rounded overflow-hidden">
+              <div
+                className="h-full bg-primary/60 rounded"
+                style={{ width: `${maxVal > 0 ? (val / maxVal) * 100 : 0}%` }}
+              />
+            </div>
+            <span className="w-8 text-muted-foreground font-mono">
+              {val.toFixed(1)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-  const confidence = prediction?.rod_average?.confidence ?? "LOW";
-  const confCfg = confidenceConfig[confidence];
-
-  const reportCount = model_info?.report_count ?? state.reportCount;
-
-  // Compute max frequency for bar scaling
-  const maxMethodFreq = prediction?.methods?.length
-    ? Math.max(...prediction.methods.map((m) => m.frequency ?? m.score ?? 0))
-    : 1;
-  const maxFlyFreq = prediction?.flies?.length
-    ? Math.max(...prediction.flies.map((f) => f.frequency ?? f.score ?? 0))
-    : 1;
-  const maxSpotFreq = prediction?.spots?.length
-    ? Math.max(...prediction.spots.map((s) => s.frequency ?? s.score ?? 0))
-    : 1;
+  // Confidence badge
+  function ConfidenceBadge({ level }: { level: string }) {
+    const colors: Record<string, string> = {
+      high: "bg-success/10 text-success border-success/20",
+      medium: "bg-accent/10 text-accent border-accent/20",
+      low: "bg-destructive/10 text-destructive border-destructive/20",
+      none: "bg-muted text-muted-foreground border-border",
+      available: "bg-success/10 text-success border-success/20",
+      insufficient: "bg-muted text-muted-foreground border-border",
+    };
+    return (
+      <span className={cn(
+        "text-[10px] px-1.5 py-0.5 rounded border font-medium uppercase",
+        colors[level] || colors.low
+      )}>
+        {level}
+      </span>
+    );
+  }
 
   return (
-    <ResultsErrorBoundary>
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-[480px] mx-auto p-4 space-y-4">
         {/* Header */}
-        <header className="bg-gradient-water text-white py-4 px-4 shadow-medium">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/dashboard")}
-              className="text-white hover:bg-white/10"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Fish className="w-6 h-6" />
-                <span className="font-semibold hidden sm:inline">Fishing Advice</span>
-              </div>
-              <Button
-                variant="ghost"
-                onClick={handleSignOut}
-                className="text-white hover:bg-white/10"
-              >
-                <LogOut className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Sign Out</span>
-              </Button>
-            </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/dashboard")}
+            className="min-h-[44px] min-w-[44px]"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-semibold truncate">{state.venue}</h1>
+            <p className="text-sm text-muted-foreground">
+              {state.date ? (state.date.includes('-') ? formatDate(state.date) : state.date) : ""}{season ? ` · ${season}` : ""}
+            </p>
           </div>
-        </header>
+        </div>
 
-        <main className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
-          {/* TOP SECTION */}
-          <div className="mb-6">
-            <div className="flex flex-wrap items-center gap-3 mb-1">
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">{venue}</h1>
-              <Badge variant="outline" className={cn("text-xs font-medium border", confCfg.className)}>
-                {confCfg.label}
-              </Badge>
-              {/* Data quality badge from model_info */}
-              {model_info?.data_quality === "limited" && (
-                <Badge variant="outline" className="text-xs font-medium border bg-amber-500/15 text-amber-600 border-amber-500/30">
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                  Limited data
-                </Badge>
-              )}
-              {model_info?.data_quality === "insufficient" && (
-                <Badge variant="outline" className="text-xs font-medium border bg-destructive/15 text-destructive border-destructive/30">
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                  Very limited data — predictions may be unreliable
-                </Badge>
-              )}
-            </div>
-
-            {/* Character notes from model_info */}
-            {model_info?.character_notes && (
-              <p className="text-sm italic text-muted-foreground mb-1">
-                {model_info.character_notes}
-              </p>
+        {/* Weather bar */}
+        {weather && (
+          <div className="flex flex-wrap items-center gap-3 text-xs px-3 py-2 rounded-md bg-muted/50">
+            <span className="flex items-center gap-1">
+              <Thermometer className="h-3.5 w-3.5" /> {weather.temp}°C
+            </span>
+            <span className="flex items-center gap-1">
+              <Wind className="h-3.5 w-3.5" /> {weather.wind_speed}mph {weather.wind_dir}
+            </span>
+            {weather.conditions && (
+              <span className="text-muted-foreground">{weather.conditions}</span>
             )}
-
-            <p className="text-lg text-muted-foreground mb-1">{date}</p>
-
-            {reportCount != null && (
-              <p className="text-sm text-muted-foreground mb-4">
-                Based on {reportCount} historical reports
-              </p>
+            {weather.is_historical && (
+              <span className="ml-auto text-[10px] text-accent font-medium">Estimate</span>
             )}
+          </div>
+        )}
 
-            <WeatherBadge
-              weather={weatherData}
-              showDetailed
-              className="mb-4 shadow-soft bg-gradient-to-r from-primary/5 to-secondary/5"
-            />
+        {/* Rod Average */}
+        {prediction?.rod_average && (
+          <Card>
+            <CardContent className="p-4 text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                Predicted Rod Average
+              </p>
+              <p className="text-4xl font-mono font-bold text-primary">
+                {typeof prediction.rod_average.predicted === 'number'
+                  ? prediction.rod_average.predicted.toFixed(1)
+                  : prediction.rod_average.predicted}
+              </p>
+              {prediction.rod_average.range && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center justify-center gap-2">
+                  <span>Range {prediction.rod_average.range[0]}–{prediction.rod_average.range[1]}</span>
+                  <ConfidenceBadge level={prediction.rod_average.confidence?.toLowerCase() ?? 'low'} />
+                </p>
+              )}
+              {reportCount > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">Based on {reportCount} reports</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Rod Average */}
-            {prediction?.rod_average && (
-              <Card className="p-5 shadow-soft border-primary/20 bg-primary/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-primary" />
+        {/* Advice text */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Fish className="h-4 w-4" /> Fishing Advice
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {renderAdvice(advice)}
+          </CardContent>
+        </Card>
+
+        {/* Predictions — methods, flies, spots */}
+        {prediction && (
+          <>
+            {/* Methods */}
+            {prediction.methods?.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Target className="h-4 w-4" /> Top Methods
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-1.5">
+                    {prediction.methods.slice(0, 6).map((m: any, i: number) => {
+                      const val = m.frequency ?? m.score ?? 0;
+                      const maxVal = Math.max(...prediction.methods.slice(0, 6).map((x: any) => x.frequency ?? x.score ?? 0));
+                      return (
+                        <div key={i} className="space-y-0.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>{m.method}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{val.toFixed ? val.toFixed(1) : val}</span>
+                          </div>
+                          <div className="h-1.5 bg-muted/30 rounded overflow-hidden">
+                            <div className="h-full bg-primary/50 rounded" style={{ width: `${maxVal > 0 ? (val / maxVal) * 100 : 0}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Predicted Rod Average</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {prediction.rod_average.predicted.toFixed(1)}{" "}
-                      <span className="text-base font-normal text-muted-foreground">
-                        fish per rod
-                      </span>
-                    </p>
-                    {prediction.rod_average.range && (
-                      <p className="text-sm text-muted-foreground">
-                        Range: {prediction.rod_average.range[0]}–{prediction.rod_average.range[1]}
-                      </p>
-                    )}
-                    {model_info?.rod_mae != null && (
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        Model accuracy: ±{model_info.rod_mae.toFixed(2)} fish per rod
-                      </p>
-                    )}
-                  </div>
-                </div>
+                </CardContent>
               </Card>
             )}
-          </div>
 
-          {/* MIDDLE SECTION */}
-          <div className="grid lg:grid-cols-2 gap-6 mb-6">
-            {/* LEFT - Advice text */}
-            <Card className="p-6 shadow-medium flex flex-col">
-              <div className="flex items-center gap-2 mb-4">
-                <Fish className="w-6 h-6 text-primary" />
-                <h2 className="text-2xl font-bold text-foreground">Fishing Advice</h2>
-              </div>
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <div className="space-y-3 text-foreground" style={{ fontSize: "16px", lineHeight: "1.7" }}>
-                  {advice.split('\n').map((line, i) => {
-                    if (line.startsWith('### ')) {
-                      return <h3 key={i} className="text-lg font-bold text-foreground mt-4 mb-1">{line.replace('### ', '')}</h3>;
-                    }
-                    if (line.startsWith('## ')) {
-                      return <h2 key={i} className="text-xl font-bold text-foreground mt-4 mb-1">{line.replace('## ', '')}</h2>;
-                    }
-                    if (line.trim() === '') {
-                      return <div key={i} className="h-2" />;
-                    }
-                    // Render inline bold (**text**)
-                    const parts = line.split(/(\*\*[^*]+\*\*)/g);
-                    return (
-                      <p key={i}>
-                        {parts.map((part, j) =>
-                          part.startsWith('**') && part.endsWith('**')
-                            ? <strong key={j}>{part.slice(2, -2)}</strong>
-                            : part
-                        )}
-                      </p>
-                    );
-                  })}
-                </div>
-              </div>
-            </Card>
-
-            {/* RIGHT - Data cards */}
-            <div className="space-y-6">
-              {/* Top Methods */}
-              {prediction?.methods && prediction.methods.length > 0 && (
-                <Card className="p-6 shadow-medium">
-                  <h3 className="text-lg font-bold text-foreground mb-4">Top Methods</h3>
-                  <div className="space-y-3">
-                    {prediction.methods.slice(0, 6).map((m) => (
-                      <FrequencyBar
-                        key={m.method}
-                        label={m.method}
-                        value={m.frequency ?? m.score ?? 0}
-                        maxValue={maxMethodFreq}
-                      />
-                    ))}
-                  </div>
-                </Card>
-              )}
-
-              {/* Recommended Flies */}
-              {prediction?.flies && prediction.flies.length > 0 && (
-                <Card className="p-6 shadow-medium">
-                  <h3 className="text-lg font-bold text-foreground mb-4">Recommended Flies</h3>
-                  <div className="space-y-3">
-                    {prediction.flies.slice(0, 6).map((f) => (
-                      <FrequencyBar
-                        key={f.fly}
-                        label={f.fly}
-                        value={f.frequency ?? f.score ?? 0}
-                        maxValue={maxFlyFreq}
-                      />
-                    ))}
-                  </div>
-                </Card>
-              )}
-
-              {/* Best Spots */}
-              {prediction?.spots && prediction.spots.length > 0 && (
-                <Card className="p-6 shadow-medium">
-                  <h3 className="text-lg font-bold text-foreground mb-4">Best Spots</h3>
-                  <div className="space-y-3">
-                    {prediction.spots.slice(0, 6).map((s) => (
-                      <FrequencyBar
-                        key={s.spot}
-                        label={s.spot}
-                        value={s.frequency ?? s.score ?? 0}
-                        maxValue={maxSpotFreq}
-                      />
-                    ))}
-                  </div>
-                </Card>
-              )}
-            </div>
-          </div>
-
-          {/* Map Section (if locations exist) */}
-          {locations && locations.length > 0 && (
-            <Card className="p-6 shadow-medium mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-6 h-6 text-primary" />
-                <h2 className="text-2xl font-bold text-foreground">Recommended Locations</h2>
-              </div>
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div style={{ minHeight: "400px" }}>
-                  <FishingMap locations={locations} venueName={venue} />
-                </div>
-                <div>
-                  <div className="space-y-2 mb-4 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
-                    {locations.map((loc, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                        <div
-                          className={cn(
-                            "w-3 h-3 rounded-full mt-1 flex-shrink-0",
-                            loc.type === "hotSpot" && "bg-primary",
-                            loc.type === "goodArea" && "bg-accent",
-                            loc.type === "entryPoint" && "bg-secondary"
-                          )}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground">{loc.name}</p>
-                          <p className="text-xs text-muted-foreground">{loc.description}</p>
+            {/* Flies */}
+            {prediction.flies?.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Fish className="h-4 w-4" /> Top Flies
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-1.5">
+                    {prediction.flies.slice(0, 6).map((f: any, i: number) => {
+                      const val = f.frequency ?? f.score ?? 0;
+                      const maxVal = Math.max(...prediction.flies.slice(0, 6).map((x: any) => x.frequency ?? x.score ?? 0));
+                      return (
+                        <div key={i} className="space-y-0.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>{f.fly}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{val.toFixed ? val.toFixed(1) : val}</span>
+                          </div>
+                          <div className="h-1.5 bg-muted/30 rounded overflow-hidden">
+                            <div className="h-full bg-secondary/60 rounded" style={{ width: `${maxVal > 0 ? (val / maxVal) * 100 : 0}%` }} />
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Spots */}
+            {prediction.spots?.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <MapPin className="h-4 w-4" /> Best Spots
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-1.5">
+                    {prediction.spots.slice(0, 6).map((s: any, i: number) => {
+                      const val = s.frequency ?? s.score ?? 0;
+                      const maxVal = Math.max(...prediction.spots.slice(0, 6).map((x: any) => x.frequency ?? x.score ?? 0));
+                      return (
+                        <div key={i} className="space-y-0.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>{s.spot}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{val.toFixed ? val.toFixed(1) : val}</span>
+                          </div>
+                          <div className="h-1.5 bg-muted/30 rounded overflow-hidden">
+                            <div className="h-full bg-accent/60 rounded" style={{ width: `${maxVal > 0 ? (val / maxVal) * 100 : 0}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+
+        {/* Tactical Insights (v2 only) */}
+        {tactical && tactical.session_count > 0 && (
+          <Card className="border-primary/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-primary" /> Diary Network Intelligence
+                <span className="ml-auto text-[10px] text-muted-foreground font-normal">
+                  {tactical.session_count} sessions · {tactical.period_count} periods
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-4">
+              {/* Techniques from diary */}
+              {tactical.techniques.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Effective Techniques
+                  </p>
+                  <div className="space-y-1.5">
+                    {tactical.techniques.slice(0, 5).map((t, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <span>{t.technique}</span>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {t.weighted_catches.toFixed(1)} catches · {t.weighted_minutes}min
+                        </span>
                       </div>
                     ))}
                   </div>
-                  <div className="space-y-2 pt-4 border-t">
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-3 h-3 rounded-full bg-primary" />
-                      <span className="text-foreground">Hot spots – Best locations</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-3 h-3 rounded-full bg-accent" />
-                      <span className="text-foreground">Good areas – Reliable spots</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-3 h-3 rounded-full bg-secondary" />
-                      <span className="text-foreground">Entry points – Easy access</span>
-                    </div>
+                </div>
+              )}
+
+              {/* Flies from diary */}
+              {tactical.flies.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Productive Flies
+                  </p>
+                  <div className="space-y-1.5">
+                    {tactical.flies.slice(0, 5).map((f, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <span>{f.fly}</span>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {f.weighted_catches.toFixed(1)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            </Card>
-          )}
+              )}
 
-          {/* Tier Banner */}
-          {tier === "free" && (
-            <Card className="p-6 shadow-soft border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 mb-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">
-                    This advice is based on historical patterns. Upgrade to Premium for AI-powered
-                    personalised advice matched to today's exact conditions.
+              {/* Spots from diary */}
+              {tactical.spots.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Best Producing Spots
                   </p>
+                  <div className="space-y-1.5">
+                    {tactical.spots.slice(0, 5).map((s, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <span>{s.spot}</span>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {s.weighted_catches.toFixed(1)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <Button className="bg-gradient-water text-white hover:opacity-90 shrink-0 gap-2">
-                  <Zap className="w-4 h-4" />
-                  Upgrade to Premium
-                </Button>
-              </div>
-            </Card>
-          )}
+              )}
 
-          {tier === "premium" && (
-            <Card className="p-5 shadow-soft border-secondary/20 bg-secondary/5 mb-6">
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-5 h-5 text-secondary" />
-                <p className="text-sm font-medium text-foreground">
-                  AI-powered advice based on similar reports matched to today's conditions.
+              {/* Catch by hour */}
+              {Object.keys(tactical.catch_by_hour).length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <Clock className="h-3 w-3" /> Peak Catch Times
+                  </p>
+                  {renderCatchByHour(tactical.catch_by_hour)}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Personal Performance (v2 only) */}
+        {personal && (
+          <Card className={personal.has_personal ? "border-success/20" : ""}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <User className="h-4 w-4 text-success" /> Your Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {personal.has_personal ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-xl font-mono font-bold">{personal.total_sessions}</p>
+                      <p className="text-[10px] text-muted-foreground">Sessions</p>
+                    </div>
+                    <div>
+                      <p className="text-xl font-mono font-bold">{personal.catch_rate?.toFixed(1)}</p>
+                      <p className="text-[10px] text-muted-foreground">Fish/session</p>
+                    </div>
+                    <div>
+                      <p className={cn(
+                        "text-xl font-mono font-bold",
+                        (personal.general_ability ?? 1) > 1.1 ? "text-success"
+                          : (personal.general_ability ?? 1) < 0.9 ? "text-destructive" : ""
+                      )}>
+                        {personal.general_ability?.toFixed(2) ?? "—"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Ability</p>
+                    </div>
+                  </div>
+
+                  {personal.technique_stats && Object.keys(personal.technique_stats).length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5">
+                        Your Technique Effectiveness
+                      </p>
+                      <div className="space-y-1.5">
+                        {Object.entries(personal.technique_stats)
+                          .slice(0, 5)
+                          .map(([style, stats]: [string, any]) => (
+                            <div key={style} className="flex items-center justify-between text-sm">
+                              <span>{style}</span>
+                              <span className="text-xs text-muted-foreground font-mono">
+                                eff: {stats.effectiveness?.toFixed(2) ?? "?"} · {stats.catches ?? 0} fish
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {personal.message || "Log 3+ sessions at this venue to unlock personalised advice."}
                 </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Confidence & Data Sources */}
+        {confidence && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Shield className="h-4 w-4" /> Data Confidence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Report data ({reportCount} reports)</span>
+                  <ConfidenceBadge level={confidence.report_data} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    Diary data ({v2?.sessionCount ?? 0} sessions)
+                  </span>
+                  <ConfidenceBadge level={confidence.tactical_data} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Personal data</span>
+                  <ConfidenceBadge level={confidence.personal_data} />
+                </div>
               </div>
-            </Card>
-          )}
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              onClick={() => navigate("/dashboard")}
-              className="bg-gradient-water text-white hover:opacity-90 shadow-medium"
-            >
-              <RefreshCw className="w-5 h-5 mr-2" />
-              New Query
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="shadow-soft"
-              onClick={() => setShareDialogOpen(true)}
-            >
-              <Share2 className="w-5 h-5 mr-2" />
-              Share This Advice
-            </Button>
-          </div>
-        </main>
-
-        <ShareDialog
-          open={shareDialogOpen}
-          selectedQueryIds={state?.queryId ? [state.queryId] : []}
-          onClose={() => setShareDialogOpen(false)}
-          onShareComplete={() => setShareDialogOpen(false)}
-        />
+        {/* Back / New Query button */}
+        <Button
+          variant="outline"
+          className="w-full min-h-[44px]"
+          onClick={() => navigate("/dashboard")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" /> New Query
+        </Button>
       </div>
-    </ResultsErrorBoundary>
+    </div>
   );
-};
-
-export default Results;
+}
