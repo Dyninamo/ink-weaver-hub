@@ -14,6 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      angler_profiles: {
+        Row: {
+          angler_location: string | null
+          angler_name: string
+          avg_catch: number | null
+          catch_rate: number | null
+          created_at: string | null
+          first_session: string | null
+          id: string
+          last_session: string | null
+          source: string | null
+          total_fish: number | null
+          total_trips: number | null
+          updated_at: string | null
+          user_id: string | null
+          venues_fished: number | null
+          weight_calculated_at: string | null
+        }
+        Insert: {
+          angler_location?: string | null
+          angler_name: string
+          avg_catch?: number | null
+          catch_rate?: number | null
+          created_at?: string | null
+          first_session?: string | null
+          id: string
+          last_session?: string | null
+          source?: string | null
+          total_fish?: number | null
+          total_trips?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          venues_fished?: number | null
+          weight_calculated_at?: string | null
+        }
+        Update: {
+          angler_location?: string | null
+          angler_name?: string
+          avg_catch?: number | null
+          catch_rate?: number | null
+          created_at?: string | null
+          first_session?: string | null
+          id?: string
+          last_session?: string | null
+          source?: string | null
+          total_fish?: number | null
+          total_trips?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          venues_fished?: number | null
+          weight_calculated_at?: string | null
+        }
+        Relationships: []
+      }
+      angler_type_weights: {
+        Row: {
+          angler_id: string
+          avg_catch: number | null
+          catch_rate: number | null
+          fishing_type: string
+          id: string
+          skill_weight: number | null
+          trips: number | null
+        }
+        Insert: {
+          angler_id: string
+          avg_catch?: number | null
+          catch_rate?: number | null
+          fishing_type: string
+          id: string
+          skill_weight?: number | null
+          trips?: number | null
+        }
+        Update: {
+          angler_id?: string
+          avg_catch?: number | null
+          catch_rate?: number | null
+          fishing_type?: string
+          id?: string
+          skill_weight?: number | null
+          trips?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "angler_type_weights_angler_id_fkey"
+            columns: ["angler_id"]
+            isOneToOne: false
+            referencedRelation: "angler_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       angler_venue_stats: {
         Row: {
           catch_rate: number | null
@@ -136,6 +228,47 @@ export type Database = {
         }
         Relationships: []
       }
+      fish_species_game: {
+        Row: {
+          fish_type_id: number
+          species_id: number
+          species_name: string
+        }
+        Insert: {
+          fish_type_id: number
+          species_id: number
+          species_name: string
+        }
+        Update: {
+          fish_type_id?: number
+          species_id?: number
+          species_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fish_species_game_fish_type_id_fkey"
+            columns: ["fish_type_id"]
+            isOneToOne: false
+            referencedRelation: "fish_types"
+            referencedColumns: ["fish_type_id"]
+          },
+        ]
+      }
+      fish_types: {
+        Row: {
+          fish_type: string
+          fish_type_id: number
+        }
+        Insert: {
+          fish_type: string
+          fish_type_id: number
+        }
+        Update: {
+          fish_type?: string
+          fish_type_id?: number
+        }
+        Relationships: []
+      }
       fishing_reports: {
         Row: {
           best_spots: string[] | null
@@ -225,10 +358,15 @@ export type Database = {
       }
       fishing_sessions: {
         Row: {
+          angler_location: string | null
+          angler_name: string | null
+          area: string | null
+          beat: string | null
           created_at: string | null
           duration_minutes: number | null
           end_time: string | null
           fishing_type: string | null
+          fishing_type_raw: string | null
           id: string
           is_active: boolean | null
           notes: string | null
@@ -236,9 +374,11 @@ export type Database = {
           rods: number | null
           satisfaction_score: number | null
           session_date: string
+          source: string | null
+          source_id: string | null
           start_time: string | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
           venue_name: string
           venue_type: string | null
           weather_conditions: string | null
@@ -250,10 +390,15 @@ export type Database = {
           would_return: boolean | null
         }
         Insert: {
+          angler_location?: string | null
+          angler_name?: string | null
+          area?: string | null
+          beat?: string | null
           created_at?: string | null
           duration_minutes?: number | null
           end_time?: string | null
           fishing_type?: string | null
+          fishing_type_raw?: string | null
           id?: string
           is_active?: boolean | null
           notes?: string | null
@@ -261,9 +406,11 @@ export type Database = {
           rods?: number | null
           satisfaction_score?: number | null
           session_date: string
+          source?: string | null
+          source_id?: string | null
           start_time?: string | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
           venue_name: string
           venue_type?: string | null
           weather_conditions?: string | null
@@ -275,10 +422,15 @@ export type Database = {
           would_return?: boolean | null
         }
         Update: {
+          angler_location?: string | null
+          angler_name?: string | null
+          area?: string | null
+          beat?: string | null
           created_at?: string | null
           duration_minutes?: number | null
           end_time?: string | null
           fishing_type?: string | null
+          fishing_type_raw?: string | null
           id?: string
           is_active?: boolean | null
           notes?: string | null
@@ -286,9 +438,11 @@ export type Database = {
           rods?: number | null
           satisfaction_score?: number | null
           session_date?: string
+          source?: string | null
+          source_id?: string | null
           start_time?: string | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
           venue_name?: string
           venue_type?: string | null
           weather_conditions?: string | null

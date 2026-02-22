@@ -340,6 +340,10 @@ const TERM_TABLES = [
   { value: "ref_depths", label: "ref_depths", conflict: "depth_label" },
   { value: "ref_lines_from_reports", label: "ref_lines_from_reports", conflict: "line_type" },
   { value: "fly_water_types", label: "fly_water_types", conflict: "pattern_name,water_type_id" },
+  { value: "fish_types", label: "fish_types", conflict: "fish_type_id" },
+  { value: "fish_species_game", label: "fish_species_game", conflict: "species_id" },
+  { value: "angler_profiles", label: "angler_profiles", conflict: "id" },
+  { value: "angler_type_weights", label: "angler_type_weights", conflict: "id" },
 ] as const;
 
 function TerminologyUploadSection() {
