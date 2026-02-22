@@ -37,6 +37,7 @@ serve(async (req) => {
       'reference_data', 'shared_reports', 'share_views', 'user_profiles', 'verification_codes',
       'fly_types', 'water_types', 'regions', 'fly_species',
       'species_hatch_calendar', 'fly_monthly_availability', 'fly_species_link',
+      'fly_water_types',
     ];
 
     const results = [];
