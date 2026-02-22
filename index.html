@@ -3,18 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fishing Advice - AI-Powered Fishing Insights</title>
-    <meta name="description" content="Get personalized fishing advice powered by AI. Real-time weather forecasts, interactive maps, and expert recommendations for UK's premier fishing venues." />
-    <meta name="author" content="Fishing Advice" />
+    <title>Fishing Intelligence</title>
+    <meta name="description" content="AI-powered fishing advice, diary tracking, and fly selection for UK venues." />
+    <meta name="author" content="Fishing Intelligence" />
 
-    <meta property="og:title" content="Fishing Advice - AI-Powered Fishing Insights" />
-    <meta property="og:description" content="Get personalized fishing advice powered by AI. Real-time weather, interactive maps, and expert recommendations." />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+
+    <meta property="og:title" content="Fishing Intelligence" />
+    <meta property="og:description" content="AI-powered fishing advice, diary tracking, and fly selection." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/icon-512.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:image" content="/icon-512.png" />
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+      }
+    </script>
   </head>
 
   <body>
