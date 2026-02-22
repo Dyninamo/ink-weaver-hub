@@ -10,6 +10,7 @@ const CONFLICT_COLUMNS: Record<string, string> = {
   ref_colours: 'colour',
   ref_depths: 'depth',
   ref_lines_from_reports: 'line_type',
+  fly_water_types: 'pattern_name,water_type_id',
 }
 
 Deno.serve(async (req) => {
