@@ -11,6 +11,10 @@ const CONFLICT_COLUMNS: Record<string, string> = {
   ref_depths: 'depth',
   ref_lines_from_reports: 'line_type',
   fly_water_types: 'pattern_name,water_type_id',
+  fish_types: 'fish_type_id',
+  fish_species_game: 'species_id',
+  angler_profiles: 'id',
+  angler_type_weights: 'id',
 }
 
 Deno.serve(async (req) => {

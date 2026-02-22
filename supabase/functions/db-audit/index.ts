@@ -38,6 +38,9 @@ serve(async (req) => {
       'fly_types', 'water_types', 'regions', 'fly_species',
       'species_hatch_calendar', 'fly_monthly_availability', 'fly_species_link',
       'fly_water_types',
+      'fish_types', 'fish_species_game', 'angler_profiles', 'angler_type_weights',
+      'fishing_sessions', 'session_events', 'session_summaries',
+      'angler_venue_stats', 'venue_stats', 'user_rod_setups',
     ];
 
     const results = [];
