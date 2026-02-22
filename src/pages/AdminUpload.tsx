@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Upload, Database, MapPin, Tag, CheckCircle, AlertCircle, Loader2, FlaskConical } from "lucide-react";
+import { Upload, Database, MapPin, Tag, CheckCircle, AlertCircle, Loader2, FlaskConical, Calculator } from "lucide-react";
 
 type Status = { state: "idle" | "loading" | "done" | "error"; message: string };
 
@@ -835,24 +835,37 @@ export default function AdminUpload() {
         <a href="/admin/db-status" className="text-sm text-primary underline hover:no-underline">DB Status →</a>
       </div>
 
-      {/* Navigation card */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="pt-4 pb-4">
-          <Link
-            to="/admin/test-advice"
-            className="flex items-center gap-3 group"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
-              <FlaskConical className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">AI Advice Test Runner</p>
-              <p className="text-xs text-muted-foreground">Run automated tests against the advice pipeline</p>
-            </div>
-            <span className="ml-auto text-muted-foreground group-hover:text-primary transition-colors">→</span>
-          </Link>
-        </CardContent>
-      </Card>
+      {/* Navigation cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-4 pb-4">
+            <Link to="/admin/test-advice" className="flex items-center gap-3 group">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <FlaskConical className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">AI Advice Test Runner</p>
+                <p className="text-xs text-muted-foreground">Run automated tests against the advice pipeline</p>
+              </div>
+              <span className="ml-auto text-muted-foreground group-hover:text-primary transition-colors">→</span>
+            </Link>
+          </CardContent>
+        </Card>
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-4 pb-4">
+            <Link to="/admin/recompute" className="flex items-center gap-3 group">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <Calculator className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Recompute Summaries</p>
+                <p className="text-xs text-muted-foreground">Batch compute session summaries, angler stats, and venue stats</p>
+              </div>
+              <span className="ml-auto text-muted-foreground group-hover:text-primary transition-colors">→</span>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
 
       <DiarySessionsSection />
       <DiaryEventsSection />

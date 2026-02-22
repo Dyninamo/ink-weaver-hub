@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import AdminUpload from "./pages/AdminUpload";
 import AdminDbStatus from "./pages/AdminDbStatus";
 import AdminTestAdvice from "./pages/AdminTestAdvice";
+import AdminRecompute from "./pages/AdminRecompute";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ const App = () => (
             <Route path="/admin/upload" element={<AdminUpload />} />
             <Route path="/admin/db-status" element={<AdminDbStatus />} />
             <Route path="/admin/test-advice" element={<AdminTestAdvice />} />
+            <Route path="/admin/recompute" element={<AdminRecompute />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
