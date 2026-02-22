@@ -27,7 +27,7 @@ function categorize(name: string): SectionKey {
   if (name.startsWith('ref_') || name === 'reference_data') return 'reference';
   if (['prediction_params', 'venue_profiles', 'venue_correlations', 'venue_metadata'].includes(name)) return 'model';
   if (['user_profiles', 'verification_codes', 'shared_reports', 'share_views'].includes(name)) return 'infrastructure';
-  if (['fly_types', 'water_types', 'regions', 'fly_species', 'species_hatch_calendar', 'fly_monthly_availability', 'fly_species_link'].includes(name)) return 'taxonomy';
+  if (['fly_types', 'water_types', 'regions', 'fly_species', 'species_hatch_calendar', 'fly_monthly_availability', 'fly_species_link', 'fly_water_types'].includes(name)) return 'taxonomy';
   return 'other';
 }
 
