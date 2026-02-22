@@ -339,6 +339,7 @@ const TERM_TABLES = [
   { value: "ref_colours", label: "ref_colours", conflict: "colour" },
   { value: "ref_depths", label: "ref_depths", conflict: "depth_label" },
   { value: "ref_lines_from_reports", label: "ref_lines_from_reports", conflict: "line_type" },
+  { value: "fly_water_types", label: "fly_water_types", conflict: "pattern_name,water_type_id" },
 ] as const;
 
 function TerminologyUploadSection() {

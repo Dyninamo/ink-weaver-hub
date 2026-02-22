@@ -430,6 +430,41 @@ export type Database = {
         }
         Relationships: []
       }
+      fly_water_types: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          pattern_name: string
+          suitability: string
+          water_type_id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pattern_name: string
+          suitability: string
+          water_type_id: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pattern_name?: string
+          suitability?: string
+          water_type_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fly_water_types_water_type_id_fkey"
+            columns: ["water_type_id"]
+            isOneToOne: false
+            referencedRelation: "water_types"
+            referencedColumns: ["water_type_id"]
+          },
+        ]
+      }
       prediction_params: {
         Row: {
           last_validated: string | null
