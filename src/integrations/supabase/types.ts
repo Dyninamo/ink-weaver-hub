@@ -369,6 +369,8 @@ export type Database = {
           fishing_type_raw: string | null
           id: string
           is_active: boolean | null
+          latitude: number | null
+          longitude: number | null
           notes: string | null
           plan: string | null
           rods: number | null
@@ -401,6 +403,8 @@ export type Database = {
           fishing_type_raw?: string | null
           id?: string
           is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           plan?: string | null
           rods?: number | null
@@ -433,6 +437,8 @@ export type Database = {
           fishing_type_raw?: string | null
           id?: string
           is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           plan?: string | null
           rods?: number | null
