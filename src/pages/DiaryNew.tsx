@@ -81,13 +81,13 @@ export default function DiaryNew() {
   const [savedSetups, setSavedSetups] = useState<RodSetup[]>([]);
   const [showSavedSetups, setShowSavedSetups] = useState(false);
 
-  // Available venues from fishing_reports
-  const [venues, setVenues] = useState<string[]>([]);
+    // Available venues from reports_enriched
+    const [venues, setVenues] = useState<string[]>([]);
 
   useEffect(() => {
     async function loadVenues() {
       const { data } = await supabase
-        .from("fishing_reports")
+        .from("reports_enriched")
         .select("venue")
         .order("venue");
       if (data) {

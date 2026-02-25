@@ -314,13 +314,13 @@ serve(async (req) => {
 
     async function buildHistoricalForecast(): Promise<Forecast> {
       const { data: histReports } = await supabase
-        .from("fishing_reports")
-        .select("t_mean_week, wind_speed_mean_week, precip_total_mm_week, pressure_mean_week, humidity_mean_week, report_date")
+        .from("reports_enriched")
+        .select("t_mean_week, wind_speed_mean_week, precip_total_mm_week, pressure_mean_week, humidity_mean_week, date")
         .eq("venue", venue_name);
 
       const seasonal = (histReports ?? []).filter((r: any) =>
         r.t_mean_week != null &&
-        isWithinWeekWindow(r.report_date, targetWeek, weekWindow + 2)
+        isWithinWeekWindow(r.date, targetWeek, weekWindow + 2)
       );
 
       if (seasonal.length === 0) {
@@ -423,13 +423,13 @@ serve(async (req) => {
 
     // ── Process 1+2: Report ranking ────────────────────────────
     const { data: allReports } = await supabase
-      .from("fishing_reports")
-      .select("venue, report_date, year, rod_average, methods, flies, best_spots, summary, t_mean_week, wind_speed_mean_week, precip_total_mm_week, pressure_mean_week, humidity_mean_week")
+      .from("reports_enriched")
+      .select("venue, date, year, rod_average, methods, flies, best_spots, summary, t_mean_week, wind_speed_mean_week, precip_total_mm_week, pressure_mean_week, humidity_mean_week")
       .eq("venue", venue_name);
 
     const reports: ReportRow[] = (allReports ?? []).map((r: any) => ({
       venue: r.venue,
-      date: r.report_date,
+      date: r.date,
       year: r.year,
       rod_average: r.rod_average,
       methods: r.methods,
