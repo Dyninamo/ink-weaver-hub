@@ -870,6 +870,20 @@ export default function AdminUpload() {
             </Link>
           </CardContent>
         </Card>
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-4 pb-4">
+            <Link to="/admin/venue-submissions" className="flex items-center gap-3 group">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <MapPin className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Venue Submissions</p>
+                <p className="text-xs text-muted-foreground">Review user-submitted venues</p>
+              </div>
+              <span className="ml-auto text-muted-foreground group-hover:text-primary transition-colors">→</span>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
 
       <DiarySessionsSection />

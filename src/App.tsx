@@ -20,6 +20,7 @@ import AdminUpload from "./pages/AdminUpload";
 import AdminDbStatus from "./pages/AdminDbStatus";
 import AdminTestAdvice from "./pages/AdminTestAdvice";
 import AdminRecompute from "./pages/AdminRecompute";
+import AdminVenueSubmissions from "./pages/AdminVenueSubmissions";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -89,6 +90,7 @@ const App = () => (
             <Route path="/admin/db-status" element={<AdminDbStatus />} />
             <Route path="/admin/test-advice" element={<AdminTestAdvice />} />
             <Route path="/admin/recompute" element={<AdminRecompute />} />
+            <Route path="/admin/venue-submissions" element={<AdminVenueSubmissions />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
