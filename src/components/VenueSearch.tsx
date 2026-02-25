@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, X, Star, ChevronRight, ChevronDown, ArrowRight, Loader2, MapPin, Navigation } from "lucide-react";
 import { format, addDays, nextSaturday, isSaturday, isSunday, formatDistanceToNow } from "date-fns";
 import { haversineDistanceMiles } from "@/utils/distance";
+import VenueSubmissionForm from "@/components/VenueSubmissionForm";
 
 interface VenueSearchProps {
   onAdviceRequest: (venueId: string, venueName: string, date: string) => void;
@@ -120,6 +121,9 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   const [resolvingLocation, setResolvingLocation] = useState(false);
   const [selectedRadius, setSelectedRadius] = useState(25);
   const nominatimLastCall = useRef(0);
+
+  // Add-a-water form
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -606,6 +610,31 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
     );
   };
 
+  // -- ADD-A-WATER FORM --
+  if (showAddForm) {
+    return (
+      <div className="space-y-3">
+        <VenueSubmissionForm
+          initialName={searchText || debouncedSearch}
+          userLocation={userLocation}
+          onSubmitted={(venue) => {
+            setShowAddForm(false);
+            setFavouritedIds((prev) => new Set(prev).add(venue.venue_id));
+            setFavouriteVenues((prev) => [venue, ...prev]);
+            handleSelectVenue(venue);
+          }}
+          onSelectExisting={(venueId) => {
+            setShowAddForm(false);
+            const found = results.find((r) => r.venue_id === venueId)
+              || favouriteVenues.find((v) => v.venue_id === venueId);
+            if (found) handleSelectVenue(found);
+          }}
+          onCancel={() => setShowAddForm(false)}
+        />
+      </div>
+    );
+  }
+
   // -- SELECTED STATE --
   if (selectedVenue) {
     const venueWithDist = addDistanceToVenue(selectedVenue);
@@ -895,12 +924,14 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
               Searching...
             </div>
           ) : groupedResults.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
-              <p>No venues found for &lsquo;{debouncedSearch}&rsquo;</p>
-              {nearMeActive && userLocation && (
-                <p className="text-xs mt-1">Try increasing the radius or removing the location filter</p>
-              )}
-              <p className="text-xs mt-2 text-primary/70">Can&apos;t find your water? Add it →</p>
+            <div className="py-8 text-center space-y-3">
+              <div className="text-muted-foreground">
+                <p>We don&apos;t have &ldquo;{debouncedSearch}&rdquo; yet</p>
+                <p className="text-xs mt-1">Add it to our database and start fishing</p>
+              </div>
+              <Button onClick={() => setShowAddForm(true)} className="mx-auto">
+                Add {debouncedSearch}
+              </Button>
             </div>
           ) : (
             <>
@@ -920,6 +951,15 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
                   Refine your search to see more results
                 </div>
               )}
+              <div className="px-4 py-3 text-center">
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => setShowAddForm(true)}
+                >
+                  Can&apos;t find your water? Add it →
+                </button>
+              </div>
             </>
           )}
         </div>
