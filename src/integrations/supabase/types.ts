@@ -1174,6 +1174,414 @@ export type Database = {
         }
         Relationships: []
       }
+      river_advice_confidence: {
+        Row: {
+          confidence_tier: string | null
+          data_volume_score: number | null
+          fly_coverage_score: number | null
+          n_sessions: number | null
+          overall_confidence: number | null
+          section_id: string
+          section_name: string | null
+          species_coverage_score: number | null
+          temporal_coverage_score: number | null
+          weather_coverage_score: number | null
+        }
+        Insert: {
+          confidence_tier?: string | null
+          data_volume_score?: number | null
+          fly_coverage_score?: number | null
+          n_sessions?: number | null
+          overall_confidence?: number | null
+          section_id: string
+          section_name?: string | null
+          species_coverage_score?: number | null
+          temporal_coverage_score?: number | null
+          weather_coverage_score?: number | null
+        }
+        Update: {
+          confidence_tier?: string | null
+          data_volume_score?: number | null
+          fly_coverage_score?: number | null
+          n_sessions?: number | null
+          overall_confidence?: number | null
+          section_id?: string
+          section_name?: string | null
+          species_coverage_score?: number | null
+          temporal_coverage_score?: number | null
+          weather_coverage_score?: number | null
+        }
+        Relationships: []
+      }
+      river_condition_modifiers: {
+        Row: {
+          catch_rate_modifier: number | null
+          condition: string
+          confidence: number | null
+          section_id: string
+          source: string | null
+        }
+        Insert: {
+          catch_rate_modifier?: number | null
+          condition: string
+          confidence?: number | null
+          section_id: string
+          source?: string | null
+        }
+        Update: {
+          catch_rate_modifier?: number | null
+          condition?: string
+          confidence?: number | null
+          section_id?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
+      river_fly_recommendations: {
+        Row: {
+          confidence_n: number | null
+          fly_1: string | null
+          fly_2: string | null
+          fly_3: string | null
+          heavy_rain_flies: string | null
+          high_water_style: string | null
+          id: number
+          method_detail: string | null
+          month: number | null
+          scope: string | null
+          scope_id: string | null
+          section_id: string | null
+          species: string | null
+          style: string | null
+          temp_band: string | null
+        }
+        Insert: {
+          confidence_n?: number | null
+          fly_1?: string | null
+          fly_2?: string | null
+          fly_3?: string | null
+          heavy_rain_flies?: string | null
+          high_water_style?: string | null
+          id?: number
+          method_detail?: string | null
+          month?: number | null
+          scope?: string | null
+          scope_id?: string | null
+          section_id?: string | null
+          species?: string | null
+          style?: string | null
+          temp_band?: string | null
+        }
+        Update: {
+          confidence_n?: number | null
+          fly_1?: string | null
+          fly_2?: string | null
+          fly_3?: string | null
+          heavy_rain_flies?: string | null
+          high_water_style?: string | null
+          id?: number
+          method_detail?: string | null
+          month?: number | null
+          scope?: string | null
+          scope_id?: string | null
+          section_id?: string | null
+          species?: string | null
+          style?: string | null
+          temp_band?: string | null
+        }
+        Relationships: []
+      }
+      river_recommendation_lookup: {
+        Row: {
+          confidence_n: number | null
+          fly_1: string | null
+          fly_2: string | null
+          fly_3: string | null
+          id: number
+          month: number | null
+          rainfall_modifier: string | null
+          recommended_style: string | null
+          scope: string | null
+          scope_id: string | null
+          species: string | null
+          temp_band: string | null
+        }
+        Insert: {
+          confidence_n?: number | null
+          fly_1?: string | null
+          fly_2?: string | null
+          fly_3?: string | null
+          id?: number
+          month?: number | null
+          rainfall_modifier?: string | null
+          recommended_style?: string | null
+          scope?: string | null
+          scope_id?: string | null
+          species?: string | null
+          temp_band?: string | null
+        }
+        Update: {
+          confidence_n?: number | null
+          fly_1?: string | null
+          fly_2?: string | null
+          fly_3?: string | null
+          id?: number
+          month?: number | null
+          rainfall_modifier?: string | null
+          recommended_style?: string | null
+          scope?: string | null
+          scope_id?: string | null
+          species?: string | null
+          temp_band?: string | null
+        }
+        Relationships: []
+      }
+      river_regional_defaults: {
+        Row: {
+          baseline_catch_rate: number | null
+          cold_modifier: number | null
+          default_style: string | null
+          fly_1: string | null
+          fly_2: string | null
+          fly_3: string | null
+          heavy_rain_modifier: number | null
+          high_water_modifier: number | null
+          low_water_modifier: number | null
+          method_detail: string | null
+          month: number
+          n_events: number | null
+          region_id: string
+          region_name: string | null
+          species: string
+          strong_wind_modifier: number | null
+          style_pct_dry: number | null
+          style_pct_nymph: number | null
+          style_pct_spider: number | null
+          style_pct_streamer: number | null
+          style_pct_wet: number | null
+          warm_modifier: number | null
+        }
+        Insert: {
+          baseline_catch_rate?: number | null
+          cold_modifier?: number | null
+          default_style?: string | null
+          fly_1?: string | null
+          fly_2?: string | null
+          fly_3?: string | null
+          heavy_rain_modifier?: number | null
+          high_water_modifier?: number | null
+          low_water_modifier?: number | null
+          method_detail?: string | null
+          month: number
+          n_events?: number | null
+          region_id: string
+          region_name?: string | null
+          species: string
+          strong_wind_modifier?: number | null
+          style_pct_dry?: number | null
+          style_pct_nymph?: number | null
+          style_pct_spider?: number | null
+          style_pct_streamer?: number | null
+          style_pct_wet?: number | null
+          warm_modifier?: number | null
+        }
+        Update: {
+          baseline_catch_rate?: number | null
+          cold_modifier?: number | null
+          default_style?: string | null
+          fly_1?: string | null
+          fly_2?: string | null
+          fly_3?: string | null
+          heavy_rain_modifier?: number | null
+          high_water_modifier?: number | null
+          low_water_modifier?: number | null
+          method_detail?: string | null
+          month?: number
+          n_events?: number | null
+          region_id?: string
+          region_name?: string | null
+          species?: string
+          strong_wind_modifier?: number | null
+          style_pct_dry?: number | null
+          style_pct_nymph?: number | null
+          style_pct_spider?: number | null
+          style_pct_streamer?: number | null
+          style_pct_wet?: number | null
+          warm_modifier?: number | null
+        }
+        Relationships: []
+      }
+      river_seasonal_baselines: {
+        Row: {
+          blank_rate: number | null
+          catch_rate: number | null
+          fishing_type_norm: string
+          month: number
+          n_catch: number | null
+          n_sessions: number | null
+          region_id: string | null
+          section_id: string
+          section_name: string | null
+          total_fish: number | null
+        }
+        Insert: {
+          blank_rate?: number | null
+          catch_rate?: number | null
+          fishing_type_norm: string
+          month: number
+          n_catch?: number | null
+          n_sessions?: number | null
+          region_id?: string | null
+          section_id: string
+          section_name?: string | null
+          total_fish?: number | null
+        }
+        Update: {
+          blank_rate?: number | null
+          catch_rate?: number | null
+          fishing_type_norm?: string
+          month?: number
+          n_catch?: number | null
+          n_sessions?: number | null
+          region_id?: string | null
+          section_id?: string
+          section_name?: string | null
+          total_fish?: number | null
+        }
+        Relationships: []
+      }
+      river_seasonal_flies: {
+        Row: {
+          catch_count: number | null
+          fly_canonical: string | null
+          month: number
+          pct_of_month: number | null
+          rank: number
+          region_id: string
+        }
+        Insert: {
+          catch_count?: number | null
+          fly_canonical?: string | null
+          month: number
+          pct_of_month?: number | null
+          rank: number
+          region_id: string
+        }
+        Update: {
+          catch_count?: number | null
+          fly_canonical?: string | null
+          month?: number
+          pct_of_month?: number | null
+          rank?: number
+          region_id?: string
+        }
+        Relationships: []
+      }
+      river_section_profiles: {
+        Row: {
+          blank_rate: number | null
+          catchment_group: string | null
+          dominant_species: string | null
+          grayling_pct: number | null
+          mean_fish: number | null
+          n_sessions: number | null
+          nearest_water_station: string | null
+          nearest_weather_station: string | null
+          pct_fly_coverage: number | null
+          pct_water_coverage: number | null
+          pct_weather_coverage: number | null
+          peak_month: number | null
+          region_id: string | null
+          region_name: string | null
+          river_name: string | null
+          salmon_pct: number | null
+          section_id: string
+          section_name: string | null
+          trend_direction: string | null
+          trend_significance: string | null
+          water_station_dist_km: number | null
+          weather_station_dist_km: number | null
+        }
+        Insert: {
+          blank_rate?: number | null
+          catchment_group?: string | null
+          dominant_species?: string | null
+          grayling_pct?: number | null
+          mean_fish?: number | null
+          n_sessions?: number | null
+          nearest_water_station?: string | null
+          nearest_weather_station?: string | null
+          pct_fly_coverage?: number | null
+          pct_water_coverage?: number | null
+          pct_weather_coverage?: number | null
+          peak_month?: number | null
+          region_id?: string | null
+          region_name?: string | null
+          river_name?: string | null
+          salmon_pct?: number | null
+          section_id: string
+          section_name?: string | null
+          trend_direction?: string | null
+          trend_significance?: string | null
+          water_station_dist_km?: number | null
+          weather_station_dist_km?: number | null
+        }
+        Update: {
+          blank_rate?: number | null
+          catchment_group?: string | null
+          dominant_species?: string | null
+          grayling_pct?: number | null
+          mean_fish?: number | null
+          n_sessions?: number | null
+          nearest_water_station?: string | null
+          nearest_weather_station?: string | null
+          pct_fly_coverage?: number | null
+          pct_water_coverage?: number | null
+          pct_weather_coverage?: number | null
+          peak_month?: number | null
+          region_id?: string | null
+          region_name?: string | null
+          river_name?: string | null
+          salmon_pct?: number | null
+          section_id?: string
+          section_name?: string | null
+          trend_direction?: string | null
+          trend_significance?: string | null
+          water_station_dist_km?: number | null
+          weather_station_dist_km?: number | null
+        }
+        Relationships: []
+      }
+      river_species_composition: {
+        Row: {
+          catch_count: number | null
+          pct: number | null
+          region_id: string | null
+          section_id: string
+          section_name: string | null
+          species_group: string
+          total_catches: number | null
+        }
+        Insert: {
+          catch_count?: number | null
+          pct?: number | null
+          region_id?: string | null
+          section_id: string
+          section_name?: string | null
+          species_group: string
+          total_catches?: number | null
+        }
+        Update: {
+          catch_count?: number | null
+          pct?: number | null
+          region_id?: string | null
+          section_id?: string
+          section_name?: string | null
+          species_group?: string
+          total_catches?: number | null
+        }
+        Relationships: []
+      }
       session_events: {
         Row: {
           blank_confidence: string | null
@@ -1510,6 +1918,231 @@ export type Database = {
             referencedColumns: ["water_type_id"]
           },
         ]
+      }
+      stillwater_advice_confidence: {
+        Row: {
+          confidence_tier: string | null
+          data_volume_score: number | null
+          fly_coverage_score: number | null
+          n_sessions: number | null
+          overall_confidence: number | null
+          seasonal_spread_score: number | null
+          temporal_coverage_score: number | null
+          venue_id: string
+          venue_name: string
+          weather_coverage_score: number | null
+        }
+        Insert: {
+          confidence_tier?: string | null
+          data_volume_score?: number | null
+          fly_coverage_score?: number | null
+          n_sessions?: number | null
+          overall_confidence?: number | null
+          seasonal_spread_score?: number | null
+          temporal_coverage_score?: number | null
+          venue_id: string
+          venue_name: string
+          weather_coverage_score?: number | null
+        }
+        Update: {
+          confidence_tier?: string | null
+          data_volume_score?: number | null
+          fly_coverage_score?: number | null
+          n_sessions?: number | null
+          overall_confidence?: number | null
+          seasonal_spread_score?: number | null
+          temporal_coverage_score?: number | null
+          venue_id?: string
+          venue_name?: string
+          weather_coverage_score?: number | null
+        }
+        Relationships: []
+      }
+      stillwater_condition_modifiers: {
+        Row: {
+          baseline: number | null
+          catch_rate: number | null
+          condition: string
+          modifier: number | null
+          n_sessions: number | null
+          source: string | null
+          venue_id: string
+          venue_name: string
+          venue_type: string | null
+        }
+        Insert: {
+          baseline?: number | null
+          catch_rate?: number | null
+          condition: string
+          modifier?: number | null
+          n_sessions?: number | null
+          source?: string | null
+          venue_id: string
+          venue_name: string
+          venue_type?: string | null
+        }
+        Update: {
+          baseline?: number | null
+          catch_rate?: number | null
+          condition?: string
+          modifier?: number | null
+          n_sessions?: number | null
+          source?: string | null
+          venue_id?: string
+          venue_name?: string
+          venue_type?: string | null
+        }
+        Relationships: []
+      }
+      stillwater_fly_rankings: {
+        Row: {
+          catch_per_event: number | null
+          fly_canonical: string
+          id: number
+          n_events: number | null
+          rank: number | null
+          source: string | null
+          total_fish: number | null
+          venue_id: string
+          venue_name: string | null
+        }
+        Insert: {
+          catch_per_event?: number | null
+          fly_canonical: string
+          id?: number
+          n_events?: number | null
+          rank?: number | null
+          source?: string | null
+          total_fish?: number | null
+          venue_id: string
+          venue_name?: string | null
+        }
+        Update: {
+          catch_per_event?: number | null
+          fly_canonical?: string
+          id?: number
+          n_events?: number | null
+          rank?: number | null
+          source?: string | null
+          total_fish?: number | null
+          venue_id?: string
+          venue_name?: string | null
+        }
+        Relationships: []
+      }
+      stillwater_fly_recommendations: {
+        Row: {
+          confidence_n: number | null
+          fly_1: string | null
+          fly_2: string | null
+          fly_3: string | null
+          month: number
+          recommended_style: string | null
+          source: string | null
+          venue_id: string
+          venue_name: string
+        }
+        Insert: {
+          confidence_n?: number | null
+          fly_1?: string | null
+          fly_2?: string | null
+          fly_3?: string | null
+          month: number
+          recommended_style?: string | null
+          source?: string | null
+          venue_id: string
+          venue_name: string
+        }
+        Update: {
+          confidence_n?: number | null
+          fly_1?: string | null
+          fly_2?: string | null
+          fly_3?: string | null
+          month?: number
+          recommended_style?: string | null
+          source?: string | null
+          venue_id?: string
+          venue_name?: string
+        }
+        Relationships: []
+      }
+      stillwater_seasonal_baselines: {
+        Row: {
+          blank_rate: number | null
+          mean_fish: number | null
+          month: number
+          n_sessions: number | null
+          venue_id: string
+          venue_name: string
+        }
+        Insert: {
+          blank_rate?: number | null
+          mean_fish?: number | null
+          month: number
+          n_sessions?: number | null
+          venue_id: string
+          venue_name: string
+        }
+        Update: {
+          blank_rate?: number | null
+          mean_fish?: number | null
+          month?: number
+          n_sessions?: number | null
+          venue_id?: string
+          venue_name?: string
+        }
+        Relationships: []
+      }
+      stillwater_venue_profiles: {
+        Row: {
+          area: string | null
+          blank_rate: number | null
+          date_max: string | null
+          date_min: string | null
+          lat: number | null
+          lng: number | null
+          mean_fish: number | null
+          n_anglers: number | null
+          n_sessions: number | null
+          peak_month: number | null
+          venue_id: string
+          venue_name: string
+          venue_type: string | null
+          weather_coverage_pct: number | null
+        }
+        Insert: {
+          area?: string | null
+          blank_rate?: number | null
+          date_max?: string | null
+          date_min?: string | null
+          lat?: number | null
+          lng?: number | null
+          mean_fish?: number | null
+          n_anglers?: number | null
+          n_sessions?: number | null
+          peak_month?: number | null
+          venue_id: string
+          venue_name: string
+          venue_type?: string | null
+          weather_coverage_pct?: number | null
+        }
+        Update: {
+          area?: string | null
+          blank_rate?: number | null
+          date_max?: string | null
+          date_min?: string | null
+          lat?: number | null
+          lng?: number | null
+          mean_fish?: number | null
+          n_anglers?: number | null
+          n_sessions?: number | null
+          peak_month?: number | null
+          venue_id?: string
+          venue_name?: string
+          venue_type?: string | null
+          weather_coverage_pct?: number | null
+        }
+        Relationships: []
       }
       user_profiles: {
         Row: {
