@@ -165,6 +165,41 @@ export async function endSession(id: string, wrapUp: {
   // Fire-and-forget: compute session summary → cascades to angler + venue stats
   triggerSessionSummary(id);
 
+  // Auto-favourite the venue and log to history
+  try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (currentUser && session.venue_name) {
+      const { data: venue } = await supabase
+        .from('venues_new')
+        .select('venue_id')
+        .ilike('name', session.venue_name)
+        .limit(1)
+        .maybeSingle();
+
+      if (venue) {
+        // Upsert favourite — ignore if already exists
+        await supabase
+          .from('user_venue_favourites')
+          .upsert(
+            { user_id: currentUser.id, venue_id: venue.venue_id },
+            { onConflict: 'user_id,venue_id', ignoreDuplicates: true }
+          );
+
+        // Log to venue history
+        await supabase
+          .from('user_venue_history')
+          .insert({
+            user_id: currentUser.id,
+            venue_id: venue.venue_id,
+            action: 'diary',
+          });
+      }
+    }
+  } catch (err) {
+    console.error('Auto-favourite/history failed:', err);
+    // Non-critical — don't block the session end flow
+  }
+
   return result;
 }
 

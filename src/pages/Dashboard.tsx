@@ -63,6 +63,32 @@ const Dashboard = () => {
     setIsLoading(true);
 
     try {
+      // Log venue selection to history (fire-and-forget)
+      if (user) {
+        supabase
+          .from("user_venue_history")
+          .insert({ user_id: user.id, venue_id: venueId, action: "advice" })
+          .then(({ error }) => {
+            if (error) console.error("History log failed:", error);
+            // Prune old history
+            supabase
+              .from("user_venue_history")
+              .select("id")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false })
+              .range(50, 999)
+              .then(({ data: oldRows }) => {
+                if (oldRows && oldRows.length > 0) {
+                  supabase
+                    .from("user_venue_history")
+                    .delete()
+                    .in("id", oldRows.map((r) => r.id))
+                    .then();
+                }
+              });
+          });
+      }
+
       setLoadingMessage("Analysing conditions and fetching weather...");
       const result = await getFishingAdvice(venueName, dateString);
 
