@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Search, X, Star, ChevronRight, ChevronDown, ArrowRight, Loader2 } from "lucide-react";
+import { Search, X, Star, ChevronRight, ChevronDown, ArrowRight, Loader2, MapPin, Navigation } from "lucide-react";
 import { format, addDays, nextSaturday, isSaturday, isSunday, formatDistanceToNow } from "date-fns";
+import { haversineDistanceMiles } from "@/utils/distance";
 
 interface VenueSearchProps {
   onAdviceRequest: (venueId: string, venueName: string, date: string) => void;
@@ -32,6 +33,10 @@ interface VenueResult {
   search_text: string;
 }
 
+interface VenueWithDistance extends VenueResult {
+  distance?: number;
+}
+
 interface WaterType {
   water_type_id: number;
   water_type: string;
@@ -51,6 +56,12 @@ interface HistoryRow {
   venues_new: VenueResult | null;
 }
 
+interface UserLocation {
+  lat: number;
+  lng: number;
+  source: "gps" | "manual";
+}
+
 const STILLWATER_IDS = [1, 2, 7];
 const RIVER_IDS = [3, 4, 5, 6];
 
@@ -66,6 +77,9 @@ const RIVER_SUBTYPES = [
   { id: 5, label: "Spate" },
   { id: 6, label: "Limestone" },
 ];
+
+const RADIUS_OPTIONS = [5, 10, 25, 50] as const;
+const UK_POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
 
 type FilterMode = "all" | "stillwater" | "river" | "nearme";
 
@@ -95,6 +109,17 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   const [favouriteVenues, setFavouriteVenues] = useState<VenueResult[]>([]);
   const [showAllFavourites, setShowAllFavourites] = useState(false);
   const [historyVenues, setHistoryVenues] = useState<{ venue: VenueResult; timestamp: string }[]>([]);
+
+  // Near me / location state
+  const [nearMeActive, setNearMeActive] = useState(false);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [showManualLocation, setShowManualLocation] = useState(false);
+  const [manualLocationInput, setManualLocationInput] = useState("");
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [resolvingLocation, setResolvingLocation] = useState(false);
+  const [selectedRadius, setSelectedRadius] = useState(25);
+  const nominatimLastCall = useRef(0);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,7 +164,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
 
       if (data) {
         const rows = data as unknown as HistoryRow[];
-        // Deduplicate by venue_id, keep most recent
         const seen = new Set<string>();
         const deduped: { venue: VenueResult; timestamp: string }[] = [];
         for (const r of rows) {
@@ -213,28 +237,166 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
     [waterTypes]
   );
 
-  // Filter favourites/history by active water type filter
+  // --- Distance helpers ---
+  const addDistanceToVenue = useCallback(
+    (venue: VenueResult): VenueWithDistance => {
+      if (!userLocation || !nearMeActive || venue.latitude == null || venue.longitude == null) {
+        return venue;
+      }
+      return {
+        ...venue,
+        distance: haversineDistanceMiles(userLocation.lat, userLocation.lng, venue.latitude, venue.longitude),
+      };
+    },
+    [userLocation, nearMeActive]
+  );
+
+  const applyDistanceFilter = useCallback(
+    (venues: VenueWithDistance[]): VenueWithDistance[] => {
+      if (!nearMeActive || !userLocation) return venues;
+      return venues
+        .filter((v) => v.distance != null && v.distance <= selectedRadius)
+        .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+    },
+    [nearMeActive, userLocation, selectedRadius]
+  );
+
+  // Filter favourites/history by active water type filter + distance
   const filteredFavourites = useMemo(() => {
     const ids = getActiveWaterTypeIds();
-    if (!ids) return favouriteVenues;
-    return favouriteVenues.filter((v) => ids.includes(v.water_type_id));
-  }, [favouriteVenues, getActiveWaterTypeIds]);
+    let favs = ids ? favouriteVenues.filter((v) => ids.includes(v.water_type_id)) : favouriteVenues;
+    const withDist = favs.map(addDistanceToVenue);
+    return nearMeActive && userLocation ? applyDistanceFilter(withDist) : withDist;
+  }, [favouriteVenues, getActiveWaterTypeIds, addDistanceToVenue, applyDistanceFilter, nearMeActive, userLocation]);
 
   const filteredHistory = useMemo(() => {
     const ids = getActiveWaterTypeIds();
-    if (!ids) return historyVenues;
-    return historyVenues.filter((h) => ids.includes(h.venue.water_type_id));
-  }, [historyVenues, getActiveWaterTypeIds]);
+    let hist = ids ? historyVenues.filter((h) => ids.includes(h.venue.water_type_id)) : historyVenues;
+    if (nearMeActive && userLocation) {
+      return hist
+        .map((h) => ({ ...h, venue: addDistanceToVenue(h.venue) as VenueWithDistance }))
+        .filter((h) => h.venue.distance != null && h.venue.distance <= selectedRadius)
+        .sort((a, b) => (a.venue.distance ?? Infinity) - (b.venue.distance ?? Infinity));
+    }
+    return hist.map((h) => ({ ...h, venue: addDistanceToVenue(h.venue) as VenueWithDistance }));
+  }, [historyVenues, getActiveWaterTypeIds, addDistanceToVenue, nearMeActive, userLocation, selectedRadius, applyDistanceFilter]);
 
   const groupedResults = useMemo(() => {
-    const rivers: VenueResult[] = [];
-    const flat: VenueResult[] = [];
-    for (const r of results) {
+    const withDist = results.map(addDistanceToVenue);
+    const filtered = nearMeActive && userLocation ? applyDistanceFilter(withDist) : withDist;
+
+    const rivers: VenueWithDistance[] = [];
+    const flat: VenueWithDistance[] = [];
+    for (const r of filtered) {
       if (r.level === "river") rivers.push(r);
       else flat.push(r);
     }
     return [...rivers, ...flat].slice(0, 15);
-  }, [results]);
+  }, [results, addDistanceToVenue, applyDistanceFilter, nearMeActive, userLocation]);
+
+  // --- Near me handlers ---
+  const handleNearMeTap = () => {
+    if (nearMeActive) {
+      // Deactivate
+      setNearMeActive(false);
+      setShowManualLocation(false);
+      setLocationError(null);
+      return;
+    }
+
+    // If we already have a cached location, just activate
+    if (userLocation) {
+      setNearMeActive(true);
+      return;
+    }
+
+    // Try GPS
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          source: "gps",
+        });
+        setNearMeActive(true);
+        setLocating(false);
+      },
+      () => {
+        // GPS denied/failed — show manual entry
+        setShowManualLocation(true);
+        setNearMeActive(true);
+        setLocating(false);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
+  };
+
+  const resolveManualLocation = async () => {
+    const input = manualLocationInput.trim();
+    if (!input) return;
+    setLocationError(null);
+    setResolvingLocation(true);
+
+    try {
+      if (UK_POSTCODE_REGEX.test(input)) {
+        // Postcode lookup
+        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(input)}`);
+        const json = await res.json();
+        if (json.status === 200 && json.result) {
+          setUserLocation({ lat: json.result.latitude, lng: json.result.longitude, source: "manual" });
+          setShowManualLocation(false);
+          setManualLocationInput("");
+        } else {
+          setLocationError("Invalid postcode — try again");
+        }
+      } else {
+        // Town name — Nominatim with rate limit
+        const now = Date.now();
+        const wait = Math.max(0, 1000 - (now - nominatimLastCall.current));
+        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+        nominatimLastCall.current = Date.now();
+
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&countrycodes=gb&format=json&limit=1`,
+          { headers: { "User-Agent": "FishingIntelligenceApp/1.0" } }
+        );
+        const json = await res.json();
+        if (json.length > 0) {
+          setUserLocation({ lat: parseFloat(json[0].lat), lng: parseFloat(json[0].lon), source: "manual" });
+          setShowManualLocation(false);
+          setManualLocationInput("");
+        } else {
+          setLocationError("Location not found — try a postcode");
+        }
+      }
+    } catch {
+      setLocationError("Failed to resolve location");
+    } finally {
+      setResolvingLocation(false);
+    }
+  };
+
+  const handleUseGpsFallback = () => {
+    setLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude, source: "gps" });
+        setShowManualLocation(false);
+        setLocating(false);
+      },
+      () => {
+        setLocationError("GPS not available — please enter a location");
+        setLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+  };
 
   const handleExpandRiver = async (river: VenueResult) => {
     const id = river.venue_id;
@@ -275,7 +437,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
 
     const wasFavourited = favouritedIds.has(venueId);
 
-    // Optimistic update
     setFavouritedIds((prev) => {
       const next = new Set(prev);
       if (wasFavourited) next.delete(venueId);
@@ -284,7 +445,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
     });
 
     if (wasFavourited) {
-      // Remove from favourites list
       setFavouriteVenues((prev) => prev.filter((v) => v.venue_id !== venueId));
     }
 
@@ -302,7 +462,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
           .insert({ user_id: user.id, venue_id: venueId });
         if (error) throw error;
 
-        // Add to favourites list if we have the venue data
         const venueData = results.find((r) => r.venue_id === venueId)
           || Object.values(riverChildren).flat().find((r) => r.venue_id === venueId)
           || historyVenues.find((h) => h.venue.venue_id === venueId)?.venue;
@@ -312,7 +471,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
       }
     } catch (err) {
       console.error("Toggle favourite failed:", err);
-      // Revert
       setFavouritedIds((prev) => {
         const next = new Set(prev);
         if (wasFavourited) next.add(venueId);
@@ -337,7 +495,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
 
   const handleFilterMode = (mode: FilterMode) => {
     if (mode === "nearme") {
-      toast({ title: "Coming soon", description: "Location-based search will be available soon." });
+      handleNearMeTap();
       return;
     }
     if (filterMode === mode) {
@@ -377,17 +535,20 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
     );
   };
 
-  const renderContextLine = (venue: VenueResult) => {
+  const renderContextLine = (venue: VenueWithDistance) => {
     const parts: string[] = [];
     if (venue.display_context) parts.push(venue.display_context);
     else if (venue.river_name) parts.push(venue.river_name);
     if (venue.county) parts.push(venue.county);
     const wt = waterTypeName(venue.water_type_id);
     if (wt) parts.push(wt);
+    if (nearMeActive && venue.distance != null) {
+      parts.push(`${venue.distance.toFixed(1)} miles`);
+    }
     return parts.join(" — ");
   };
 
-  const renderStar = (venueId: string, e?: React.MouseEvent) => {
+  const renderStar = (venueId: string) => {
     const isFav = favouritedIds.has(venueId);
     return (
       <button
@@ -406,7 +567,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
     );
   };
 
-  const renderResultRow = (venue: VenueResult, indent = 0) => {
+  const renderResultRow = (venue: VenueWithDistance, indent = 0) => {
     const isRiver = venue.level === "river";
     const isExpanded = expandedRivers.has(venue.venue_id);
     const isLoadingChildren = loadingRivers.has(venue.venue_id);
@@ -447,13 +608,14 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
 
   // -- SELECTED STATE --
   if (selectedVenue) {
+    const venueWithDist = addDistanceToVenue(selectedVenue);
     return (
       <div className="space-y-6">
         <div className="border border-border rounded-lg p-4 flex items-start gap-3">
           {renderStar(selectedVenue.venue_id)}
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-foreground">{selectedVenue.name}</div>
-            <div className="text-sm text-muted-foreground">{renderContextLine(selectedVenue)}</div>
+            <div className="text-sm text-muted-foreground">{renderContextLine(venueWithDist)}</div>
           </div>
           <Button variant="link" size="sm" onClick={handleChangeVenue} className="flex-shrink-0 text-primary">
             Change
@@ -542,23 +704,86 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
             { mode: "all" as const, label: "All" },
             { mode: "stillwater" as const, label: "Stillwater ▾" },
             { mode: "river" as const, label: "River ▾" },
-            { mode: "nearme" as const, label: "Near me" },
+            { mode: "nearme" as const, label: nearMeActive ? (userLocation ? "Near me ✓" : "Near me") : locating ? "Locating..." : "Near me" },
           ] as const).map((chip) => (
             <button
               key={chip.mode}
               type="button"
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-colors min-h-[36px]",
-                filterMode === chip.mode
+                "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-colors min-h-[36px] flex items-center gap-1.5",
+                chip.mode === "nearme" && nearMeActive
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : filterMode === chip.mode && chip.mode !== "nearme"
                   ? "bg-primary text-primary-foreground border-primary"
                   : "border-border text-muted-foreground hover:bg-muted"
               )}
               onClick={() => handleFilterMode(chip.mode)}
+              disabled={chip.mode === "nearme" && locating}
             >
+              {chip.mode === "nearme" && locating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              {chip.mode === "nearme" && !locating && <MapPin className="w-3.5 h-3.5" />}
               {chip.label}
             </button>
           ))}
         </div>
+
+        {/* Radius chips */}
+        {nearMeActive && userLocation && (
+          <div className="flex gap-2 overflow-x-auto pb-1 pl-4 scrollbar-hide">
+            {RADIUS_OPTIONS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors min-h-[32px]",
+                  selectedRadius === r
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border text-muted-foreground hover:bg-muted"
+                )}
+                onClick={() => setSelectedRadius(r)}
+              >
+                {r} mi
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Manual location entry */}
+        {nearMeActive && showManualLocation && !userLocation && (
+          <div className="border border-border rounded-lg p-3 space-y-2">
+            {navigator.geolocation && (
+              <button
+                type="button"
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+                onClick={handleUseGpsFallback}
+                disabled={locating}
+              >
+                <Navigation className="w-3 h-3" />
+                {locating ? "Locating..." : "Use my current location"}
+              </button>
+            )}
+            <div className="flex gap-2">
+              <Input
+                value={manualLocationInput}
+                onChange={(e) => { setManualLocationInput(e.target.value); setLocationError(null); }}
+                placeholder="Enter postcode or town name"
+                className="flex-1 h-9 text-sm"
+                onKeyDown={(e) => e.key === "Enter" && resolveManualLocation()}
+              />
+              <Button
+                size="sm"
+                onClick={resolveManualLocation}
+                disabled={resolvingLocation || !manualLocationInput.trim()}
+                className="h-9"
+              >
+                {resolvingLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : "Go"}
+              </Button>
+            </div>
+            {locationError && (
+              <p className="text-xs text-destructive">{locationError}</p>
+            )}
+          </div>
+        )}
 
         {filterMode === "stillwater" && (
           <div className="flex gap-2 overflow-x-auto pb-1 pl-4 scrollbar-hide">
@@ -598,7 +823,9 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
             {filteredFavourites.length === 0 ? (
               <div className="text-sm text-muted-foreground flex items-center gap-2 py-4">
                 <Star className="w-4 h-4 text-muted-foreground/30" />
-                Star venues to save them here
+                {nearMeActive && userLocation
+                  ? "No favourites within this radius"
+                  : "Star venues to save them here"}
               </div>
             ) : (
               <>
@@ -670,6 +897,9 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
           ) : groupedResults.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
               <p>No venues found for &lsquo;{debouncedSearch}&rsquo;</p>
+              {nearMeActive && userLocation && (
+                <p className="text-xs mt-1">Try increasing the radius or removing the location filter</p>
+              )}
               <p className="text-xs mt-2 text-primary/70">Can&apos;t find your water? Add it →</p>
             </div>
           ) : (
@@ -681,7 +911,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
                     expandedRivers.has(venue.venue_id) &&
                     riverChildren[venue.venue_id]?.map((child) => {
                       const indent = child.level === "beat" ? 2 : 1;
-                      return renderResultRow(child, indent);
+                      return renderResultRow(addDistanceToVenue(child), indent);
                     })}
                 </div>
               ))}
