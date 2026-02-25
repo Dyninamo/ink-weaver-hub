@@ -41,6 +41,8 @@ serve(async (req) => {
       'fish_types', 'fish_species_game', 'angler_profiles', 'angler_type_weights',
       'fishing_sessions', 'session_events', 'session_summaries',
       'angler_venue_stats', 'venue_stats', 'user_rod_setups',
+      'reports_raw', 'harvested_events', 'venues', 'counties', 'fisheries',
+      'url_patterns', 'crawl_audit', 'crawl_intelligence', 'discovered_urls', 'discovery_hubs',
     ];
 
     const results = [];

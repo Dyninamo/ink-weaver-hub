@@ -15,6 +15,7 @@ const ALLOWED_TABLES = [
   'river_regional_defaults', 'river_seasonal_flies',
   'river_condition_modifiers', 'river_species_composition',
   'river_advice_confidence',
+  'reports_raw', 'harvested_events', 'venues', 'counties', 'fisheries',
 ] as const;
 
 type AllowedTable = typeof ALLOWED_TABLES[number];
@@ -36,6 +37,11 @@ const pkCol: Record<string, string> = {
   river_condition_modifiers: 'section_id',
   river_species_composition: 'section_id',
   river_advice_confidence: 'section_id',
+  reports_raw: 'id',
+  harvested_events: 'id',
+  venues: 'id',
+  counties: 'county_id',
+  fisheries: 'fishery_id',
 };
 
 // Tables with SERIAL id columns — strip id from input so Postgres auto-generates
@@ -43,6 +49,9 @@ const SERIAL_ID_TABLES = new Set([
   'stillwater_fly_rankings',
   'river_fly_recommendations',
   'river_recommendation_lookup',
+  'reports_raw',
+  'harvested_events',
+  'venues',
 ]);
 
 serve(async (req) => {

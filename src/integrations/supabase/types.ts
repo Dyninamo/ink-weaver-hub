@@ -252,6 +252,121 @@ export type Database = {
         }
         Relationships: []
       }
+      counties: {
+        Row: {
+          country: string
+          county_id: number
+          county_name: string
+          region_id: number
+        }
+        Insert: {
+          country: string
+          county_id: number
+          county_name: string
+          region_id: number
+        }
+        Update: {
+          country?: string
+          county_id?: number
+          county_name?: string
+          region_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counties_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["region_id"]
+          },
+        ]
+      }
+      crawl_audit: {
+        Row: {
+          action: string | null
+          audit_id: number
+          details: string | null
+          fishery_id: number | null
+          result: string | null
+          timestamp: string | null
+          url: string | null
+        }
+        Insert: {
+          action?: string | null
+          audit_id?: number
+          details?: string | null
+          fishery_id?: number | null
+          result?: string | null
+          timestamp?: string | null
+          url?: string | null
+        }
+        Update: {
+          action?: string | null
+          audit_id?: number
+          details?: string | null
+          fishery_id?: number | null
+          result?: string | null
+          timestamp?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_audit_fishery_id_fkey"
+            columns: ["fishery_id"]
+            isOneToOne: false
+            referencedRelation: "fisheries"
+            referencedColumns: ["fishery_id"]
+          },
+        ]
+      }
+      crawl_intelligence: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          finding_data: string | null
+          finding_type: string | null
+          fishery_id: number | null
+          intel_id: number
+          pattern_id: number | null
+          verified: boolean | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          finding_data?: string | null
+          finding_type?: string | null
+          fishery_id?: number | null
+          intel_id?: number
+          pattern_id?: number | null
+          verified?: boolean | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          finding_data?: string | null
+          finding_type?: string | null
+          fishery_id?: number | null
+          intel_id?: number
+          pattern_id?: number | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crawl_intelligence_fishery_id_fkey"
+            columns: ["fishery_id"]
+            isOneToOne: false
+            referencedRelation: "fisheries"
+            referencedColumns: ["fishery_id"]
+          },
+          {
+            foreignKeyName: "crawl_intelligence_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "url_patterns"
+            referencedColumns: ["pattern_id"]
+          },
+        ]
+      }
       depths: {
         Row: {
           created_at: string | null
@@ -275,6 +390,104 @@ export type Database = {
           your_notes?: string | null
         }
         Relationships: []
+      }
+      discovered_urls: {
+        Row: {
+          discovered_at: string | null
+          discovered_from: string | null
+          discovery_method: string | null
+          download_success: boolean | null
+          download_timestamp: string | null
+          downloaded: boolean | null
+          fishery_id: number | null
+          http_status: number | null
+          sha256_hash: string | null
+          url: string
+          url_id: number
+        }
+        Insert: {
+          discovered_at?: string | null
+          discovered_from?: string | null
+          discovery_method?: string | null
+          download_success?: boolean | null
+          download_timestamp?: string | null
+          downloaded?: boolean | null
+          fishery_id?: number | null
+          http_status?: number | null
+          sha256_hash?: string | null
+          url: string
+          url_id?: number
+        }
+        Update: {
+          discovered_at?: string | null
+          discovered_from?: string | null
+          discovery_method?: string | null
+          download_success?: boolean | null
+          download_timestamp?: string | null
+          downloaded?: boolean | null
+          fishery_id?: number | null
+          http_status?: number | null
+          sha256_hash?: string | null
+          url?: string
+          url_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovered_urls_fishery_id_fkey"
+            columns: ["fishery_id"]
+            isOneToOne: false
+            referencedRelation: "fisheries"
+            referencedColumns: ["fishery_id"]
+          },
+        ]
+      }
+      discovery_hubs: {
+        Row: {
+          fishery_id: number | null
+          hub_id: number
+          hub_type: string | null
+          hub_url: string
+          last_crawled: string | null
+          pattern_id: number | null
+          reports_found: number | null
+          still_active: boolean | null
+        }
+        Insert: {
+          fishery_id?: number | null
+          hub_id?: number
+          hub_type?: string | null
+          hub_url: string
+          last_crawled?: string | null
+          pattern_id?: number | null
+          reports_found?: number | null
+          still_active?: boolean | null
+        }
+        Update: {
+          fishery_id?: number | null
+          hub_id?: number
+          hub_type?: string | null
+          hub_url?: string
+          last_crawled?: string | null
+          pattern_id?: number | null
+          reports_found?: number | null
+          still_active?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovery_hubs_fishery_id_fkey"
+            columns: ["fishery_id"]
+            isOneToOne: false
+            referencedRelation: "fisheries"
+            referencedColumns: ["fishery_id"]
+          },
+          {
+            foreignKeyName: "discovery_hubs_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "url_patterns"
+            referencedColumns: ["pattern_id"]
+          },
+        ]
       }
       fish_species_game: {
         Row: {
@@ -314,6 +527,63 @@ export type Database = {
         Update: {
           fish_type?: string
           fish_type_id?: number
+        }
+        Relationships: []
+      }
+      fisheries: {
+        Row: {
+          active: boolean | null
+          country: string | null
+          created_at: string | null
+          discovery_method: string | null
+          fishery_id: number
+          fishery_name: string
+          fishery_type: string | null
+          last_crawled: string | null
+          last_successful_crawl: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          platform_type: string | null
+          region: string | null
+          root_url: string | null
+          total_reports_found: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          country?: string | null
+          created_at?: string | null
+          discovery_method?: string | null
+          fishery_id?: number
+          fishery_name: string
+          fishery_type?: string | null
+          last_crawled?: string | null
+          last_successful_crawl?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          platform_type?: string | null
+          region?: string | null
+          root_url?: string | null
+          total_reports_found?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          country?: string | null
+          created_at?: string | null
+          discovery_method?: string | null
+          fishery_id?: number
+          fishery_name?: string
+          fishery_type?: string | null
+          last_crawled?: string | null
+          last_successful_crawl?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          platform_type?: string | null
+          region?: string | null
+          root_url?: string | null
+          total_reports_found?: number | null
         }
         Relationships: []
       }
@@ -656,6 +926,60 @@ export type Database = {
             referencedColumns: ["water_type_id"]
           },
         ]
+      }
+      harvested_events: {
+        Row: {
+          areas_json: Json | null
+          catch_form_json: Json | null
+          conditions_json: Json | null
+          created_at: string
+          flies_json: Json | null
+          flies_raw_json: Json | null
+          id: number
+          raw_text_segment: string
+          report_date: string
+          source_name: string
+          source_type: string
+          source_url: string
+          tactics_json: Json | null
+          venue_name: string
+          venue_name_raw: string | null
+        }
+        Insert: {
+          areas_json?: Json | null
+          catch_form_json?: Json | null
+          conditions_json?: Json | null
+          created_at: string
+          flies_json?: Json | null
+          flies_raw_json?: Json | null
+          id?: number
+          raw_text_segment: string
+          report_date: string
+          source_name: string
+          source_type: string
+          source_url: string
+          tactics_json?: Json | null
+          venue_name: string
+          venue_name_raw?: string | null
+        }
+        Update: {
+          areas_json?: Json | null
+          catch_form_json?: Json | null
+          conditions_json?: Json | null
+          created_at?: string
+          flies_json?: Json | null
+          flies_raw_json?: Json | null
+          id?: number
+          raw_text_segment?: string
+          report_date?: string
+          source_name?: string
+          source_type?: string
+          source_url?: string
+          tactics_json?: Json | null
+          venue_name?: string
+          venue_name_raw?: string | null
+        }
+        Relationships: []
       }
       hook_sizes: {
         Row: {
@@ -1086,6 +1410,51 @@ export type Database = {
           wind_speed_ms?: number | null
           wind_speed_std?: number | null
           year?: number | null
+        }
+        Relationships: []
+      }
+      reports_raw: {
+        Row: {
+          content: string | null
+          date: string | null
+          extraction_confidence: number | null
+          fishery_id: number | null
+          headers: string | null
+          id: number
+          platform_source: string | null
+          region: string | null
+          report_url: string | null
+          rod_averages: number | null
+          sha256_hash: string | null
+          venue: string | null
+        }
+        Insert: {
+          content?: string | null
+          date?: string | null
+          extraction_confidence?: number | null
+          fishery_id?: number | null
+          headers?: string | null
+          id?: never
+          platform_source?: string | null
+          region?: string | null
+          report_url?: string | null
+          rod_averages?: number | null
+          sha256_hash?: string | null
+          venue?: string | null
+        }
+        Update: {
+          content?: string | null
+          date?: string | null
+          extraction_confidence?: number | null
+          fishery_id?: number | null
+          headers?: string | null
+          id?: never
+          platform_source?: string | null
+          region?: string | null
+          report_url?: string | null
+          rod_averages?: number | null
+          sha256_hash?: string | null
+          venue?: string | null
         }
         Relationships: []
       }
@@ -2296,6 +2665,48 @@ export type Database = {
         }
         Relationships: []
       }
+      url_patterns: {
+        Row: {
+          confidence_score: number | null
+          created_by: string | null
+          discovered_at: string | null
+          example_urls: string | null
+          failure_count: number | null
+          last_used: string | null
+          pattern_id: number
+          pattern_template: string
+          pattern_type: string | null
+          success_count: number | null
+          works_for_platforms: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_by?: string | null
+          discovered_at?: string | null
+          example_urls?: string | null
+          failure_count?: number | null
+          last_used?: string | null
+          pattern_id?: number
+          pattern_template: string
+          pattern_type?: string | null
+          success_count?: number | null
+          works_for_platforms?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_by?: string | null
+          discovered_at?: string | null
+          example_urls?: string | null
+          failure_count?: number | null
+          last_used?: string | null
+          pattern_id?: number
+          pattern_template?: string
+          pattern_type?: string | null
+          success_count?: number | null
+          works_for_platforms?: string | null
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string | null
@@ -2603,6 +3014,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      venues: {
+        Row: {
+          id: number
+          latitude: number | null
+          location: string | null
+          longitude: number | null
+        }
+        Insert: {
+          id?: never
+          latitude?: number | null
+          location?: string | null
+          longitude?: number | null
+        }
+        Update: {
+          id?: never
+          latitude?: number | null
+          location?: string | null
+          longitude?: number | null
+        }
+        Relationships: []
       }
       venues_new: {
         Row: {
@@ -2929,6 +3361,78 @@ export type Database = {
           venue: string | null
           week_num: number | null
           wind_speed_mean_week: number | null
+          year: number | null
+        }
+        Relationships: []
+      }
+      model_inputs_ready: {
+        Row: {
+          best_spots: string[] | null
+          date: string | null
+          flies: string[] | null
+          humidity_mean_week: number | null
+          methods: string[] | null
+          precip_total_mm_week: number | null
+          pressure_mean_week: number | null
+          rod_average: number | null
+          t_mean_week: number | null
+          venue: string | null
+          water_temp_week: number | null
+          wind_speed_mean_week: number | null
+          year: number | null
+        }
+        Insert: {
+          best_spots?: string[] | null
+          date?: string | null
+          flies?: string[] | null
+          humidity_mean_week?: number | null
+          methods?: string[] | null
+          precip_total_mm_week?: number | null
+          pressure_mean_week?: number | null
+          rod_average?: number | null
+          t_mean_week?: number | null
+          venue?: string | null
+          water_temp_week?: number | null
+          wind_speed_mean_week?: number | null
+          year?: number | null
+        }
+        Update: {
+          best_spots?: string[] | null
+          date?: string | null
+          flies?: string[] | null
+          humidity_mean_week?: number | null
+          methods?: string[] | null
+          precip_total_mm_week?: number | null
+          pressure_mean_week?: number | null
+          rod_average?: number | null
+          t_mean_week?: number | null
+          venue?: string | null
+          water_temp_week?: number | null
+          wind_speed_mean_week?: number | null
+          year?: number | null
+        }
+        Relationships: []
+      }
+      report_weather_summary: {
+        Row: {
+          best_spots: string[] | null
+          date: string | null
+          flies: string[] | null
+          humidity_mean_week: number | null
+          methods: string[] | null
+          precip_mm: number | null
+          precip_total_mm_week: number | null
+          pressure_mean_week: number | null
+          rod_average: number | null
+          summary: string | null
+          t_avg_day: number | null
+          t_mean_week: number | null
+          venue: string | null
+          water_temp_week: number | null
+          wind_dir_deg: number | null
+          wind_dir_deg_week: number | null
+          wind_speed_mean_week: number | null
+          wind_speed_ms: number | null
           year: number | null
         }
         Relationships: []
