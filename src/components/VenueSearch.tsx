@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Search, X, Star, ChevronRight, ChevronDown, ArrowRight, Loader2 } from "lucide-react";
-import { format, addDays, nextSaturday, isSaturday, isSunday } from "date-fns";
+import { format, addDays, nextSaturday, isSaturday, isSunday, formatDistanceToNow } from "date-fns";
 
 interface VenueSearchProps {
   onAdviceRequest: (venueId: string, venueName: string, date: string) => void;
@@ -36,6 +37,20 @@ interface WaterType {
   water_type: string;
 }
 
+interface FavouriteRow {
+  venue_id: string;
+  created_at: string;
+  venues_new: VenueResult | null;
+}
+
+interface HistoryRow {
+  id: string;
+  venue_id: string;
+  action: string;
+  created_at: string;
+  venues_new: VenueResult | null;
+}
+
 const STILLWATER_IDS = [1, 2, 7];
 const RIVER_IDS = [3, 4, 5, 6];
 
@@ -54,7 +69,10 @@ const RIVER_SUBTYPES = [
 
 type FilterMode = "all" | "stillwater" | "river" | "nearme";
 
+const VENUE_SELECT_FIELDS = "venue_id, name, full_name, level, water_type_id, region_id, county, river_name, latitude, longitude, parent_id, session_count, display_context, search_text";
+
 const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [searchText, setSearchText] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -72,6 +90,12 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 1));
   const [activeQuickDate, setActiveQuickDate] = useState<string | null>(null);
 
+  // Favourites & history
+  const [favouritedIds, setFavouritedIds] = useState<Set<string>>(new Set());
+  const [favouriteVenues, setFavouriteVenues] = useState<VenueResult[]>([]);
+  const [showAllFavourites, setShowAllFavourites] = useState(false);
+  const [historyVenues, setHistoryVenues] = useState<{ venue: VenueResult; timestamp: string }[]>([]);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Load water types on mount
@@ -80,6 +104,58 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
       if (data) setWaterTypes(data);
     });
   }, []);
+
+  // Load favourites & history
+  useEffect(() => {
+    if (!user) return;
+
+    const loadFavourites = async () => {
+      const { data } = await supabase
+        .from("user_venue_favourites")
+        .select(`venue_id, created_at, venues_new (${VENUE_SELECT_FIELDS})`)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (data) {
+        const rows = data as unknown as FavouriteRow[];
+        const ids = new Set(rows.map((r) => r.venue_id));
+        setFavouritedIds(ids);
+
+        const venues = rows
+          .filter((r) => r.venues_new)
+          .map((r) => r.venues_new!)
+          .sort((a, b) => (b.session_count || 0) - (a.session_count || 0));
+        setFavouriteVenues(venues);
+      }
+    };
+
+    const loadHistory = async () => {
+      const { data } = await supabase
+        .from("user_venue_history")
+        .select(`id, venue_id, action, created_at, venues_new (${VENUE_SELECT_FIELDS})`)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (data) {
+        const rows = data as unknown as HistoryRow[];
+        // Deduplicate by venue_id, keep most recent
+        const seen = new Set<string>();
+        const deduped: { venue: VenueResult; timestamp: string }[] = [];
+        for (const r of rows) {
+          if (!seen.has(r.venue_id) && r.venues_new) {
+            seen.add(r.venue_id);
+            deduped.push({ venue: r.venues_new, timestamp: r.created_at });
+          }
+          if (deduped.length >= 5) break;
+        }
+        setHistoryVenues(deduped);
+      }
+    };
+
+    loadFavourites();
+    loadHistory();
+  }, [user]);
 
   // Debounce search
   useEffect(() => {
@@ -100,14 +176,13 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
       setIsSearching(true);
       let query = supabase
         .from("venues_new")
-        .select("venue_id, name, full_name, level, water_type_id, region_id, county, river_name, latitude, longitude, parent_id, session_count, display_context, search_text")
+        .select(VENUE_SELECT_FIELDS)
         .eq("is_searchable", true)
         .eq("is_active", true)
         .ilike("search_text", `%${debouncedSearch}%`)
         .order("session_count", { ascending: false })
         .limit(50);
 
-      // Apply water type filter
       const activeIds = getActiveWaterTypeIds();
       if (activeIds) {
         query = query.in("water_type_id", activeIds);
@@ -138,66 +213,114 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
     [waterTypes]
   );
 
-  // Group results: rivers as expandable parents, everything else as flat items
+  // Filter favourites/history by active water type filter
+  const filteredFavourites = useMemo(() => {
+    const ids = getActiveWaterTypeIds();
+    if (!ids) return favouriteVenues;
+    return favouriteVenues.filter((v) => ids.includes(v.water_type_id));
+  }, [favouriteVenues, getActiveWaterTypeIds]);
+
+  const filteredHistory = useMemo(() => {
+    const ids = getActiveWaterTypeIds();
+    if (!ids) return historyVenues;
+    return historyVenues.filter((h) => ids.includes(h.venue.water_type_id));
+  }, [historyVenues, getActiveWaterTypeIds]);
+
   const groupedResults = useMemo(() => {
     const rivers: VenueResult[] = [];
     const flat: VenueResult[] = [];
-
     for (const r of results) {
-      if (r.level === "river") {
-        rivers.push(r);
-      } else {
-        flat.push(r);
-      }
+      if (r.level === "river") rivers.push(r);
+      else flat.push(r);
     }
-
-    // Combine: rivers first, then flat items, max 15
-    const combined: VenueResult[] = [...rivers, ...flat].slice(0, 15);
-    return combined;
+    return [...rivers, ...flat].slice(0, 15);
   }, [results]);
 
   const handleExpandRiver = async (river: VenueResult) => {
     const id = river.venue_id;
     if (expandedRivers.has(id)) {
-      setExpandedRivers((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+      setExpandedRivers((prev) => { const next = new Set(prev); next.delete(id); return next; });
       return;
     }
 
     setLoadingRivers((prev) => new Set(prev).add(id));
-    // Fetch sections
     const { data: sections } = await supabase
       .from("venues_new")
-      .select("venue_id, name, full_name, level, water_type_id, region_id, county, river_name, latitude, longitude, parent_id, session_count, display_context, search_text")
+      .select(VENUE_SELECT_FIELDS)
       .eq("parent_id", id)
       .eq("is_active", true)
       .order("name");
 
     let allChildren = (sections as VenueResult[]) || [];
-
-    // Fetch beats for each section
     const sectionIds = allChildren.filter((c) => c.level === "section").map((c) => c.venue_id);
     if (sectionIds.length > 0) {
       const { data: beats } = await supabase
         .from("venues_new")
-        .select("venue_id, name, full_name, level, water_type_id, region_id, county, river_name, latitude, longitude, parent_id, session_count, display_context, search_text")
+        .select(VENUE_SELECT_FIELDS)
         .in("parent_id", sectionIds)
         .eq("is_active", true)
         .order("name");
-
       if (beats) allChildren = [...allChildren, ...(beats as VenueResult[])];
     }
 
     setRiverChildren((prev) => ({ ...prev, [id]: allChildren }));
     setExpandedRivers((prev) => new Set(prev).add(id));
-    setLoadingRivers((prev) => {
+    setLoadingRivers((prev) => { const next = new Set(prev); next.delete(id); return next; });
+  };
+
+  // Star toggle
+  const toggleFavourite = async (venueId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!user) return;
+
+    const wasFavourited = favouritedIds.has(venueId);
+
+    // Optimistic update
+    setFavouritedIds((prev) => {
       const next = new Set(prev);
-      next.delete(id);
+      if (wasFavourited) next.delete(venueId);
+      else next.add(venueId);
       return next;
     });
+
+    if (wasFavourited) {
+      // Remove from favourites list
+      setFavouriteVenues((prev) => prev.filter((v) => v.venue_id !== venueId));
+    }
+
+    try {
+      if (wasFavourited) {
+        const { error } = await supabase
+          .from("user_venue_favourites")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("venue_id", venueId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("user_venue_favourites")
+          .insert({ user_id: user.id, venue_id: venueId });
+        if (error) throw error;
+
+        // Add to favourites list if we have the venue data
+        const venueData = results.find((r) => r.venue_id === venueId)
+          || Object.values(riverChildren).flat().find((r) => r.venue_id === venueId)
+          || historyVenues.find((h) => h.venue.venue_id === venueId)?.venue;
+        if (venueData) {
+          setFavouriteVenues((prev) => [venueData, ...prev]);
+        }
+      }
+    } catch (err) {
+      console.error("Toggle favourite failed:", err);
+      // Revert
+      setFavouritedIds((prev) => {
+        const next = new Set(prev);
+        if (wasFavourited) next.add(venueId);
+        else next.delete(venueId);
+        return next;
+      });
+      toast({ variant: "destructive", title: "Error", description: "Failed to update favourite." });
+    }
   };
 
   const handleSelectVenue = (venue: VenueResult) => {
@@ -229,14 +352,9 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   const handleQuickDate = (key: string) => {
     const today = new Date();
     let d: Date;
-    if (key === "today") {
-      d = today;
-    } else if (key === "tomorrow") {
-      d = addDays(today, 1);
-    } else {
-      // This weekend = next Saturday
-      d = isSaturday(today) ? today : isSunday(today) ? addDays(today, 6) : nextSaturday(today);
-    }
+    if (key === "today") d = today;
+    else if (key === "tomorrow") d = addDays(today, 1);
+    else d = isSaturday(today) ? today : isSunday(today) ? addDays(today, 6) : nextSaturday(today);
     setSelectedDate(d);
     setActiveQuickDate(key);
   };
@@ -246,7 +364,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
     onAdviceRequest(selectedVenue.venue_id, selectedVenue.name, format(selectedDate, "yyyy-MM-dd"));
   };
 
-  // Highlight matching text
   const highlightMatch = (text: string) => {
     if (!debouncedSearch || debouncedSearch.length < 2) return text;
     const idx = text.toLowerCase().indexOf(debouncedSearch.toLowerCase());
@@ -270,23 +387,41 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
     return parts.join(" — ");
   };
 
+  const renderStar = (venueId: string, e?: React.MouseEvent) => {
+    const isFav = favouritedIds.has(venueId);
+    return (
+      <button
+        type="button"
+        className="flex-shrink-0 mt-0.5"
+        onClick={(ev) => toggleFavourite(venueId, ev)}
+        aria-label={isFav ? "Remove from favourites" : "Add to favourites"}
+      >
+        <Star
+          className={cn(
+            "w-5 h-5 transition-colors",
+            isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"
+          )}
+        />
+      </button>
+    );
+  };
+
   const renderResultRow = (venue: VenueResult, indent = 0) => {
     const isRiver = venue.level === "river";
     const isExpanded = expandedRivers.has(venue.venue_id);
     const isLoadingChildren = loadingRivers.has(venue.venue_id);
 
     return (
-      <button
+      <div
         key={venue.venue_id}
-        type="button"
         className={cn(
-          "w-full text-left px-4 py-3 hover:bg-muted/60 transition-colors flex items-start gap-3 min-h-[56px]",
+          "w-full text-left px-4 py-3 hover:bg-muted/60 transition-colors flex items-start gap-3 min-h-[56px] cursor-pointer",
           indent === 1 && "pl-10",
           indent === 2 && "pl-16"
         )}
         onClick={() => (isRiver ? handleExpandRiver(venue) : handleSelectVenue(venue))}
       >
-        <Star className="w-5 h-5 text-muted-foreground/40 mt-0.5 flex-shrink-0" />
+        {renderStar(venue.venue_id)}
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-foreground truncate text-sm">
             {highlightMatch(venue.name)}
@@ -306,7 +441,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
             )}
           </div>
         )}
-      </button>
+      </div>
     );
   };
 
@@ -314,9 +449,8 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   if (selectedVenue) {
     return (
       <div className="space-y-6">
-        {/* Selected venue card */}
         <div className="border border-border rounded-lg p-4 flex items-start gap-3">
-          <Star className="w-5 h-5 text-muted-foreground/40 mt-0.5 flex-shrink-0" />
+          {renderStar(selectedVenue.venue_id)}
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-foreground">{selectedVenue.name}</div>
             <div className="text-sm text-muted-foreground">{renderContextLine(selectedVenue)}</div>
@@ -326,7 +460,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
           </Button>
         </div>
 
-        {/* Date picker */}
         <div className="space-y-3">
           <p className="font-medium text-foreground">When are you fishing?</p>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -354,39 +487,31 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
             <Calendar
               mode="single"
               selected={selectedDate}
-              onSelect={(d) => {
-                setSelectedDate(d);
-                setActiveQuickDate(null);
-              }}
+              onSelect={(d) => { setSelectedDate(d); setActiveQuickDate(null); }}
               disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
               className="rounded-md border"
             />
           </div>
         </div>
 
-        {/* Get Advice button */}
         <Button
           onClick={handleSubmit}
           disabled={!selectedDate || isLoading}
           className="w-full bg-gradient-water text-white hover:opacity-90 text-lg py-6"
         >
           {isLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Processing...
-            </>
+            <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing...</>
           ) : (
-            <>
-              Get Advice
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </>
+            <>Get Advice<ArrowRight className="w-5 h-5 ml-2" /></>
           )}
         </Button>
       </div>
     );
   }
 
-  // -- SEARCH STATE --
+  // -- DEFAULT / SEARCH STATE --
+  const showDefaultState = !debouncedSearch;
+
   return (
     <div className="space-y-3">
       {/* Search input */}
@@ -403,10 +528,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
           <button
             type="button"
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              setSearchText("");
-              setResults([]);
-            }}
+            onClick={() => { setSearchText(""); setResults([]); }}
           >
             <X className="w-5 h-5" />
           </button>
@@ -416,14 +538,12 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
       {/* Filter chips */}
       <div className="space-y-2">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {(
-            [
-              { mode: "all" as const, label: "All" },
-              { mode: "stillwater" as const, label: "Stillwater ▾" },
-              { mode: "river" as const, label: "River ▾" },
-              { mode: "nearme" as const, label: "Near me" },
-            ] as const
-          ).map((chip) => (
+          {([
+            { mode: "all" as const, label: "All" },
+            { mode: "stillwater" as const, label: "Stillwater ▾" },
+            { mode: "river" as const, label: "River ▾" },
+            { mode: "nearme" as const, label: "Near me" },
+          ] as const).map((chip) => (
             <button
               key={chip.mode}
               type="button"
@@ -440,21 +560,13 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
           ))}
         </div>
 
-        {/* Sub-type chips */}
         {filterMode === "stillwater" && (
           <div className="flex gap-2 overflow-x-auto pb-1 pl-4 scrollbar-hide">
             {STILLWATER_SUBTYPES.map((st) => (
-              <button
-                key={st.id}
-                type="button"
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors min-h-[32px]",
-                  subTypeFilter === st.id
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:bg-muted"
-                )}
-                onClick={() => setSubTypeFilter(subTypeFilter === st.id ? null : st.id)}
-              >
+              <button key={st.id} type="button" className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors min-h-[32px]",
+                subTypeFilter === st.id ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"
+              )} onClick={() => setSubTypeFilter(subTypeFilter === st.id ? null : st.id)}>
                 {st.label}
               </button>
             ))}
@@ -463,23 +575,89 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
         {filterMode === "river" && (
           <div className="flex gap-2 overflow-x-auto pb-1 pl-4 scrollbar-hide">
             {RIVER_SUBTYPES.map((st) => (
-              <button
-                key={st.id}
-                type="button"
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors min-h-[32px]",
-                  subTypeFilter === st.id
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:bg-muted"
-                )}
-                onClick={() => setSubTypeFilter(subTypeFilter === st.id ? null : st.id)}
-              >
+              <button key={st.id} type="button" className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors min-h-[32px]",
+                subTypeFilter === st.id ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"
+              )} onClick={() => setSubTypeFilter(subTypeFilter === st.id ? null : st.id)}>
                 {st.label}
               </button>
             ))}
           </div>
         )}
       </div>
+
+      {/* Default state: Favourites + Recent */}
+      {showDefaultState && (
+        <div className="space-y-6 pt-2">
+          {/* Favourites */}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-3">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              Your Favourites
+            </h3>
+            {filteredFavourites.length === 0 ? (
+              <div className="text-sm text-muted-foreground flex items-center gap-2 py-4">
+                <Star className="w-4 h-4 text-muted-foreground/30" />
+                Star venues to save them here
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {(showAllFavourites ? filteredFavourites : filteredFavourites.slice(0, 6)).map((venue) => (
+                    <Card
+                      key={venue.venue_id}
+                      className="p-3 cursor-pointer hover:bg-muted/60 transition-colors"
+                      onClick={() => handleSelectVenue(venue)}
+                    >
+                      <div className="flex items-start gap-2">
+                        {renderStar(venue.venue_id)}
+                        <div className="min-w-0">
+                          <div className="font-semibold text-foreground text-sm truncate">{venue.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">{renderContextLine(venue)}</div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+                {filteredFavourites.length > 6 && !showAllFavourites && (
+                  <button
+                    type="button"
+                    className="text-xs text-primary mt-2 hover:underline"
+                    onClick={() => setShowAllFavourites(true)}
+                  >
+                    Show all ({filteredFavourites.length})
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Recent */}
+          {filteredHistory.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Recent</h3>
+              <div className="border border-border rounded-lg divide-y divide-border">
+                {filteredHistory.map((h) => (
+                  <div
+                    key={h.venue.venue_id}
+                    className="w-full text-left px-4 py-3 hover:bg-muted/60 transition-colors flex items-start gap-3 min-h-[56px] cursor-pointer"
+                    onClick={() => handleSelectVenue(h.venue)}
+                  >
+                    {renderStar(h.venue.venue_id)}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-foreground truncate text-sm">{h.venue.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{renderContextLine(h.venue)}</div>
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap mt-1">
+                      {formatDistanceToNow(new Date(h.timestamp), { addSuffix: true })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Search results */}
       {debouncedSearch && (
@@ -499,7 +677,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
               {groupedResults.map((venue) => (
                 <div key={venue.venue_id}>
                   {renderResultRow(venue)}
-                  {/* River children */}
                   {venue.level === "river" &&
                     expandedRivers.has(venue.venue_id) &&
                     riverChildren[venue.venue_id]?.map((child) => {
