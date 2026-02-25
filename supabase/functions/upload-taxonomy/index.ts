@@ -9,6 +9,7 @@ const corsHeaders = {
 const ALLOWED_TABLES = [
   'fly_types', 'water_types', 'regions', 'fly_species',
   'species_hatch_calendar', 'fly_monthly_availability', 'fly_species_link',
+  'venues_new',
 ] as const;
 
 type AllowedTable = typeof ALLOWED_TABLES[number];
@@ -55,11 +56,12 @@ serve(async (req) => {
       species_hatch_calendar: 'id',
       fly_monthly_availability: 'id',
       fly_species_link: 'id',
+      venues_new: 'venue_id',
     };
 
     if (clear_first) {
       const pk = pkMap[table];
-      const { error: delError } = await supabase.from(table).delete().gte(pk, -999999);
+      const { error: delError } = await supabase.from(table).delete().neq(pk, '___PLACEHOLDER_NEVER_MATCH___');
       if (delError) {
         console.error(`Delete error for ${table}:`, delError);
         return new Response(

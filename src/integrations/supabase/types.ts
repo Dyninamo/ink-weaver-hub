@@ -1795,6 +1795,123 @@ export type Database = {
           },
         ]
       }
+      venues_new: {
+        Row: {
+          aliases: Json | null
+          country: string
+          county: string | null
+          created_at: string
+          display_context: string | null
+          full_name: string
+          has_diary: boolean
+          has_passport: boolean
+          has_reports: boolean
+          is_active: boolean
+          is_searchable: boolean
+          last_crawled: string | null
+          last_successful_crawl: string | null
+          latitude: number | null
+          level: string
+          longitude: number | null
+          name: string
+          parent_id: string | null
+          platform_type: string | null
+          region_id: number
+          river_name: string | null
+          root_url: string | null
+          search_text: string
+          section_profile_id: string | null
+          session_count: number
+          source: string | null
+          source_id: string | null
+          stillwater_profile_id: string | null
+          updated_at: string
+          venue_id: string
+          water_type_id: number
+        }
+        Insert: {
+          aliases?: Json | null
+          country?: string
+          county?: string | null
+          created_at?: string
+          display_context?: string | null
+          full_name: string
+          has_diary?: boolean
+          has_passport?: boolean
+          has_reports?: boolean
+          is_active?: boolean
+          is_searchable?: boolean
+          last_crawled?: string | null
+          last_successful_crawl?: string | null
+          latitude?: number | null
+          level: string
+          longitude?: number | null
+          name: string
+          parent_id?: string | null
+          platform_type?: string | null
+          region_id: number
+          river_name?: string | null
+          root_url?: string | null
+          search_text?: string
+          section_profile_id?: string | null
+          session_count?: number
+          source?: string | null
+          source_id?: string | null
+          stillwater_profile_id?: string | null
+          updated_at?: string
+          venue_id: string
+          water_type_id: number
+        }
+        Update: {
+          aliases?: Json | null
+          country?: string
+          county?: string | null
+          created_at?: string
+          display_context?: string | null
+          full_name?: string
+          has_diary?: boolean
+          has_passport?: boolean
+          has_reports?: boolean
+          is_active?: boolean
+          is_searchable?: boolean
+          last_crawled?: string | null
+          last_successful_crawl?: string | null
+          latitude?: number | null
+          level?: string
+          longitude?: number | null
+          name?: string
+          parent_id?: string | null
+          platform_type?: string | null
+          region_id?: number
+          river_name?: string | null
+          root_url?: string | null
+          search_text?: string
+          section_profile_id?: string | null
+          session_count?: number
+          source?: string | null
+          source_id?: string | null
+          stillwater_profile_id?: string | null
+          updated_at?: string
+          venue_id?: string
+          water_type_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venues_new_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["region_id"]
+          },
+          {
+            foreignKeyName: "venues_new_water_type_id_fkey"
+            columns: ["water_type_id"]
+            isOneToOne: false
+            referencedRelation: "water_types"
+            referencedColumns: ["water_type_id"]
+          },
+        ]
+      }
       verification_codes: {
         Row: {
           code: string
