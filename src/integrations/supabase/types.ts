@@ -1919,6 +1919,69 @@ export type Database = {
           },
         ]
       }
+      station_registry: {
+        Row: {
+          data_end_date: string | null
+          data_start_date: string | null
+          flood_mon_id: string | null
+          has_flow: boolean | null
+          has_level: boolean | null
+          has_wq: boolean | null
+          hydrology_id: string | null
+          last_fetched: string | null
+          latitude: number | null
+          longitude: number | null
+          nrw_parameter_ids: Json | null
+          nrw_station_id: string | null
+          raw_id: string
+          river_name: string | null
+          source: string
+          station_id: string
+          station_name: string | null
+          status: string | null
+        }
+        Insert: {
+          data_end_date?: string | null
+          data_start_date?: string | null
+          flood_mon_id?: string | null
+          has_flow?: boolean | null
+          has_level?: boolean | null
+          has_wq?: boolean | null
+          hydrology_id?: string | null
+          last_fetched?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          nrw_parameter_ids?: Json | null
+          nrw_station_id?: string | null
+          raw_id: string
+          river_name?: string | null
+          source: string
+          station_id: string
+          station_name?: string | null
+          status?: string | null
+        }
+        Update: {
+          data_end_date?: string | null
+          data_start_date?: string | null
+          flood_mon_id?: string | null
+          has_flow?: boolean | null
+          has_level?: boolean | null
+          has_wq?: boolean | null
+          hydrology_id?: string | null
+          last_fetched?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          nrw_parameter_ids?: Json | null
+          nrw_station_id?: string | null
+          raw_id?: string
+          river_name?: string | null
+          source?: string
+          station_id?: string
+          station_name?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       stillwater_advice_confidence: {
         Row: {
           confidence_tier: string | null
@@ -2381,6 +2444,30 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_station_map: {
+        Row: {
+          data_type: string
+          distance_km: number | null
+          match_type: string | null
+          station_id: string
+          venue_name: string
+        }
+        Insert: {
+          data_type: string
+          distance_km?: number | null
+          match_type?: string | null
+          station_id: string
+          venue_name: string
+        }
+        Update: {
+          data_type?: string
+          distance_km?: number | null
+          match_type?: string | null
+          station_id?: string
+          venue_name?: string
+        }
+        Relationships: []
+      }
       venue_stats: {
         Row: {
           diary_date_range: string | null
@@ -2575,6 +2662,105 @@ export type Database = {
         }
         Relationships: []
       }
+      water_level_daily: {
+        Row: {
+          date: string
+          flow_max_m3s: number | null
+          flow_mean_m3s: number | null
+          flow_min_m3s: number | null
+          level_max_m: number | null
+          level_mean_m: number | null
+          level_min_m: number | null
+          reading_count: number | null
+          source: string
+          station_id: string
+          station_name: string | null
+        }
+        Insert: {
+          date: string
+          flow_max_m3s?: number | null
+          flow_mean_m3s?: number | null
+          flow_min_m3s?: number | null
+          level_max_m?: number | null
+          level_mean_m?: number | null
+          level_min_m?: number | null
+          reading_count?: number | null
+          source: string
+          station_id: string
+          station_name?: string | null
+        }
+        Update: {
+          date?: string
+          flow_max_m3s?: number | null
+          flow_mean_m3s?: number | null
+          flow_min_m3s?: number | null
+          level_max_m?: number | null
+          level_mean_m?: number | null
+          level_min_m?: number | null
+          reading_count?: number | null
+          source?: string
+          station_id?: string
+          station_name?: string | null
+        }
+        Relationships: []
+      }
+      water_quality_daily: {
+        Row: {
+          date: string
+          do_max_pct: number | null
+          do_mean_pct: number | null
+          do_min_pct: number | null
+          ph_max: number | null
+          ph_mean: number | null
+          ph_min: number | null
+          reading_count: number | null
+          station_id: string
+          station_name: string | null
+          temp_max_c: number | null
+          temp_mean_c: number | null
+          temp_min_c: number | null
+          turbidity_max_ntu: number | null
+          turbidity_mean_ntu: number | null
+          turbidity_min_ntu: number | null
+        }
+        Insert: {
+          date: string
+          do_max_pct?: number | null
+          do_mean_pct?: number | null
+          do_min_pct?: number | null
+          ph_max?: number | null
+          ph_mean?: number | null
+          ph_min?: number | null
+          reading_count?: number | null
+          station_id: string
+          station_name?: string | null
+          temp_max_c?: number | null
+          temp_mean_c?: number | null
+          temp_min_c?: number | null
+          turbidity_max_ntu?: number | null
+          turbidity_mean_ntu?: number | null
+          turbidity_min_ntu?: number | null
+        }
+        Update: {
+          date?: string
+          do_max_pct?: number | null
+          do_mean_pct?: number | null
+          do_min_pct?: number | null
+          ph_max?: number | null
+          ph_mean?: number | null
+          ph_min?: number | null
+          reading_count?: number | null
+          station_id?: string
+          station_name?: string | null
+          temp_max_c?: number | null
+          temp_mean_c?: number | null
+          temp_min_c?: number | null
+          turbidity_max_ntu?: number | null
+          turbidity_mean_ntu?: number | null
+          turbidity_min_ntu?: number | null
+        }
+        Relationships: []
+      }
       water_types: {
         Row: {
           description: string | null
@@ -2590,6 +2776,48 @@ export type Database = {
           description?: string | null
           water_type?: string
           water_type_id?: number
+        }
+        Relationships: []
+      }
+      weather_daily: {
+        Row: {
+          date: string
+          granularity: string | null
+          id: number
+          location: string
+          precip_mm: number | null
+          t_avg_day: number | null
+          t_max_day: number | null
+          t_min_day: number | null
+          wind_dir_compass: string | null
+          wind_dir_deg: number | null
+          wind_speed_ms: number | null
+        }
+        Insert: {
+          date: string
+          granularity?: string | null
+          id?: never
+          location: string
+          precip_mm?: number | null
+          t_avg_day?: number | null
+          t_max_day?: number | null
+          t_min_day?: number | null
+          wind_dir_compass?: string | null
+          wind_dir_deg?: number | null
+          wind_speed_ms?: number | null
+        }
+        Update: {
+          date?: string
+          granularity?: string | null
+          id?: never
+          location?: string
+          precip_mm?: number | null
+          t_avg_day?: number | null
+          t_max_day?: number | null
+          t_min_day?: number | null
+          wind_dir_compass?: string | null
+          wind_dir_deg?: number | null
+          wind_speed_ms?: number | null
         }
         Relationships: []
       }

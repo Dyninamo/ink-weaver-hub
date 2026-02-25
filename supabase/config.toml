@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.get-ai-advice-v2]
 verify_jwt = false
+
+[functions.upload-environmental]
+verify_jwt = false
