@@ -2,14 +2,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
 const CONFLICT_COLUMNS: Record<string, string> = {
-  ref_flies: 'pattern_name',
-  ref_lines: 'line_type_code',
-  ref_retrieves: 'retrieve_name',
-  ref_rigs: 'rig_name',
-  ref_hook_sizes: 'hook_size',
-  ref_colours: 'colour',
-  ref_depths: 'depth',
-  ref_lines_from_reports: 'line_type',
+  flies: 'pattern_name',
+  lines: 'line_type_code',
+  retrieves: 'retrieve_name',
+  rigs: 'rig_name',
+  hook_sizes: 'hook_size',
+  colours: 'colour',
+  depths: 'depth',
+  lines_from_reports: 'line_type',
   fly_water_types: 'pattern_name,water_type_id',
   fish_types: 'fish_type_id',
   fish_species_game: 'species_id',

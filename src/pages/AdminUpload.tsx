@@ -226,19 +226,19 @@ function ReferenceDataSection() {
 }
 
 // ── Section 5: Reference Data Upload (JSON → edge function) ──
-const REF_UPLOAD_TABLES = [
-  { value: "ref_flies", label: "Flies (ref_flies)", expectedRows: 556 },
-  { value: "ref_rigs", label: "Rigs (ref_rigs)", expectedRows: 53 },
-  { value: "ref_retrieves", label: "Retrieves (ref_retrieves)", expectedRows: 35 },
-  { value: "ref_lines", label: "Lines (ref_lines)", expectedRows: 35 },
-  { value: "ref_leaders", label: "Leaders (ref_leaders)", expectedRows: 25 },
-  { value: "ref_tippets", label: "Tippets (ref_tippets)", expectedRows: 29 },
-  { value: "ref_rods", label: "Rods (ref_rods)", expectedRows: 82 },
+const UPLOAD_TABLES = [
+  { value: "flies", label: "Flies", expectedRows: 556 },
+  { value: "rigs", label: "Rigs", expectedRows: 53 },
+  { value: "retrieves", label: "Retrieves", expectedRows: 35 },
+  { value: "lines", label: "Lines", expectedRows: 35 },
+  { value: "leaders", label: "Leaders", expectedRows: 25 },
+  { value: "tippets", label: "Tippets", expectedRows: 29 },
+  { value: "rods", label: "Rods", expectedRows: 82 },
 ] as const;
 
 function ReferenceDataUploadSection() {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [selectedTable, setSelectedTable] = useState<string>(REF_UPLOAD_TABLES[0].value);
+  const [selectedTable, setSelectedTable] = useState<string>(UPLOAD_TABLES[0].value);
   const [replaceAll, setReplaceAll] = useState(true);
   const [status, setStatus] = useState<Status>({ state: "idle", message: "" });
   const [progress, setProgress] = useState(0);
@@ -246,7 +246,7 @@ function ReferenceDataUploadSection() {
 
   const loadCounts = async () => {
     const results: Record<string, number | string> = {};
-    for (const t of REF_UPLOAD_TABLES) {
+    for (const t of UPLOAD_TABLES) {
       const { count, error } = await (supabase.from as any)(t.value).select("*", { count: "exact", head: true });
       results[t.value] = error ? `Error` : (count ?? 0);
     }
@@ -293,7 +293,7 @@ function ReferenceDataUploadSection() {
             onChange={e => setSelectedTable(e.target.value)}
             className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            {REF_UPLOAD_TABLES.map(t => (
+            {UPLOAD_TABLES.map(t => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
@@ -315,7 +315,7 @@ function ReferenceDataUploadSection() {
             <Button variant="ghost" size="sm" onClick={loadCounts} className="text-xs h-6 px-2">Refresh counts</Button>
           </div>
           <div className="space-y-1 text-sm font-mono">
-            {REF_UPLOAD_TABLES.map(t => (
+            {UPLOAD_TABLES.map(t => (
               <div key={t.value} className="flex justify-between max-w-xs">
                 <span>{t.value}:</span>
                 <span className="text-muted-foreground">{tableCounts[t.value] ?? "—"} rows</span>
@@ -331,14 +331,14 @@ function ReferenceDataUploadSection() {
 
 // ── Section 6: Terminology Data (legacy) ──
 const TERM_TABLES = [
-  { value: "ref_flies", label: "ref_flies", conflict: "pattern_name" },
-  { value: "ref_lines", label: "ref_lines", conflict: "line_type_code" },
-  { value: "ref_retrieves", label: "ref_retrieves", conflict: "retrieve_name" },
-  { value: "ref_rigs", label: "ref_rigs", conflict: "rig_name" },
-  { value: "ref_hook_sizes", label: "ref_hook_sizes", conflict: "hook_size" },
-  { value: "ref_colours", label: "ref_colours", conflict: "colour" },
-  { value: "ref_depths", label: "ref_depths", conflict: "depth_label" },
-  { value: "ref_lines_from_reports", label: "ref_lines_from_reports", conflict: "line_type" },
+  { value: "flies", label: "flies", conflict: "pattern_name" },
+  { value: "lines", label: "lines", conflict: "line_type_code" },
+  { value: "retrieves", label: "retrieves", conflict: "retrieve_name" },
+  { value: "rigs", label: "rigs", conflict: "rig_name" },
+  { value: "hook_sizes", label: "hook_sizes", conflict: "hook_size" },
+  { value: "colours", label: "colours", conflict: "colour" },
+  { value: "depths", label: "depths", conflict: "depth_label" },
+  { value: "lines_from_reports", label: "lines_from_reports", conflict: "line_type" },
   { value: "fly_water_types", label: "fly_water_types", conflict: "pattern_name,water_type_id" },
   { value: "fish_types", label: "fish_types", conflict: "fish_type_id" },
   { value: "fish_species_game", label: "fish_species_game", conflict: "species_id" },
@@ -443,7 +443,7 @@ function TerminologyUploadSection() {
 
 const ALL_VERIFY_TABLES = [
   ...TERM_TABLES.map(t => t.value),
-  'ref_leaders', 'ref_tippets', 'ref_rods',
+  'leaders', 'tippets', 'rods',
 ];
 
 // ── Verify Tables ──

@@ -228,6 +228,54 @@ export type Database = {
         }
         Relationships: []
       }
+      colours: {
+        Row: {
+          colour: string | null
+          created_at: string | null
+          id: number
+          mentions_in_671_reports: string | null
+          your_notes: string | null
+        }
+        Insert: {
+          colour?: string | null
+          created_at?: string | null
+          id?: number
+          mentions_in_671_reports?: string | null
+          your_notes?: string | null
+        }
+        Update: {
+          colour?: string | null
+          created_at?: string | null
+          id?: number
+          mentions_in_671_reports?: string | null
+          your_notes?: string | null
+        }
+        Relationships: []
+      }
+      depths: {
+        Row: {
+          created_at: string | null
+          depth: string | null
+          id: number
+          mentions_in_671_reports: string | null
+          your_notes: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          depth?: string | null
+          id?: number
+          mentions_in_671_reports?: string | null
+          your_notes?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          depth?: string | null
+          id?: number
+          mentions_in_671_reports?: string | null
+          your_notes?: string | null
+        }
+        Relationships: []
+      }
       fish_species_game: {
         Row: {
           fish_type_id: number
@@ -461,6 +509,77 @@ export type Database = {
         }
         Relationships: []
       }
+      flies: {
+        Row: {
+          box_location: string | null
+          confidence_rating: string | null
+          created_at: string | null
+          fly_type_id: number | null
+          hook_size_max: string | null
+          hook_size_min: string | null
+          id: number
+          imitation: string | null
+          life_stage: string | null
+          materials_summary: string | null
+          pattern_name: string | null
+          primary_colours: string | null
+          season_notes: string | null
+          sub_category: string | null
+          tactics_notes: string | null
+          top_category: string | null
+          water_type: string | null
+          weight_buoyancy: string | null
+        }
+        Insert: {
+          box_location?: string | null
+          confidence_rating?: string | null
+          created_at?: string | null
+          fly_type_id?: number | null
+          hook_size_max?: string | null
+          hook_size_min?: string | null
+          id?: number
+          imitation?: string | null
+          life_stage?: string | null
+          materials_summary?: string | null
+          pattern_name?: string | null
+          primary_colours?: string | null
+          season_notes?: string | null
+          sub_category?: string | null
+          tactics_notes?: string | null
+          top_category?: string | null
+          water_type?: string | null
+          weight_buoyancy?: string | null
+        }
+        Update: {
+          box_location?: string | null
+          confidence_rating?: string | null
+          created_at?: string | null
+          fly_type_id?: number | null
+          hook_size_max?: string | null
+          hook_size_min?: string | null
+          id?: number
+          imitation?: string | null
+          life_stage?: string | null
+          materials_summary?: string | null
+          pattern_name?: string | null
+          primary_colours?: string | null
+          season_notes?: string | null
+          sub_category?: string | null
+          tactics_notes?: string | null
+          top_category?: string | null
+          water_type?: string | null
+          weight_buoyancy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flies_fly_type_id_fkey"
+            columns: ["fly_type_id"]
+            isOneToOne: false
+            referencedRelation: "fly_types"
+            referencedColumns: ["fly_type_id"]
+          },
+        ]
+      }
       fly_monthly_availability: {
         Row: {
           id: number
@@ -625,6 +744,135 @@ export type Database = {
           },
         ]
       }
+      hook_sizes: {
+        Row: {
+          created_at: string | null
+          hook_size: string | null
+          id: number
+        }
+        Insert: {
+          created_at?: string | null
+          hook_size?: string | null
+          id?: number
+        }
+        Update: {
+          created_at?: string | null
+          hook_size?: string | null
+          id?: number
+        }
+        Relationships: []
+      }
+      leaders: {
+        Row: {
+          brand: string | null
+          breaking_strain_lb: number | null
+          butt_diameter_mm: number | null
+          created_at: string | null
+          id: number
+          length_ft: number | null
+          material: string | null
+          tippet_diameter_mm: number | null
+          type: string | null
+          typical_use: string | null
+        }
+        Insert: {
+          brand?: string | null
+          breaking_strain_lb?: number | null
+          butt_diameter_mm?: number | null
+          created_at?: string | null
+          id?: never
+          length_ft?: number | null
+          material?: string | null
+          tippet_diameter_mm?: number | null
+          type?: string | null
+          typical_use?: string | null
+        }
+        Update: {
+          brand?: string | null
+          breaking_strain_lb?: number | null
+          butt_diameter_mm?: number | null
+          created_at?: string | null
+          id?: never
+          length_ft?: number | null
+          material?: string | null
+          tippet_diameter_mm?: number | null
+          type?: string | null
+          typical_use?: string | null
+        }
+        Relationships: []
+      }
+      lines: {
+        Row: {
+          buoyancy: string | null
+          created_at: string | null
+          description: string | null
+          friendly_name: string | null
+          id: number
+          line_family: string | null
+          line_type_code: string | null
+          line_weight_label: string | null
+          sink_rate_ips: string | null
+          typical_usage: string | null
+          typical_weight_max_wt: string | null
+          typical_weight_min_wt: string | null
+        }
+        Insert: {
+          buoyancy?: string | null
+          created_at?: string | null
+          description?: string | null
+          friendly_name?: string | null
+          id?: number
+          line_family?: string | null
+          line_type_code?: string | null
+          line_weight_label?: string | null
+          sink_rate_ips?: string | null
+          typical_usage?: string | null
+          typical_weight_max_wt?: string | null
+          typical_weight_min_wt?: string | null
+        }
+        Update: {
+          buoyancy?: string | null
+          created_at?: string | null
+          description?: string | null
+          friendly_name?: string | null
+          id?: number
+          line_family?: string | null
+          line_type_code?: string | null
+          line_weight_label?: string | null
+          sink_rate_ips?: string | null
+          typical_usage?: string | null
+          typical_weight_max_wt?: string | null
+          typical_weight_min_wt?: string | null
+        }
+        Relationships: []
+      }
+      lines_from_reports: {
+        Row: {
+          created_at: string | null
+          id: number
+          line_type: string | null
+          mentions_in_671_reports: string | null
+          sink_rate: string | null
+          your_notes: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          line_type?: string | null
+          mentions_in_671_reports?: string | null
+          sink_rate?: string | null
+          your_notes?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          line_type?: string | null
+          mentions_in_671_reports?: string | null
+          sink_rate?: string | null
+          your_notes?: string | null
+        }
+        Relationships: []
+      }
       prediction_params: {
         Row: {
           last_validated: string | null
@@ -718,244 +966,55 @@ export type Database = {
         }
         Relationships: []
       }
-      ref_colours: {
+      reference_data: {
         Row: {
-          colour: string | null
-          created_at: string | null
-          id: number
-          mentions_in_671_reports: string | null
-          your_notes: string | null
+          category: string
+          id: string
+          usage_count: number | null
+          value: string
+          venue: string | null
         }
         Insert: {
-          colour?: string | null
-          created_at?: string | null
-          id?: number
-          mentions_in_671_reports?: string | null
-          your_notes?: string | null
+          category: string
+          id?: string
+          usage_count?: number | null
+          value: string
+          venue?: string | null
         }
         Update: {
-          colour?: string | null
-          created_at?: string | null
-          id?: number
-          mentions_in_671_reports?: string | null
-          your_notes?: string | null
+          category?: string
+          id?: string
+          usage_count?: number | null
+          value?: string
+          venue?: string | null
         }
         Relationships: []
       }
-      ref_depths: {
+      regions: {
         Row: {
-          created_at: string | null
-          depth: string | null
-          id: number
-          mentions_in_671_reports: string | null
-          your_notes: string | null
+          country: string | null
+          essential_fly_mapping: string | null
+          region_id: number
+          region_name: string
+          sort_order: number | null
         }
         Insert: {
-          created_at?: string | null
-          depth?: string | null
-          id?: number
-          mentions_in_671_reports?: string | null
-          your_notes?: string | null
+          country?: string | null
+          essential_fly_mapping?: string | null
+          region_id: number
+          region_name: string
+          sort_order?: number | null
         }
         Update: {
-          created_at?: string | null
-          depth?: string | null
-          id?: number
-          mentions_in_671_reports?: string | null
-          your_notes?: string | null
+          country?: string | null
+          essential_fly_mapping?: string | null
+          region_id?: number
+          region_name?: string
+          sort_order?: number | null
         }
         Relationships: []
       }
-      ref_flies: {
-        Row: {
-          box_location: string | null
-          confidence_rating: string | null
-          created_at: string | null
-          hook_size_max: string | null
-          hook_size_min: string | null
-          id: number
-          imitation: string | null
-          life_stage: string | null
-          materials_summary: string | null
-          pattern_name: string | null
-          primary_colours: string | null
-          season_notes: string | null
-          sub_category: string | null
-          tactics_notes: string | null
-          top_category: string | null
-          water_type: string | null
-          weight_buoyancy: string | null
-        }
-        Insert: {
-          box_location?: string | null
-          confidence_rating?: string | null
-          created_at?: string | null
-          hook_size_max?: string | null
-          hook_size_min?: string | null
-          id?: number
-          imitation?: string | null
-          life_stage?: string | null
-          materials_summary?: string | null
-          pattern_name?: string | null
-          primary_colours?: string | null
-          season_notes?: string | null
-          sub_category?: string | null
-          tactics_notes?: string | null
-          top_category?: string | null
-          water_type?: string | null
-          weight_buoyancy?: string | null
-        }
-        Update: {
-          box_location?: string | null
-          confidence_rating?: string | null
-          created_at?: string | null
-          hook_size_max?: string | null
-          hook_size_min?: string | null
-          id?: number
-          imitation?: string | null
-          life_stage?: string | null
-          materials_summary?: string | null
-          pattern_name?: string | null
-          primary_colours?: string | null
-          season_notes?: string | null
-          sub_category?: string | null
-          tactics_notes?: string | null
-          top_category?: string | null
-          water_type?: string | null
-          weight_buoyancy?: string | null
-        }
-        Relationships: []
-      }
-      ref_hook_sizes: {
-        Row: {
-          created_at: string | null
-          hook_size: string | null
-          id: number
-        }
-        Insert: {
-          created_at?: string | null
-          hook_size?: string | null
-          id?: number
-        }
-        Update: {
-          created_at?: string | null
-          hook_size?: string | null
-          id?: number
-        }
-        Relationships: []
-      }
-      ref_leaders: {
-        Row: {
-          brand: string | null
-          breaking_strain_lb: number | null
-          butt_diameter_mm: number | null
-          created_at: string | null
-          id: number
-          length_ft: number | null
-          material: string | null
-          tippet_diameter_mm: number | null
-          type: string | null
-          typical_use: string | null
-        }
-        Insert: {
-          brand?: string | null
-          breaking_strain_lb?: number | null
-          butt_diameter_mm?: number | null
-          created_at?: string | null
-          id?: never
-          length_ft?: number | null
-          material?: string | null
-          tippet_diameter_mm?: number | null
-          type?: string | null
-          typical_use?: string | null
-        }
-        Update: {
-          brand?: string | null
-          breaking_strain_lb?: number | null
-          butt_diameter_mm?: number | null
-          created_at?: string | null
-          id?: never
-          length_ft?: number | null
-          material?: string | null
-          tippet_diameter_mm?: number | null
-          type?: string | null
-          typical_use?: string | null
-        }
-        Relationships: []
-      }
-      ref_lines: {
-        Row: {
-          buoyancy: string | null
-          created_at: string | null
-          description: string | null
-          friendly_name: string | null
-          id: number
-          line_family: string | null
-          line_type_code: string | null
-          line_weight_label: string | null
-          sink_rate_ips: string | null
-          typical_usage: string | null
-          typical_weight_max_wt: string | null
-          typical_weight_min_wt: string | null
-        }
-        Insert: {
-          buoyancy?: string | null
-          created_at?: string | null
-          description?: string | null
-          friendly_name?: string | null
-          id?: number
-          line_family?: string | null
-          line_type_code?: string | null
-          line_weight_label?: string | null
-          sink_rate_ips?: string | null
-          typical_usage?: string | null
-          typical_weight_max_wt?: string | null
-          typical_weight_min_wt?: string | null
-        }
-        Update: {
-          buoyancy?: string | null
-          created_at?: string | null
-          description?: string | null
-          friendly_name?: string | null
-          id?: number
-          line_family?: string | null
-          line_type_code?: string | null
-          line_weight_label?: string | null
-          sink_rate_ips?: string | null
-          typical_usage?: string | null
-          typical_weight_max_wt?: string | null
-          typical_weight_min_wt?: string | null
-        }
-        Relationships: []
-      }
-      ref_lines_from_reports: {
-        Row: {
-          created_at: string | null
-          id: number
-          line_type: string | null
-          mentions_in_671_reports: string | null
-          sink_rate: string | null
-          your_notes: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: number
-          line_type?: string | null
-          mentions_in_671_reports?: string | null
-          sink_rate?: string | null
-          your_notes?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: number
-          line_type?: string | null
-          mentions_in_671_reports?: string | null
-          sink_rate?: string | null
-          your_notes?: string | null
-        }
-        Relationships: []
-      }
-      ref_retrieves: {
+      retrieves: {
         Row: {
           created_at: string | null
           depth_zone: string | null
@@ -997,7 +1056,7 @@ export type Database = {
         }
         Relationships: []
       }
-      ref_rigs: {
+      rigs: {
         Row: {
           created_at: string | null
           depth_zone: string | null
@@ -1045,132 +1104,6 @@ export type Database = {
           typical_dropper_flies?: string | null
           typical_point_flies?: string | null
           water_type?: string | null
-        }
-        Relationships: []
-      }
-      ref_rods: {
-        Row: {
-          action: string | null
-          created_at: string | null
-          id: number
-          length_ft: number | null
-          line_weight: number | null
-          manufacturer: string | null
-          model: string | null
-          notes: string | null
-          owner: string | null
-          pieces: number | null
-          primary_use: string | null
-          water_type: string | null
-        }
-        Insert: {
-          action?: string | null
-          created_at?: string | null
-          id?: never
-          length_ft?: number | null
-          line_weight?: number | null
-          manufacturer?: string | null
-          model?: string | null
-          notes?: string | null
-          owner?: string | null
-          pieces?: number | null
-          primary_use?: string | null
-          water_type?: string | null
-        }
-        Update: {
-          action?: string | null
-          created_at?: string | null
-          id?: never
-          length_ft?: number | null
-          line_weight?: number | null
-          manufacturer?: string | null
-          model?: string | null
-          notes?: string | null
-          owner?: string | null
-          pieces?: number | null
-          primary_use?: string | null
-          water_type?: string | null
-        }
-        Relationships: []
-      }
-      ref_tippets: {
-        Row: {
-          brand: string | null
-          breaking_strain_lb: number | null
-          created_at: string | null
-          diameter_mm: number | null
-          id: number
-          material: string | null
-          spool_length_m: number | null
-          typical_use: string | null
-          x_rating: string | null
-        }
-        Insert: {
-          brand?: string | null
-          breaking_strain_lb?: number | null
-          created_at?: string | null
-          diameter_mm?: number | null
-          id?: never
-          material?: string | null
-          spool_length_m?: number | null
-          typical_use?: string | null
-          x_rating?: string | null
-        }
-        Update: {
-          brand?: string | null
-          breaking_strain_lb?: number | null
-          created_at?: string | null
-          diameter_mm?: number | null
-          id?: never
-          material?: string | null
-          spool_length_m?: number | null
-          typical_use?: string | null
-          x_rating?: string | null
-        }
-        Relationships: []
-      }
-      reference_data: {
-        Row: {
-          category: string
-          id: string
-          usage_count: number | null
-          value: string
-          venue: string | null
-        }
-        Insert: {
-          category: string
-          id?: string
-          usage_count?: number | null
-          value: string
-          venue?: string | null
-        }
-        Update: {
-          category?: string
-          id?: string
-          usage_count?: number | null
-          value?: string
-          venue?: string | null
-        }
-        Relationships: []
-      }
-      regions: {
-        Row: {
-          description: string | null
-          essential_fly_mapping: string | null
-          region_id: number
-          region_name: string
-        }
-        Insert: {
-          description?: string | null
-          essential_fly_mapping?: string | null
-          region_id: number
-          region_name: string
-        }
-        Update: {
-          description?: string | null
-          essential_fly_mapping?: string | null
-          region_id?: number
-          region_name?: string
         }
         Relationships: []
       }
@@ -1579,6 +1512,51 @@ export type Database = {
           section_name?: string | null
           species_group?: string
           total_catches?: number | null
+        }
+        Relationships: []
+      }
+      rods: {
+        Row: {
+          action: string | null
+          created_at: string | null
+          id: number
+          length_ft: number | null
+          line_weight: number | null
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          owner: string | null
+          pieces: number | null
+          primary_use: string | null
+          water_type: string | null
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string | null
+          id?: never
+          length_ft?: number | null
+          line_weight?: number | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          owner?: string | null
+          pieces?: number | null
+          primary_use?: string | null
+          water_type?: string | null
+        }
+        Update: {
+          action?: string | null
+          created_at?: string | null
+          id?: never
+          length_ft?: number | null
+          line_weight?: number | null
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          owner?: string | null
+          pieces?: number | null
+          primary_use?: string | null
+          water_type?: string | null
         }
         Relationships: []
       }
@@ -2204,6 +2182,42 @@ export type Database = {
           venue_name?: string
           venue_type?: string | null
           weather_coverage_pct?: number | null
+        }
+        Relationships: []
+      }
+      tippets: {
+        Row: {
+          brand: string | null
+          breaking_strain_lb: number | null
+          created_at: string | null
+          diameter_mm: number | null
+          id: number
+          material: string | null
+          spool_length_m: number | null
+          typical_use: string | null
+          x_rating: string | null
+        }
+        Insert: {
+          brand?: string | null
+          breaking_strain_lb?: number | null
+          created_at?: string | null
+          diameter_mm?: number | null
+          id?: never
+          material?: string | null
+          spool_length_m?: number | null
+          typical_use?: string | null
+          x_rating?: string | null
+        }
+        Update: {
+          brand?: string | null
+          breaking_strain_lb?: number | null
+          created_at?: string | null
+          diameter_mm?: number | null
+          id?: never
+          material?: string | null
+          spool_length_m?: number | null
+          typical_use?: string | null
+          x_rating?: string | null
         }
         Relationships: []
       }
