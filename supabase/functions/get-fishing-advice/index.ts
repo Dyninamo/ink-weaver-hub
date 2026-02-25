@@ -122,12 +122,12 @@ serve(async (req) => {
 
     // 1. Fetch fishery reports for this venue
     const { data: fisheryReports, error: frError } = await supabase
-      .from('fishing_reports')
-      .select('venue, report_date, year, rod_average, methods, flies, best_spots, summary, t_mean_week, wind_speed_mean_week, precip_total_mm_week, pressure_mean_week, humidity_mean_week')
+      .from('reports_enriched')
+      .select('venue, date, year, rod_average, methods, flies, best_spots, summary, t_mean_week, wind_speed_mean_week, precip_total_mm_week, pressure_mean_week, humidity_mean_week')
       .eq('venue', venue);
 
     if (frError) {
-      console.error('fishing_reports query error:', frError);
+      console.error('reports_enriched query error:', frError);
       throw new Error('Failed to query fishing reports');
     }
 
@@ -145,7 +145,7 @@ serve(async (req) => {
     // 3. Merge into unified report list
     const allReports: ReportRow[] = [
       ...(fisheryReports ?? []).map(r => ({
-        venue: r.venue, date: r.report_date, year: r.year,
+        venue: r.venue, date: r.date, year: r.year,
         rod_average: r.rod_average, methods: r.methods, flies: r.flies,
         best_spots: r.best_spots, summary: r.summary,
         t_mean_week: r.t_mean_week, wind_speed_mean_week: r.wind_speed_mean_week,

@@ -30,7 +30,7 @@ serve(async (req) => {
     // Since we can't query information_schema via postgrest, use a different approach
     // We'll hardcode known tables and query each one
     const knownTables = [
-      'fishing_reports', 'basic_advice', 'queries', 'diary_entries', 'diary_fish',
+      'reports_enriched', 'basic_advice', 'queries', 'diary_entries', 'diary_fish',
       'flies', 'rigs', 'retrieves', 'lines', 'lines_from_reports',
       'leaders', 'tippets', 'rods', 'colours', 'depths', 'hook_sizes',
       'prediction_params', 'venue_profiles', 'venue_correlations', 'venue_metadata', 'venue_spots',

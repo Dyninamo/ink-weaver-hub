@@ -317,93 +317,6 @@ export type Database = {
         }
         Relationships: []
       }
-      fishing_reports: {
-        Row: {
-          best_spots: string[] | null
-          created_at: string | null
-          fish_killed: string | null
-          fish_released: string | null
-          flies: string[] | null
-          headers: string | null
-          humidity_mean_week: number | null
-          id: string
-          methods: string[] | null
-          precip_total_mm_week: number | null
-          pressure_mean_week: number | null
-          report_date: string
-          report_text: string | null
-          report_url: string | null
-          returns: number | null
-          rod_average: number | null
-          summary: string | null
-          t_mean_week: number | null
-          venue: string
-          venue_type: string | null
-          water_level: string | null
-          water_temp_week: number | null
-          weather: string[] | null
-          wind_dir_deg_week: number | null
-          wind_speed_mean_week: number | null
-          year: number | null
-        }
-        Insert: {
-          best_spots?: string[] | null
-          created_at?: string | null
-          fish_killed?: string | null
-          fish_released?: string | null
-          flies?: string[] | null
-          headers?: string | null
-          humidity_mean_week?: number | null
-          id?: string
-          methods?: string[] | null
-          precip_total_mm_week?: number | null
-          pressure_mean_week?: number | null
-          report_date: string
-          report_text?: string | null
-          report_url?: string | null
-          returns?: number | null
-          rod_average?: number | null
-          summary?: string | null
-          t_mean_week?: number | null
-          venue: string
-          venue_type?: string | null
-          water_level?: string | null
-          water_temp_week?: number | null
-          weather?: string[] | null
-          wind_dir_deg_week?: number | null
-          wind_speed_mean_week?: number | null
-          year?: number | null
-        }
-        Update: {
-          best_spots?: string[] | null
-          created_at?: string | null
-          fish_killed?: string | null
-          fish_released?: string | null
-          flies?: string[] | null
-          headers?: string | null
-          humidity_mean_week?: number | null
-          id?: string
-          methods?: string[] | null
-          precip_total_mm_week?: number | null
-          pressure_mean_week?: number | null
-          report_date?: string
-          report_text?: string | null
-          report_url?: string | null
-          returns?: number | null
-          rod_average?: number | null
-          summary?: string | null
-          t_mean_week?: number | null
-          venue?: string
-          venue_type?: string | null
-          water_level?: string | null
-          water_temp_week?: number | null
-          weather?: string[] | null
-          wind_dir_deg_week?: number | null
-          wind_speed_mean_week?: number | null
-          year?: number | null
-        }
-        Relationships: []
-      }
       fishing_sessions: {
         Row: {
           angler_location: string | null
@@ -1011,6 +924,168 @@ export type Database = {
           region_id?: number
           region_name?: string
           sort_order?: number | null
+        }
+        Relationships: []
+      }
+      reports_enriched: {
+        Row: {
+          best_spots: string[] | null
+          content: string | null
+          created_at: string | null
+          date: string
+          fish_killed: string | null
+          fish_released: string | null
+          flies: string[] | null
+          granularity: string | null
+          headers: string | null
+          humidity_mean_week: number | null
+          id: string
+          methods: string[] | null
+          precip_mm: number | null
+          precip_total_mm_week: number | null
+          pressure_change: number | null
+          pressure_max_week: number | null
+          pressure_mean_std: number | null
+          pressure_mean_week: number | null
+          pressure_min_week: number | null
+          report_url: string | null
+          returns: number | null
+          rod_average: number | null
+          storm_days_week: number | null
+          summary: string | null
+          sunshine_hours_week: number | null
+          t_avg_day: number | null
+          t_max_day: number | null
+          t_max_week: number | null
+          t_mean_change: number | null
+          t_mean_std: number | null
+          t_mean_week: number | null
+          t_min_day: number | null
+          t_min_week: number | null
+          text: string | null
+          url: string | null
+          venue: string
+          venue_type: string | null
+          water_level: string | null
+          water_temp_week: number | null
+          weather: string[] | null
+          weather_venue: string | null
+          week_start: string | null
+          wind_dir_compass: string | null
+          wind_dir_deg: number | null
+          wind_dir_deg_week: number | null
+          wind_speed_change: number | null
+          wind_speed_max_week: number | null
+          wind_speed_mean_week: number | null
+          wind_speed_ms: number | null
+          wind_speed_std: number | null
+          year: number | null
+        }
+        Insert: {
+          best_spots?: string[] | null
+          content?: string | null
+          created_at?: string | null
+          date: string
+          fish_killed?: string | null
+          fish_released?: string | null
+          flies?: string[] | null
+          granularity?: string | null
+          headers?: string | null
+          humidity_mean_week?: number | null
+          id?: string
+          methods?: string[] | null
+          precip_mm?: number | null
+          precip_total_mm_week?: number | null
+          pressure_change?: number | null
+          pressure_max_week?: number | null
+          pressure_mean_std?: number | null
+          pressure_mean_week?: number | null
+          pressure_min_week?: number | null
+          report_url?: string | null
+          returns?: number | null
+          rod_average?: number | null
+          storm_days_week?: number | null
+          summary?: string | null
+          sunshine_hours_week?: number | null
+          t_avg_day?: number | null
+          t_max_day?: number | null
+          t_max_week?: number | null
+          t_mean_change?: number | null
+          t_mean_std?: number | null
+          t_mean_week?: number | null
+          t_min_day?: number | null
+          t_min_week?: number | null
+          text?: string | null
+          url?: string | null
+          venue: string
+          venue_type?: string | null
+          water_level?: string | null
+          water_temp_week?: number | null
+          weather?: string[] | null
+          weather_venue?: string | null
+          week_start?: string | null
+          wind_dir_compass?: string | null
+          wind_dir_deg?: number | null
+          wind_dir_deg_week?: number | null
+          wind_speed_change?: number | null
+          wind_speed_max_week?: number | null
+          wind_speed_mean_week?: number | null
+          wind_speed_ms?: number | null
+          wind_speed_std?: number | null
+          year?: number | null
+        }
+        Update: {
+          best_spots?: string[] | null
+          content?: string | null
+          created_at?: string | null
+          date?: string
+          fish_killed?: string | null
+          fish_released?: string | null
+          flies?: string[] | null
+          granularity?: string | null
+          headers?: string | null
+          humidity_mean_week?: number | null
+          id?: string
+          methods?: string[] | null
+          precip_mm?: number | null
+          precip_total_mm_week?: number | null
+          pressure_change?: number | null
+          pressure_max_week?: number | null
+          pressure_mean_std?: number | null
+          pressure_mean_week?: number | null
+          pressure_min_week?: number | null
+          report_url?: string | null
+          returns?: number | null
+          rod_average?: number | null
+          storm_days_week?: number | null
+          summary?: string | null
+          sunshine_hours_week?: number | null
+          t_avg_day?: number | null
+          t_max_day?: number | null
+          t_max_week?: number | null
+          t_mean_change?: number | null
+          t_mean_std?: number | null
+          t_mean_week?: number | null
+          t_min_day?: number | null
+          t_min_week?: number | null
+          text?: string | null
+          url?: string | null
+          venue?: string
+          venue_type?: string | null
+          water_level?: string | null
+          water_temp_week?: number | null
+          weather?: string[] | null
+          weather_venue?: string | null
+          week_start?: string | null
+          wind_dir_compass?: string | null
+          wind_dir_deg?: number | null
+          wind_dir_deg_week?: number | null
+          wind_speed_change?: number | null
+          wind_speed_max_week?: number | null
+          wind_speed_mean_week?: number | null
+          wind_speed_ms?: number | null
+          wind_speed_std?: number | null
+          year?: number | null
         }
         Relationships: []
       }

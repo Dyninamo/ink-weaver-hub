@@ -32,10 +32,10 @@ serve(async (req) => {
     for (let i = 0; i < reports.length; i++) {
       const r = reports[i]
       try {
-        const { error } = await supabase.from('fishing_reports').upsert({
+        const { error } = await supabase.from('reports_enriched').upsert({
           venue: r.venue,
-          report_date: r.report_date,
-          report_text: r.report_text,
+          date: r.date,
+          text: r.text,
           rod_average: r.rod_average,
           methods: r.methods || [],
           flies: r.flies || [],
@@ -56,7 +56,7 @@ serve(async (req) => {
           pressure_mean_week: r.pressure_mean_week,
           humidity_mean_week: r.humidity_mean_week,
           water_temp_week: r.water_temp_week,
-        }, { onConflict: 'venue,report_date' })
+        }, { onConflict: 'venue,date' })
 
         if (error) {
           failed++

@@ -23,7 +23,7 @@ interface AuditResult {
 type SectionKey = 'core' | 'reference' | 'model' | 'infrastructure' | 'taxonomy' | 'other';
 
 function categorize(name: string): SectionKey {
-  if (['fishing_reports', 'basic_advice', 'queries', 'diary_entries', 'diary_fish', 'diary_as_reports (view)'].includes(name)) return 'core';
+  if (['reports_enriched', 'basic_advice', 'queries', 'diary_entries', 'diary_fish', 'diary_as_reports (view)'].includes(name)) return 'core';
   if (name.startsWith('ref_') || name === 'reference_data') return 'reference';
   if (['prediction_params', 'venue_profiles', 'venue_correlations', 'venue_metadata'].includes(name)) return 'model';
   if (['user_profiles', 'verification_codes', 'shared_reports', 'share_views'].includes(name)) return 'infrastructure';
