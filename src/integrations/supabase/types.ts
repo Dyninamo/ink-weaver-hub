@@ -2782,6 +2782,123 @@ export type Database = {
         }
         Relationships: []
       }
+      user_venue_favourites: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_venue_favourites_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
+      }
+      user_venue_history: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          id?: string
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_venue_history_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
+      }
+      user_venue_submissions: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          reviewed_at: string | null
+          status: string
+          submitted_county: string | null
+          submitted_latitude: number | null
+          submitted_longitude: number | null
+          submitted_name: string
+          submitted_postcode: string | null
+          submitted_water_type: string
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          status?: string
+          submitted_county?: string | null
+          submitted_latitude?: number | null
+          submitted_longitude?: number | null
+          submitted_name: string
+          submitted_postcode?: string | null
+          submitted_water_type: string
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          status?: string
+          submitted_county?: string | null
+          submitted_latitude?: number | null
+          submitted_longitude?: number | null
+          submitted_name?: string
+          submitted_postcode?: string | null
+          submitted_water_type?: string
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_venue_submissions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
+      }
       venue_correlations: {
         Row: {
           correlation: number | null
