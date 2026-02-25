@@ -67,7 +67,7 @@ export async function enrichFliesForSelector(
   predictionFlies: { fly: string; frequency?: number; score?: number }[]
 ): Promise<RecommendedFly[]> {
   const { data: refFlies } = await supabase
-    .from("ref_flies")
+    .from("flies")
     .select(
       "pattern_name, top_category, hook_size_min, hook_size_max, primary_colours"
     );

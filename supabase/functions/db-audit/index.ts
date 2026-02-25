@@ -31,8 +31,8 @@ serve(async (req) => {
     // We'll hardcode known tables and query each one
     const knownTables = [
       'fishing_reports', 'basic_advice', 'queries', 'diary_entries', 'diary_fish',
-      'ref_flies', 'ref_rigs', 'ref_retrieves', 'ref_lines', 'ref_lines_from_reports',
-      'ref_leaders', 'ref_tippets', 'ref_rods', 'ref_colours', 'ref_depths', 'ref_hook_sizes',
+      'flies', 'rigs', 'retrieves', 'lines', 'lines_from_reports',
+      'leaders', 'tippets', 'rods', 'colours', 'depths', 'hook_sizes',
       'prediction_params', 'venue_profiles', 'venue_correlations', 'venue_metadata', 'venue_spots',
       'reference_data', 'shared_reports', 'share_views', 'user_profiles', 'verification_codes',
       'fly_types', 'water_types', 'regions', 'fly_species',

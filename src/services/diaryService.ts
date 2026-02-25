@@ -332,7 +332,7 @@ export function calculateSessionStats(events: SessionEvent[]) {
 // ============================================================
 
 export async function getRefFlies(options?: { waterType?: string; topCategory?: string }) {
-  let query = supabase.from('ref_flies').select('pattern_name, top_category, sub_category, hook_size_min, hook_size_max, water_type');
+  let query = supabase.from('flies').select('pattern_name, top_category, sub_category, hook_size_min, hook_size_max, water_type');
   if (options?.waterType) query = query.eq('water_type', options.waterType);
   if (options?.topCategory) query = query.eq('top_category', options.topCategory);
   const { data, error } = await query.order('pattern_name');
@@ -341,7 +341,7 @@ export async function getRefFlies(options?: { waterType?: string; topCategory?: 
 }
 
 export async function getRefRigs(options?: { style?: string; waterType?: string }) {
-  let query = supabase.from('ref_rigs').select('rig_name, water_type, style, flies_on_rig, depth_zone');
+  let query = supabase.from('rigs').select('rig_name, water_type, style, flies_on_rig, depth_zone');
   if (options?.style) query = query.eq('style', options.style);
   if (options?.waterType) query = query.eq('water_type', options.waterType);
   const { data, error } = await query.order('rig_name');
@@ -350,7 +350,7 @@ export async function getRefRigs(options?: { style?: string; waterType?: string 
 }
 
 export async function getRefRetrieves(options?: { style?: string }) {
-  let query = supabase.from('ref_retrieves').select('retrieve_name, water_type, style, pace, depth_zone');
+  let query = supabase.from('retrieves').select('retrieve_name, water_type, style, pace, depth_zone');
   if (options?.style) query = query.eq('style', options.style);
   const { data, error } = await query.order('retrieve_name');
   if (error) throw error;
@@ -359,7 +359,7 @@ export async function getRefRetrieves(options?: { style?: string }) {
 
 export async function getRefLines() {
   const { data, error } = await supabase
-    .from('ref_lines')
+    .from('lines')
     .select('line_type_code, line_family, buoyancy, sink_rate_ips, friendly_name')
     .order('line_family');
   if (error) throw error;
@@ -378,7 +378,7 @@ export async function getVenueSpots(venueName: string) {
 
 export async function getRefHookSizes() {
   const { data, error } = await supabase
-    .from('ref_hook_sizes')
+    .from('hook_sizes')
     .select('hook_size')
     .order('hook_size');
   if (error) throw error;

@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 const ALLOWED_TABLES = [
-  'ref_flies', 'ref_rigs', 'ref_retrieves', 'ref_lines',
-  'ref_leaders', 'ref_tippets', 'ref_rods',
+  'flies', 'rigs', 'retrieves', 'lines',
+  'leaders', 'tippets', 'rods',
 ] as const;
 
 type AllowedTable = typeof ALLOWED_TABLES[number];
