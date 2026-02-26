@@ -58,7 +58,8 @@ export default function FlySelector({ flies, venueName, tripDate, onClose }: Fly
       if (next > 6) return prev;
       // Check minimum 12 when decreasing
       if (delta < 0) {
-        const newTotal = totalFlies + delta;
+        const currentTotal = Object.values(prev).reduce((s, q) => s + q, 0);
+        const newTotal = currentTotal + delta;
         if (newTotal < 12) {
           toast({
             title: "Minimum 12 flies",

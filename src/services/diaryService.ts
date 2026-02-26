@@ -482,9 +482,9 @@ export const DEFAULT_SPECIES: Record<string, string> = {
 };
 
 export function convertLengthToWeight(lengthInches: number, species: string): { lb: number; oz: number } {
-  const lengthCm = lengthInches * 2.54;
+  const lengthMm = lengthInches * 25.4;
   const k = species === 'Brown' ? 1.0 : 1.1;
-  const weightGrams = (k * Math.pow(lengthCm, 3)) / 100000;
+  const weightGrams = (k * Math.pow(lengthMm, 3)) / 100000;
   const weightOzTotal = weightGrams / 28.3495;
   const lb = Math.floor(weightOzTotal / 16);
   const oz = Math.round(weightOzTotal % 16);

@@ -122,7 +122,7 @@ export default function CatchModal({
   function canAdvance(): boolean {
     switch (step) {
       case 1:
-        if (measureMode === "weight") return weightLb !== "" || weightOz !== "";
+        if (measureMode === "weight") return (parseInt(weightLb) > 0) || (parseInt(weightOz) > 0);
         return lengthInches !== "";
       case 2: return flyPattern !== null;
       case 3: return flySize !== null;

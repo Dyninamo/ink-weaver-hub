@@ -86,11 +86,11 @@ const App = () => (
               } 
             />
             <Route path="/share/:token" element={<ShareView />} />
-            <Route path="/admin/upload" element={<AdminUpload />} />
-            <Route path="/admin/db-status" element={<AdminDbStatus />} />
-            <Route path="/admin/test-advice" element={<AdminTestAdvice />} />
-            <Route path="/admin/recompute" element={<AdminRecompute />} />
-            <Route path="/admin/venue-submissions" element={<AdminVenueSubmissions />} />
+            <Route path="/admin/upload" element={<ProtectedRoute><AdminUpload /></ProtectedRoute>} />
+            <Route path="/admin/db-status" element={<ProtectedRoute><AdminDbStatus /></ProtectedRoute>} />
+            <Route path="/admin/test-advice" element={<ProtectedRoute><AdminTestAdvice /></ProtectedRoute>} />
+            <Route path="/admin/recompute" element={<ProtectedRoute><AdminRecompute /></ProtectedRoute>} />
+            <Route path="/admin/venue-submissions" element={<ProtectedRoute><AdminVenueSubmissions /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
