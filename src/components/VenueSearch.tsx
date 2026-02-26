@@ -3,11 +3,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Search, X, Star, ChevronRight, ChevronDown, ArrowRight, Loader2, MapPin, Navigation } from "lucide-react";
+import { Search, X, Star, ChevronRight, ChevronDown, ArrowRight, Loader2, MapPin, Navigation, AlertCircle } from "lucide-react";
 import { format, addDays, nextSaturday, isSaturday, isSunday, formatDistanceToNow } from "date-fns";
 import { haversineDistanceMiles } from "@/utils/distance";
 import VenueSubmissionForm from "@/components/VenueSubmissionForm";
@@ -15,6 +16,7 @@ import VenueSubmissionForm from "@/components/VenueSubmissionForm";
 interface VenueSearchProps {
   onAdviceRequest: (venueId: string, venueName: string, date: string) => void;
   isLoading?: boolean;
+  loadingMessage?: string;
 }
 
 interface VenueResult {
@@ -86,13 +88,15 @@ type FilterMode = "all" | "stillwater" | "river" | "nearme";
 
 const VENUE_SELECT_FIELDS = "venue_id, name, full_name, level, water_type_id, region_id, county, river_name, latitude, longitude, parent_id, session_count, display_context, search_text";
 
-const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) => {
+const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }: VenueSearchProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchText, setSearchText] = useState("");
+  const [previousSearchText, setPreviousSearchText] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [results, setResults] = useState<VenueResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [waterTypes, setWaterTypes] = useState<WaterType[]>([]);
   const [filterMode, setFilterMode] = useState<FilterMode>("all");
   const [subTypeFilter, setSubTypeFilter] = useState<number | null>(null);
@@ -104,6 +108,11 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   const [selectedVenue, setSelectedVenue] = useState<VenueResult | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(addDays(new Date(), 1));
   const [activeQuickDate, setActiveQuickDate] = useState<string | null>(null);
+  const [adviceError, setAdviceError] = useState<string | null>(null);
+
+  // Transition state
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Favourites & history
   const [favouritedIds, setFavouritedIds] = useState<Set<string>>(new Set());
@@ -202,6 +211,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
 
     const doSearch = async () => {
       setIsSearching(true);
+      setSearchError(null);
       let query = supabase
         .from("venues_new")
         .select(VENUE_SELECT_FIELDS)
@@ -219,6 +229,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
       const { data, error } = await query;
       if (error) {
         console.error("Venue search error:", error);
+        setSearchError("Unable to search — check your connection");
         setResults([]);
       } else {
         setResults((data as VenueResult[]) || []);
@@ -228,6 +239,14 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
 
     doSearch();
   }, [debouncedSearch, filterMode, subTypeFilter]);
+
+  const retrySearch = () => {
+    setSearchError(null);
+    if (debouncedSearch) {
+      setDebouncedSearch("");
+      setTimeout(() => setDebouncedSearch(searchText), 50);
+    }
+  };
 
   const getActiveWaterTypeIds = useCallback((): number[] | null => {
     if (subTypeFilter !== null) return [subTypeFilter];
@@ -301,20 +320,17 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   // --- Near me handlers ---
   const handleNearMeTap = () => {
     if (nearMeActive) {
-      // Deactivate
       setNearMeActive(false);
       setShowManualLocation(false);
       setLocationError(null);
       return;
     }
 
-    // If we already have a cached location, just activate
     if (userLocation) {
       setNearMeActive(true);
       return;
     }
 
-    // Try GPS
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -327,7 +343,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
         setLocating(false);
       },
       () => {
-        // GPS denied/failed — show manual entry
         setShowManualLocation(true);
         setNearMeActive(true);
         setLocating(false);
@@ -348,7 +363,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
 
     try {
       if (UK_POSTCODE_REGEX.test(input)) {
-        // Postcode lookup
         const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(input)}`);
         const json = await res.json();
         if (json.status === 200 && json.result) {
@@ -359,7 +373,6 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
           setLocationError("Invalid postcode — try again");
         }
       } else {
-        // Town name — Nominatim with rate limit
         const now = Date.now();
         const wait = Math.max(0, 1000 - (now - nominatimLastCall.current));
         if (wait > 0) await new Promise((r) => setTimeout(r, wait));
@@ -486,15 +499,32 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   };
 
   const handleSelectVenue = (venue: VenueResult) => {
-    setSelectedVenue(venue);
-    setSearchText("");
-    setResults([]);
+    setPreviousSearchText(searchText);
+    setIsTransitioning(true);
+    setAdviceError(null);
+    // Fade out results, then set venue
+    setTimeout(() => {
+      setSelectedVenue(venue);
+      setSearchText("");
+      setResults([]);
+      // Trigger date picker fade in
+      setTimeout(() => {
+        setShowDatePicker(true);
+        setIsTransitioning(false);
+      }, 50);
+    }, 150);
   };
 
   const handleChangeVenue = () => {
-    setSelectedVenue(null);
-    setActiveQuickDate(null);
-    setTimeout(() => searchInputRef.current?.focus(), 100);
+    setShowDatePicker(false);
+    setIsTransitioning(true);
+    setAdviceError(null);
+    setTimeout(() => {
+      setSelectedVenue(null);
+      setSearchText(previousSearchText);
+      setIsTransitioning(false);
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }, 200);
   };
 
   const handleFilterMode = (mode: FilterMode) => {
@@ -513,18 +543,31 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
 
   const handleQuickDate = (key: string) => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     let d: Date;
     if (key === "today") d = today;
     else if (key === "tomorrow") d = addDays(today, 1);
-    else d = isSaturday(today) ? today : isSunday(today) ? addDays(today, 6) : nextSaturday(today);
+    else {
+      // "weekend": Saturday. If today is Saturday or Sunday, use today.
+      d = isSaturday(today) || isSunday(today) ? today : nextSaturday(today);
+    }
     setSelectedDate(d);
     setActiveQuickDate(key);
   };
 
+  const handleCalendarSelect = (d: Date | undefined) => {
+    setSelectedDate(d);
+    setActiveQuickDate(null); // Clear chip highlight when calendar is used
+  };
+
   const handleSubmit = () => {
     if (!selectedVenue || !selectedDate) return;
+    setAdviceError(null);
     onAdviceRequest(selectedVenue.venue_id, selectedVenue.name, format(selectedDate, "yyyy-MM-dd"));
   };
+
+  // Allow parent to signal errors via a callback — we detect via isLoading going false with no navigation
+  // For now, we track adviceError via the parent passing error state or we use a simple approach
 
   const highlightMatch = (text: string) => {
     if (!debouncedSearch || debouncedSearch.length < 2) return text;
@@ -579,6 +622,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
     return (
       <div
         key={venue.venue_id}
+        role="option"
         className={cn(
           "w-full text-left px-4 py-3 hover:bg-muted/60 transition-colors flex items-start gap-3 min-h-[56px] cursor-pointer",
           indent === 1 && "pl-10",
@@ -639,20 +683,26 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   if (selectedVenue) {
     const venueWithDist = addDistanceToVenue(selectedVenue);
     return (
-      <div className="space-y-6">
-        <div className="border border-border rounded-lg p-4 flex items-start gap-3">
+      <div className={cn("space-y-6 transition-all duration-200", isTransitioning && "opacity-0")}>
+        {/* Selected venue card */}
+        <div className="border border-border rounded-lg p-4 flex items-start gap-3 transition-all duration-200">
           {renderStar(selectedVenue.venue_id)}
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-foreground">{selectedVenue.name}</div>
             <div className="text-sm text-muted-foreground">{renderContextLine(venueWithDist)}</div>
           </div>
-          <Button variant="link" size="sm" onClick={handleChangeVenue} className="flex-shrink-0 text-primary">
+          <Button variant="link" size="sm" onClick={handleChangeVenue} className="flex-shrink-0 text-primary" disabled={isLoading}>
             Change
           </Button>
         </div>
 
-        <div className="space-y-3">
-          <p className="font-medium text-foreground">When are you fishing?</p>
+        {/* Date picker section */}
+        <div className={cn(
+          "space-y-3 transition-all duration-200",
+          showDatePicker ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2",
+          isLoading && "pointer-events-none opacity-60"
+        )}>
+          <p className="text-sm text-muted-foreground">When are you fishing?</p>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {[
               { key: "today", label: "Today" },
@@ -669,6 +719,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
                     : "border-border text-muted-foreground hover:bg-muted"
                 )}
                 onClick={() => handleQuickDate(q.key)}
+                disabled={isLoading}
               >
                 {q.label}
               </button>
@@ -678,24 +729,53 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
             <Calendar
               mode="single"
               selected={selectedDate}
-              onSelect={(d) => { setSelectedDate(d); setActiveQuickDate(null); }}
+              onSelect={handleCalendarSelect}
               disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
               className="rounded-md border"
             />
           </div>
         </div>
 
-        <Button
-          onClick={handleSubmit}
-          disabled={!selectedDate || isLoading}
-          className="w-full bg-gradient-water text-white hover:opacity-90 text-lg py-6"
-        >
-          {isLoading ? (
-            <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing...</>
-          ) : (
-            <>Get Advice<ArrowRight className="w-5 h-5 ml-2" /></>
+        {/* Advice error */}
+        {adviceError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>{adviceError}</span>
+              <Button variant="outline" size="sm" onClick={handleSubmit} className="ml-3 flex-shrink-0">
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Get Advice button */}
+        <div className="space-y-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={!selectedDate || isLoading}
+            aria-busy={isLoading}
+            className={cn(
+              "w-full text-lg py-6 transition-all duration-200",
+              selectedDate && !isLoading
+                ? "bg-gradient-water text-white hover:opacity-90"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {isLoading ? (
+              <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{loadingMessage || "Processing..."}</>
+            ) : !selectedDate ? (
+              "Select a date"
+            ) : (
+              <>Get Advice<ArrowRight className="w-5 h-5 ml-2" /></>
+            )}
+          </Button>
+          {isLoading && (
+            <p className="text-xs text-muted-foreground text-center">
+              This typically takes 2–5 seconds...
+            </p>
           )}
-        </Button>
+        </div>
       </div>
     );
   }
@@ -704,7 +784,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
   const showDefaultState = !debouncedSearch;
 
   return (
-    <div className="space-y-3">
+    <div className={cn("space-y-3 transition-all duration-200", isTransitioning && "opacity-0")}>
       {/* Search input */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -714,20 +794,32 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
           onChange={(e) => setSearchText(e.target.value)}
           placeholder="Search by name, river, region, or postcode..."
           className="pl-10 pr-10 h-12 text-base"
+          aria-label="Search venues"
         />
         {searchText && (
           <button
             type="button"
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            onClick={() => { setSearchText(""); setResults([]); }}
+            onClick={() => { setSearchText(""); setResults([]); setSearchError(null); }}
           >
             <X className="w-5 h-5" />
           </button>
         )}
       </div>
 
+      {/* Search error */}
+      {searchError && (
+        <div className="text-sm text-destructive flex items-center gap-2 px-1">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{searchError}</span>
+          <button type="button" className="text-primary hover:underline text-sm font-medium" onClick={retrySearch}>
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Filter chips */}
-      <div className="space-y-2">
+      <div className="space-y-2" role="group" aria-label="Filter by water type">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {([
             { mode: "all" as const, label: "All" },
@@ -916,8 +1008,8 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false }: VenueSearchProps) =
       )}
 
       {/* Search results */}
-      {debouncedSearch && (
-        <div className="border border-border rounded-lg divide-y divide-border max-h-[400px] overflow-y-auto">
+      {debouncedSearch && !searchError && (
+        <div className="border border-border rounded-lg divide-y divide-border max-h-[400px] overflow-y-auto" role="listbox">
           {isSearching ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin mr-2" />

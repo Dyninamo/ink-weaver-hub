@@ -296,13 +296,7 @@ const Dashboard = () => {
             )}
 
             {/* Venue Search */}
-            <VenueSearch onAdviceRequest={handleAdviceRequest} isLoading={isLoading} />
-
-            {isLoading && (
-              <p className="text-sm text-muted-foreground text-center">
-                {loadingMessage || "This typically takes 2-5 seconds..."}
-              </p>
-            )}
+            <VenueSearch onAdviceRequest={handleAdviceRequest} isLoading={isLoading} loadingMessage={loadingMessage} />
           </CardContent>
         </Card>
 
