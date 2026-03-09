@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import CatchModal from "@/components/diary/CatchModal";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
+import NotableFishDialog from "@/components/social/NotableFishDialog";
 import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
 import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
