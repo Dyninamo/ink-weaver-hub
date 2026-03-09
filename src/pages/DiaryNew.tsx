@@ -192,6 +192,19 @@ export default function DiaryNew() {
         });
       }
 
+      // Trigger venue affiliation (non-blocking)
+      try {
+        await supabase.functions.invoke("on-session-logged", {
+          body: {
+            user_id: user.id,
+            venue_id: null, // venue_id lookup handled server-side in future
+            session_date: sessionDate,
+          },
+        });
+      } catch (affiliationErr) {
+        console.warn("Affiliation call failed (non-critical):", affiliationErr);
+      }
+
       toast.success("Session started!");
       navigate(`/diary/${session.id}`);
     } catch (err: any) {
