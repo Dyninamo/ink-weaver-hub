@@ -32,6 +32,8 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
   const [membersOpen, setMembersOpen] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [feedCards, setFeedCards] = useState<any[]>([]);
+  const [feedLoading, setFeedLoading] = useState(true);
 
   const fetchDetail = useCallback(async () => {
     setLoading(true);
