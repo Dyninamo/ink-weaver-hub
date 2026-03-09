@@ -326,17 +326,31 @@ export default function DiaryEntry() {
               )}
             </p>
           </div>
-          {/* Share button (completed sessions only) */}
+          {/* Notable Fish + Share buttons (completed sessions only) */}
           {!isActive && profileId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShareOpen(true)}
-              className="shrink-0"
-              title="Share to group"
-            >
-              <Share2 className="h-5 w-5" />
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setNotablePrefill(null);
+                  setNotableOpen(true);
+                }}
+                className="shrink-0 text-[#F59E0B]"
+                title="Submit Notable Fish"
+              >
+                <Trophy className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShareOpen(true)}
+                className="shrink-0"
+                title="Share to group"
+              >
+                <Share2 className="h-5 w-5" />
+              </Button>
+            </>
           )}
         </div>
 
