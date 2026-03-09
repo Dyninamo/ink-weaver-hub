@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Fish, Circle, RefreshCw, Clock, Star, MapPin,
-  Thermometer, Wind, StopCircle, Trash2, Share2,
+  Thermometer, Wind, StopCircle, Trash2, Share2, Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
