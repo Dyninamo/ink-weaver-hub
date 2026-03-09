@@ -558,7 +558,7 @@ export default function DiaryEntry() {
                   <Card key={event.id} className={isActive ? "bg-[#162230] border-[#2A4055]" : ""}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
-                        <div>
+                        <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <Fish className="h-4 w-4 text-diary-catch" />
                             <span className="font-medium">{event.species}</span>
@@ -580,6 +580,17 @@ export default function DiaryEntry() {
                             {formatTime(event.event_time)}
                           </p>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setNotablePrefill(event.species || null);
+                            setNotableOpen(true);
+                          }}
+                          className="p-1.5 rounded-md hover:bg-muted/50 transition-colors"
+                          title="Submit as notable fish"
+                        >
+                          <Trophy className="h-4 w-4 text-muted-foreground hover:text-[#F59E0B] transition-colors" />
+                        </button>
                       </div>
                     </CardContent>
                   </Card>
