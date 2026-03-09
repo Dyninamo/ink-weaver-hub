@@ -51,6 +51,20 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: `Unknown species: ${species}` }), { status: 400, headers })
     }
 
+    // Validate venue_id exists
+    const { data: venueRow } = await supabase
+      .from('venues_new')
+      .select('venue_id')
+      .eq('venue_id', venue_id)
+      .maybeSingle()
+
+    if (!venueRow) {
+      return new Response(
+        JSON.stringify({ error: 'Venue not found' }),
+        { status: 400, headers }
+      )
+    }
+
     // 3. Convert length <-> weight using L-W formula: weight_kg = a * (length_cm ^ b)
     let finalLengthCm = length_cm
     let finalWeightKg = weight_kg
