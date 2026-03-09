@@ -228,6 +228,110 @@ export type Database = {
         }
         Relationships: []
       }
+      card_reactions: {
+        Row: {
+          card_id: string | null
+          created_at: string
+          emoji: string
+          profile_id: string
+          reaction_id: string
+          reply_id: string | null
+        }
+        Insert: {
+          card_id?: string | null
+          created_at?: string
+          emoji: string
+          profile_id: string
+          reaction_id?: string
+          reply_id?: string | null
+        }
+        Update: {
+          card_id?: string | null
+          created_at?: string
+          emoji?: string
+          profile_id?: string
+          reaction_id?: string
+          reply_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_reactions_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "social_cards"
+            referencedColumns: ["card_id"]
+          },
+          {
+            foreignKeyName: "card_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "card_reactions_reply_id_fkey"
+            columns: ["reply_id"]
+            isOneToOne: false
+            referencedRelation: "card_replies"
+            referencedColumns: ["reply_id"]
+          },
+        ]
+      }
+      card_replies: {
+        Row: {
+          body: string
+          card_id: string
+          created_at: string
+          is_deleted: boolean
+          parent_reply_id: string | null
+          profile_id: string
+          reply_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          card_id: string
+          created_at?: string
+          is_deleted?: boolean
+          parent_reply_id?: string | null
+          profile_id: string
+          reply_id?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          card_id?: string
+          created_at?: string
+          is_deleted?: boolean
+          parent_reply_id?: string | null
+          profile_id?: string
+          reply_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_replies_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "social_cards"
+            referencedColumns: ["card_id"]
+          },
+          {
+            foreignKeyName: "card_replies_parent_reply_id_fkey"
+            columns: ["parent_reply_id"]
+            isOneToOne: false
+            referencedRelation: "card_replies"
+            referencedColumns: ["reply_id"]
+          },
+          {
+            foreignKeyName: "card_replies_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       colours: {
         Row: {
           colour: string | null
@@ -251,6 +355,50 @@ export type Database = {
           your_notes?: string | null
         }
         Relationships: []
+      }
+      content_reports: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          notes: string | null
+          reason: string
+          report_id: string
+          reporter_profile_id: string
+          reviewed_at: string | null
+          status: string
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          notes?: string | null
+          reason: string
+          report_id?: string
+          reporter_profile_id: string
+          reviewed_at?: string | null
+          status?: string
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          notes?: string | null
+          reason?: string
+          report_id?: string
+          reporter_profile_id?: string
+          reviewed_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_reports_reporter_profile_id_fkey"
+            columns: ["reporter_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
       }
       counties: {
         Row: {
@@ -924,6 +1072,64 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "water_types"
             referencedColumns: ["water_type_id"]
+          },
+        ]
+      }
+      group_memberships: {
+        Row: {
+          group_id: string
+          invited_at: string | null
+          invited_by_profile_id: string | null
+          joined_at: string | null
+          membership_id: string
+          profile_id: string
+          removed_at: string | null
+          role: string
+          status: string
+        }
+        Insert: {
+          group_id: string
+          invited_at?: string | null
+          invited_by_profile_id?: string | null
+          joined_at?: string | null
+          membership_id?: string
+          profile_id: string
+          removed_at?: string | null
+          role?: string
+          status?: string
+        }
+        Update: {
+          group_id?: string
+          invited_at?: string | null
+          invited_by_profile_id?: string | null
+          joined_at?: string | null
+          membership_id?: string
+          profile_id?: string
+          removed_at?: string | null
+          role?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "social_groups"
+            referencedColumns: ["group_id"]
+          },
+          {
+            foreignKeyName: "group_memberships_invited_by_profile_id_fkey"
+            columns: ["invited_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "group_memberships_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
           },
         ]
       }
@@ -2456,6 +2662,145 @@ export type Database = {
           },
         ]
       }
+      social_cards: {
+        Row: {
+          card_id: string
+          conditions_temp_c: number | null
+          conditions_weather: string | null
+          conditions_wind: string | null
+          created_at: string
+          group_id: string | null
+          is_deleted: boolean
+          is_pinned: boolean
+          method: string | null
+          n_fish: number
+          personal_note: string | null
+          photo_url: string | null
+          profile_id: string
+          session_date: string
+          session_id: string | null
+          species_breakdown: Json | null
+          top_fly_1: string | null
+          top_fly_2: string | null
+          updated_at: string
+          venue_id: string | null
+          venue_name: string
+        }
+        Insert: {
+          card_id?: string
+          conditions_temp_c?: number | null
+          conditions_weather?: string | null
+          conditions_wind?: string | null
+          created_at?: string
+          group_id?: string | null
+          is_deleted?: boolean
+          is_pinned?: boolean
+          method?: string | null
+          n_fish?: number
+          personal_note?: string | null
+          photo_url?: string | null
+          profile_id: string
+          session_date: string
+          session_id?: string | null
+          species_breakdown?: Json | null
+          top_fly_1?: string | null
+          top_fly_2?: string | null
+          updated_at?: string
+          venue_id?: string | null
+          venue_name: string
+        }
+        Update: {
+          card_id?: string
+          conditions_temp_c?: number | null
+          conditions_weather?: string | null
+          conditions_wind?: string | null
+          created_at?: string
+          group_id?: string | null
+          is_deleted?: boolean
+          is_pinned?: boolean
+          method?: string | null
+          n_fish?: number
+          personal_note?: string | null
+          photo_url?: string | null
+          profile_id?: string
+          session_date?: string
+          session_id?: string | null
+          species_breakdown?: Json | null
+          top_fly_1?: string | null
+          top_fly_2?: string | null
+          updated_at?: string
+          venue_id?: string | null
+          venue_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_cards_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "social_groups"
+            referencedColumns: ["group_id"]
+          },
+          {
+            foreignKeyName: "social_cards_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "social_cards_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_cards_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
+      }
+      social_groups: {
+        Row: {
+          created_at: string
+          created_by_profile_id: string
+          group_id: string
+          invite_code: string | null
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_profile_id: string
+          group_id?: string
+          invite_code?: string | null
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_profile_id?: string
+          group_id?: string
+          invite_code?: string | null
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_groups_created_by_profile_id_fkey"
+            columns: ["created_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       species_hatch_calendar: {
         Row: {
           hatch_intensity: string | null
@@ -2880,29 +3225,109 @@ export type Database = {
         }
         Relationships: []
       }
-      user_profiles: {
+      user_blocks: {
         Row: {
-          created_at: string | null
-          id: string
-          mobile_number: string | null
-          mobile_verified: boolean | null
-          two_factor_enabled: boolean | null
+          block_id: string
+          blocked_profile_id: string
+          blocker_profile_id: string
+          created_at: string
         }
         Insert: {
-          created_at?: string | null
-          id: string
-          mobile_number?: string | null
-          mobile_verified?: boolean | null
-          two_factor_enabled?: boolean | null
+          block_id?: string
+          blocked_profile_id: string
+          blocker_profile_id: string
+          created_at?: string
         }
         Update: {
+          block_id?: string
+          blocked_profile_id?: string
+          blocker_profile_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_blocks_blocked_profile_id_fkey"
+            columns: ["blocked_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_blocks_blocker_profile_id_fkey"
+            columns: ["blocker_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          angler_id: string | null
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string
+          id: string
+          location: string | null
+          mobile_number: string | null
+          mobile_verified: boolean | null
+          notification_push_token: string | null
+          notify_group_post: boolean
+          notify_notable_fish: boolean
+          notify_platform_record: boolean
+          notify_venue_card: boolean
+          profile_id: string
+          two_factor_enabled: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          angler_id?: string | null
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
-          id?: string
+          display_name?: string
+          id: string
+          location?: string | null
           mobile_number?: string | null
           mobile_verified?: boolean | null
+          notification_push_token?: string | null
+          notify_group_post?: boolean
+          notify_notable_fish?: boolean
+          notify_platform_record?: boolean
+          notify_venue_card?: boolean
+          profile_id?: string
           two_factor_enabled?: boolean | null
+          updated_at?: string
         }
-        Relationships: []
+        Update: {
+          angler_id?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          location?: string | null
+          mobile_number?: string | null
+          mobile_verified?: boolean | null
+          notification_push_token?: string | null
+          notify_group_post?: boolean
+          notify_notable_fish?: boolean
+          notify_platform_record?: boolean
+          notify_venue_card?: boolean
+          profile_id?: string
+          two_factor_enabled?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_angler_id_fkey"
+            columns: ["angler_id"]
+            isOneToOne: false
+            referencedRelation: "angler_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_rod_setups: {
         Row: {
@@ -3072,6 +3497,57 @@ export type Database = {
           },
         ]
       }
+      venue_affiliations: {
+        Row: {
+          affiliation_id: string
+          is_welcome_back_pending: boolean
+          joined_at: string
+          lapsed_at: string | null
+          last_session_at: string | null
+          opted_out_at: string | null
+          profile_id: string
+          status: string
+          venue_id: string
+        }
+        Insert: {
+          affiliation_id?: string
+          is_welcome_back_pending?: boolean
+          joined_at?: string
+          lapsed_at?: string | null
+          last_session_at?: string | null
+          opted_out_at?: string | null
+          profile_id: string
+          status?: string
+          venue_id: string
+        }
+        Update: {
+          affiliation_id?: string
+          is_welcome_back_pending?: boolean
+          joined_at?: string
+          lapsed_at?: string | null
+          last_session_at?: string | null
+          opted_out_at?: string | null
+          profile_id?: string
+          status?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_affiliations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "venue_affiliations_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
+      }
       venue_correlations: {
         Row: {
           correlation: number | null
@@ -3101,6 +3577,86 @@ export type Database = {
           venue_b?: string
         }
         Relationships: []
+      }
+      venue_daily_cards: {
+        Row: {
+          best_fish_length_cm: number | null
+          best_fish_length_in: number | null
+          best_fish_species: string | null
+          best_fish_weight_kg: number | null
+          best_fish_weight_lb: number | null
+          card_date: string
+          conditions_temp_c: number | null
+          conditions_weather: string | null
+          conditions_wind: string | null
+          daily_card_id: string
+          dominant_method: string | null
+          generated_at: string
+          has_leaderboard_event: boolean
+          leaderboard_summary: string | null
+          n_sessions: number
+          narrative: string
+          rod_average: number | null
+          top_fly_1: string | null
+          top_fly_2: string | null
+          top_fly_3: string | null
+          venue_id: string
+        }
+        Insert: {
+          best_fish_length_cm?: number | null
+          best_fish_length_in?: number | null
+          best_fish_species?: string | null
+          best_fish_weight_kg?: number | null
+          best_fish_weight_lb?: number | null
+          card_date: string
+          conditions_temp_c?: number | null
+          conditions_weather?: string | null
+          conditions_wind?: string | null
+          daily_card_id?: string
+          dominant_method?: string | null
+          generated_at?: string
+          has_leaderboard_event?: boolean
+          leaderboard_summary?: string | null
+          n_sessions?: number
+          narrative: string
+          rod_average?: number | null
+          top_fly_1?: string | null
+          top_fly_2?: string | null
+          top_fly_3?: string | null
+          venue_id: string
+        }
+        Update: {
+          best_fish_length_cm?: number | null
+          best_fish_length_in?: number | null
+          best_fish_species?: string | null
+          best_fish_weight_kg?: number | null
+          best_fish_weight_lb?: number | null
+          card_date?: string
+          conditions_temp_c?: number | null
+          conditions_weather?: string | null
+          conditions_wind?: string | null
+          daily_card_id?: string
+          dominant_method?: string | null
+          generated_at?: string
+          has_leaderboard_event?: boolean
+          leaderboard_summary?: string | null
+          n_sessions?: number
+          narrative?: string
+          rod_average?: number | null
+          top_fly_1?: string | null
+          top_fly_2?: string | null
+          top_fly_3?: string | null
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_daily_cards_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
       }
       venue_metadata: {
         Row: {
