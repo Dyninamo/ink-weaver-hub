@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.lapse-affiliations]
 verify_jwt = false
+
+[functions.generate-venue-cards]
+verify_jwt = false
