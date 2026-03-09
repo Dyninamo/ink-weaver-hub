@@ -899,6 +899,19 @@ export default function DiaryEntry() {
           profileId={profileId}
         />
       )}
+
+      {/* Notable Fish Dialog */}
+      {user && session && (
+        <NotableFishDialog
+          open={notableOpen}
+          onOpenChange={setNotableOpen}
+          sessionId={id!}
+          userId={user.id}
+          venueId={null}
+          venueName={session.venue_name}
+          prefillSpecies={notablePrefill}
+        />
+      )}
     </div>
   );
 }
