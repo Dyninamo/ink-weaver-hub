@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import InviteDialog from "./InviteDialog";
 import GroupSettings from "./GroupSettings";
+import SharingCard from "./SharingCard";
 
 interface GroupDetailProps {
   groupId: string;
@@ -31,6 +32,8 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
   const [membersOpen, setMembersOpen] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [feedCards, setFeedCards] = useState<any[]>([]);
+  const [feedLoading, setFeedLoading] = useState(true);
 
   const fetchDetail = useCallback(async () => {
     setLoading(true);
@@ -62,7 +65,54 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
     }
 
     setLoading(false);
-  }, [groupId]);
+
+    // Fetch feed cards
+    setFeedLoading(true);
+    const { data: cards } = await supabase
+      .from("social_cards")
+      .select("*, user_profiles!social_cards_profile_id_fkey(display_name)")
+      .eq("group_id", groupId)
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (cards) {
+      // Fetch reaction/reply counts
+      const cardIds = cards.map((c) => c.card_id);
+
+      const { data: reactions } = cardIds.length > 0
+        ? await supabase.from("card_reactions").select("card_id, profile_id").in("card_id", cardIds).is("reply_id", null)
+        : { data: [] };
+
+      const { data: replies } = cardIds.length > 0
+        ? await supabase.from("card_replies").select("card_id").in("card_id", cardIds).eq("is_deleted", false)
+        : { data: [] };
+
+      const reactionCounts = new Map<string, { count: number; userReacted: boolean }>();
+      (reactions || []).forEach((r) => {
+        const existing = reactionCounts.get(r.card_id!) || { count: 0, userReacted: false };
+        existing.count++;
+        if (r.profile_id === profileId) existing.userReacted = true;
+        reactionCounts.set(r.card_id!, existing);
+      });
+
+      const replyCounts = new Map<string, number>();
+      (replies || []).forEach((r) => {
+        replyCounts.set(r.card_id, (replyCounts.get(r.card_id) || 0) + 1);
+      });
+
+      setFeedCards(
+        cards.map((c) => ({
+          ...c,
+          display_name: (c as any).user_profiles?.display_name ?? "Unknown",
+          _reactionCount: reactionCounts.get(c.card_id)?.count || 0,
+          _userReacted: reactionCounts.get(c.card_id)?.userReacted || false,
+          _replyCount: replyCounts.get(c.card_id) || 0,
+        }))
+      );
+    }
+    setFeedLoading(false);
+  }, [groupId, profileId]);
 
   useEffect(() => {
     fetchDetail();
@@ -151,12 +201,31 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Feed placeholder */}
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-        <p className="text-muted-foreground text-sm max-w-xs">
-          No shared sessions yet. Share a session from your diary to start the conversation.
-        </p>
-      </div>
+      {/* Feed */}
+      {feedLoading ? (
+        <div className="flex justify-center py-8">
+          <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : feedCards.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+          <p className="text-muted-foreground text-sm max-w-xs">
+            No shared sessions yet. Share a session from your diary to start the conversation.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 px-4 py-3">
+          {feedCards.map((card) => (
+            <SharingCard
+              key={card.card_id}
+              card={card}
+              profileId={profileId}
+              reactionCount={card._reactionCount}
+              replyCount={card._replyCount}
+              userReacted={card._userReacted}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Invite dialog */}
       <InviteDialog
