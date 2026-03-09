@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.upload-environmental]
 verify_jwt = false
+
+[functions.on-session-logged]
+verify_jwt = false
+
+[functions.lapse-affiliations]
+verify_jwt = false
