@@ -1251,6 +1251,147 @@ export type Database = {
         }
         Relationships: []
       }
+      report_advice_confidence: {
+        Row: {
+          confidence_score: number | null
+          date_span_years: number | null
+          n_reports: number | null
+          pct_flies: number | null
+          pct_weather: number | null
+          venue_name: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          date_span_years?: number | null
+          n_reports?: number | null
+          pct_flies?: number | null
+          pct_weather?: number | null
+          venue_name: string
+        }
+        Update: {
+          confidence_score?: number | null
+          date_span_years?: number | null
+          n_reports?: number | null
+          pct_flies?: number | null
+          pct_weather?: number | null
+          venue_name?: string
+        }
+        Relationships: []
+      }
+      report_condition_fly_rankings: {
+        Row: {
+          condition_type: string
+          condition_value: string
+          fly_name: string
+          mention_count: number | null
+          rank: number | null
+          venue_name: string
+        }
+        Insert: {
+          condition_type: string
+          condition_value: string
+          fly_name: string
+          mention_count?: number | null
+          rank?: number | null
+          venue_name: string
+        }
+        Update: {
+          condition_type?: string
+          condition_value?: string
+          fly_name?: string
+          mention_count?: number | null
+          rank?: number | null
+          venue_name?: string
+        }
+        Relationships: []
+      }
+      report_method_rankings: {
+        Row: {
+          mention_count: number | null
+          method: string
+          month: number
+          rank: number | null
+          venue_name: string
+        }
+        Insert: {
+          mention_count?: number | null
+          method: string
+          month: number
+          rank?: number | null
+          venue_name: string
+        }
+        Update: {
+          mention_count?: number | null
+          method?: string
+          month?: number
+          rank?: number | null
+          venue_name?: string
+        }
+        Relationships: []
+      }
+      report_seasonal_fly_rankings: {
+        Row: {
+          fly_name: string
+          mention_count: number | null
+          month: number
+          rank: number | null
+          venue_name: string
+        }
+        Insert: {
+          fly_name: string
+          mention_count?: number | null
+          month: number
+          rank?: number | null
+          venue_name: string
+        }
+        Update: {
+          fly_name?: string
+          mention_count?: number | null
+          month?: number
+          rank?: number | null
+          venue_name?: string
+        }
+        Relationships: []
+      }
+      report_venue_profiles: {
+        Row: {
+          date_end: string | null
+          date_start: string | null
+          latitude: number | null
+          longitude: number | null
+          mean_rod_avg: number | null
+          n_reports: number | null
+          pct_flies: number | null
+          pct_methods: number | null
+          pct_weather: number | null
+          venue_name: string
+        }
+        Insert: {
+          date_end?: string | null
+          date_start?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          mean_rod_avg?: number | null
+          n_reports?: number | null
+          pct_flies?: number | null
+          pct_methods?: number | null
+          pct_weather?: number | null
+          venue_name: string
+        }
+        Update: {
+          date_end?: string | null
+          date_start?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          mean_rod_avg?: number | null
+          n_reports?: number | null
+          pct_flies?: number | null
+          pct_methods?: number | null
+          pct_weather?: number | null
+          venue_name?: string
+        }
+        Relationships: []
+      }
       reports_enriched: {
         Row: {
           best_spots: string[] | null
@@ -2207,6 +2348,38 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "venue_metadata"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_venue_map: {
+        Row: {
+          created_at: string
+          match_method: string
+          session_count: number | null
+          session_venue_name: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          match_method: string
+          session_count?: number | null
+          session_venue_name: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          match_method?: string
+          session_count?: number | null
+          session_venue_name?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_venue_map_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
           },
         ]
       }
@@ -3178,6 +3351,8 @@ export type Database = {
           river_name: string | null
           root_url: string | null
           search_text: string
+          season_end_month: number | null
+          season_start_month: number | null
           section_profile_id: string | null
           session_count: number
           source: string | null
@@ -3211,6 +3386,8 @@ export type Database = {
           river_name?: string | null
           root_url?: string | null
           search_text?: string
+          season_end_month?: number | null
+          season_start_month?: number | null
           section_profile_id?: string | null
           session_count?: number
           source?: string | null
@@ -3244,6 +3421,8 @@ export type Database = {
           river_name?: string | null
           root_url?: string | null
           search_text?: string
+          season_end_month?: number | null
+          season_start_month?: number | null
           section_profile_id?: string | null
           session_count?: number
           source?: string | null
@@ -3456,6 +3635,279 @@ export type Database = {
           wind_dir_compass?: string | null
           wind_dir_deg?: number | null
           wind_speed_ms?: number | null
+        }
+        Relationships: []
+      }
+      wt_advice_confidence: {
+        Row: {
+          confidence_score: number | null
+          cross_validation_score: number | null
+          db_data_score: number | null
+          fly_diversity_score: number | null
+          method_coverage_score: number | null
+          months_with_data: number | null
+          n_reports: number | null
+          n_venues: number | null
+          n_web_sources: number | null
+          water_type_id: number
+          web_coverage_score: number | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          cross_validation_score?: number | null
+          db_data_score?: number | null
+          fly_diversity_score?: number | null
+          method_coverage_score?: number | null
+          months_with_data?: number | null
+          n_reports?: number | null
+          n_venues?: number | null
+          n_web_sources?: number | null
+          water_type_id: number
+          web_coverage_score?: number | null
+        }
+        Update: {
+          confidence_score?: number | null
+          cross_validation_score?: number | null
+          db_data_score?: number | null
+          fly_diversity_score?: number | null
+          method_coverage_score?: number | null
+          months_with_data?: number | null
+          n_reports?: number | null
+          n_venues?: number | null
+          n_web_sources?: number | null
+          water_type_id?: number
+          web_coverage_score?: number | null
+        }
+        Relationships: []
+      }
+      wt_advice_profiles: {
+        Row: {
+          confidence_score: number | null
+          generated_at: string
+          last_db_refresh: string | null
+          n_reports: number | null
+          n_sessions: number | null
+          n_venues: number | null
+          water_type_id: number
+          water_type_name: string
+          web_sources: number | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          generated_at: string
+          last_db_refresh?: string | null
+          n_reports?: number | null
+          n_sessions?: number | null
+          n_venues?: number | null
+          water_type_id: number
+          water_type_name: string
+          web_sources?: number | null
+        }
+        Update: {
+          confidence_score?: number | null
+          generated_at?: string
+          last_db_refresh?: string | null
+          n_reports?: number | null
+          n_sessions?: number | null
+          n_venues?: number | null
+          water_type_id?: number
+          water_type_name?: string
+          web_sources?: number | null
+        }
+        Relationships: []
+      }
+      wt_condition_advice: {
+        Row: {
+          catch_modifier: number | null
+          condition_type: string
+          condition_value: string
+          fly_adjustments: string | null
+          method_adjustments: string | null
+          n_observations: number | null
+          notes: string | null
+          source: string
+          water_type_id: number
+        }
+        Insert: {
+          catch_modifier?: number | null
+          condition_type: string
+          condition_value: string
+          fly_adjustments?: string | null
+          method_adjustments?: string | null
+          n_observations?: number | null
+          notes?: string | null
+          source: string
+          water_type_id: number
+        }
+        Update: {
+          catch_modifier?: number | null
+          condition_type?: string
+          condition_value?: string
+          fly_adjustments?: string | null
+          method_adjustments?: string | null
+          n_observations?: number | null
+          notes?: string | null
+          source?: string
+          water_type_id?: number
+        }
+        Relationships: []
+      }
+      wt_monthly_fly_advice: {
+        Row: {
+          confidence: number | null
+          fly_name: string
+          fly_style: string | null
+          importance: string | null
+          mention_count: number | null
+          month: number
+          notes: string | null
+          rank: number | null
+          source: string
+          water_type_id: number
+        }
+        Insert: {
+          confidence?: number | null
+          fly_name: string
+          fly_style?: string | null
+          importance?: string | null
+          mention_count?: number | null
+          month: number
+          notes?: string | null
+          rank?: number | null
+          source: string
+          water_type_id: number
+        }
+        Update: {
+          confidence?: number | null
+          fly_name?: string
+          fly_style?: string | null
+          importance?: string | null
+          mention_count?: number | null
+          month?: number
+          notes?: string | null
+          rank?: number | null
+          source?: string
+          water_type_id?: number
+        }
+        Relationships: []
+      }
+      wt_monthly_method_advice: {
+        Row: {
+          confidence: number | null
+          importance: string | null
+          mention_count: number | null
+          method_name: string
+          month: number
+          notes: string | null
+          rank: number | null
+          source: string
+          water_type_id: number
+        }
+        Insert: {
+          confidence?: number | null
+          importance?: string | null
+          mention_count?: number | null
+          method_name: string
+          month: number
+          notes?: string | null
+          rank?: number | null
+          source: string
+          water_type_id: number
+        }
+        Update: {
+          confidence?: number | null
+          importance?: string | null
+          mention_count?: number | null
+          method_name?: string
+          month?: number
+          notes?: string | null
+          rank?: number | null
+          source?: string
+          water_type_id?: number
+        }
+        Relationships: []
+      }
+      wt_narrative_advice: {
+        Row: {
+          generated_at: string
+          month: number
+          narrative_text: string
+          source: string
+          water_type_id: number
+          word_count: number | null
+        }
+        Insert: {
+          generated_at: string
+          month: number
+          narrative_text: string
+          source: string
+          water_type_id: number
+          word_count?: number | null
+        }
+        Update: {
+          generated_at?: string
+          month?: number
+          narrative_text?: string
+          source?: string
+          water_type_id?: number
+          word_count?: number | null
+        }
+        Relationships: []
+      }
+      wt_seasonal_overview: {
+        Row: {
+          avg_rod_average: number | null
+          key_flies: string | null
+          key_hatches: string | null
+          key_methods: string | null
+          overview_text: string | null
+          peak_months: string | null
+          season: string
+          source: string
+          water_type_id: number
+        }
+        Insert: {
+          avg_rod_average?: number | null
+          key_flies?: string | null
+          key_hatches?: string | null
+          key_methods?: string | null
+          overview_text?: string | null
+          peak_months?: string | null
+          season: string
+          source: string
+          water_type_id: number
+        }
+        Update: {
+          avg_rod_average?: number | null
+          key_flies?: string | null
+          key_hatches?: string | null
+          key_methods?: string | null
+          overview_text?: string | null
+          peak_months?: string | null
+          season?: string
+          source?: string
+          water_type_id?: number
+        }
+        Relationships: []
+      }
+      wt_where_to_fish: {
+        Row: {
+          advice_text: string
+          source: string
+          topic: string
+          water_type_id: number
+        }
+        Insert: {
+          advice_text: string
+          source: string
+          topic: string
+          water_type_id: number
+        }
+        Update: {
+          advice_text?: string
+          source?: string
+          topic?: string
+          water_type_id?: number
         }
         Relationships: []
       }
