@@ -97,6 +97,7 @@ export default function NotableFishDialog({
   venueName,
   prefillSpecies,
 }: NotableFishDialogProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
   const [speciesList, setSpeciesList] = useState<string[]>([]);
   const [selectedSpecies, setSelectedSpecies] = useState("");
