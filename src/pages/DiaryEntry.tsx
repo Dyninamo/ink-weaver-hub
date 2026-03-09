@@ -14,12 +14,13 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Fish, Circle, RefreshCw, Clock, Star, MapPin,
-  Thermometer, Wind, StopCircle, Trash2, Share2,
+  Thermometer, Wind, StopCircle, Trash2, Share2, Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import CatchModal from "@/components/diary/CatchModal";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
+import NotableFishDialog from "@/components/social/NotableFishDialog";
 import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
 import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
@@ -80,6 +81,8 @@ export default function DiaryEntry() {
   const [latestWeather, setLatestWeather] = useState<WeatherSnapshot | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [notableOpen, setNotableOpen] = useState(false);
+  const [notablePrefill, setNotablePrefill] = useState<string | null>(null);
 
   // Load session + events
   const loadData = useCallback(async () => {
@@ -323,17 +326,31 @@ export default function DiaryEntry() {
               )}
             </p>
           </div>
-          {/* Share button (completed sessions only) */}
+          {/* Notable Fish + Share buttons (completed sessions only) */}
           {!isActive && profileId && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShareOpen(true)}
-              className="shrink-0"
-              title="Share to group"
-            >
-              <Share2 className="h-5 w-5" />
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setNotablePrefill(null);
+                  setNotableOpen(true);
+                }}
+                className="shrink-0 text-[#F59E0B]"
+                title="Submit Notable Fish"
+              >
+                <Trophy className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShareOpen(true)}
+                className="shrink-0"
+                title="Share to group"
+              >
+                <Share2 className="h-5 w-5" />
+              </Button>
+            </>
           )}
         </div>
 
@@ -541,7 +558,7 @@ export default function DiaryEntry() {
                   <Card key={event.id} className={isActive ? "bg-[#162230] border-[#2A4055]" : ""}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
-                        <div>
+                        <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <Fish className="h-4 w-4 text-diary-catch" />
                             <span className="font-medium">{event.species}</span>
@@ -563,6 +580,17 @@ export default function DiaryEntry() {
                             {formatTime(event.event_time)}
                           </p>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setNotablePrefill(event.species || null);
+                            setNotableOpen(true);
+                          }}
+                          className="p-1.5 rounded-md hover:bg-muted/50 transition-colors"
+                          title="Submit as notable fish"
+                        >
+                          <Trophy className="h-4 w-4 text-muted-foreground hover:text-[#F59E0B] transition-colors" />
+                        </button>
                       </div>
                     </CardContent>
                   </Card>
@@ -869,6 +897,19 @@ export default function DiaryEntry() {
           weatherConditions={session.weather_conditions}
           method={session.fishing_type}
           profileId={profileId}
+        />
+      )}
+
+      {/* Notable Fish Dialog */}
+      {user && session && (
+        <NotableFishDialog
+          open={notableOpen}
+          onOpenChange={setNotableOpen}
+          sessionId={id!}
+          userId={user.id}
+          venueId={null}
+          venueName={session.venue_name}
+          prefillSpecies={notablePrefill}
         />
       )}
     </div>
