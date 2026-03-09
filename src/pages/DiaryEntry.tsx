@@ -323,6 +323,18 @@ export default function DiaryEntry() {
               )}
             </p>
           </div>
+          {/* Share button (completed sessions only) */}
+          {!isActive && profileId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShareOpen(true)}
+              className="shrink-0"
+              title="Share to group"
+            >
+              <Share2 className="h-5 w-5" />
+            </Button>
+          )}
         </div>
 
         {/* Weather bar */}
