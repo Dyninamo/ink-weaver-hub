@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Fish, Circle, RefreshCw, Clock, Star, MapPin,
-  Thermometer, Wind, StopCircle, Trash2,
+  Thermometer, Wind, StopCircle, Trash2, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import CatchModal from "@/components/diary/CatchModal";
+import ShareSessionDialog from "@/components/social/ShareSessionDialog";
 import BlankModal from "@/components/diary/BlankModal";
 import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
 import {
