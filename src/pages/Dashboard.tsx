@@ -264,6 +264,10 @@ const Dashboard = () => {
             <BookOpen className="w-4 h-4 mr-2" />
             My Diary
           </Button>
+          <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => navigate("/social")}>
+            <Users className="w-4 h-4 mr-2" />
+            Social
+          </Button>
         </div>
       </nav>
 
