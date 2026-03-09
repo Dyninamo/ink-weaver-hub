@@ -59,3 +59,9 @@ verify_jwt = false
 
 [functions.generate-venue-cards]
 verify_jwt = false
+
+[functions.submit-notable-fish]
+verify_jwt = false
+
+[functions.witness-notable-fish]
+verify_jwt = false
