@@ -22,6 +22,7 @@ import AdminTestAdvice from "./pages/AdminTestAdvice";
 import AdminRecompute from "./pages/AdminRecompute";
 import AdminVenueSubmissions from "./pages/AdminVenueSubmissions";
 import SocialFeed from "./pages/SocialFeed";
+import Leaderboard from "./pages/Leaderboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,8 @@ const App = () => (
               } 
             />
             <Route path="/social" element={<ProtectedRoute><SocialFeed /></ProtectedRoute>} />
+            <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+            <Route path="/leaderboard/:scope" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
             <Route path="/share/:token" element={<ShareView />} />
             <Route path="/admin/upload" element={<ProtectedRoute><AdminUpload /></ProtectedRoute>} />
             <Route path="/admin/db-status" element={<ProtectedRoute><AdminDbStatus /></ProtectedRoute>} />

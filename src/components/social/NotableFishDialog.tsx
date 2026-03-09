@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -96,6 +97,7 @@ export default function NotableFishDialog({
   venueName,
   prefillSpecies,
 }: NotableFishDialogProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
   const [speciesList, setSpeciesList] = useState<string[]>([]);
   const [selectedSpecies, setSelectedSpecies] = useState("");
@@ -672,6 +674,16 @@ export default function NotableFishDialog({
               onClick={() => onOpenChange(false)}
             >
               Done
+            </Button>
+            <Button
+              variant="link"
+              className="w-full text-sm"
+              onClick={() => {
+                onOpenChange(false);
+                navigate("/leaderboard/personal_best");
+              }}
+            >
+              View Leaderboard →
             </Button>
           </div>
         )}

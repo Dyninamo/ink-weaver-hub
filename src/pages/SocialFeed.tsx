@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Users, ArrowLeft } from "lucide-react";
+import { MapPin, Users, ArrowLeft, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import VenueFeedTab from "@/components/social/VenueFeedTab";
@@ -19,7 +19,10 @@ const SocialFeed = () => {
         <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold text-foreground">Social</h1>
+        <h1 className="text-xl font-semibold text-foreground flex-1">Social</h1>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/leaderboard")}>
+          <Trophy className="h-5 w-5 text-[#F59E0B]" />
+        </Button>
       </div>
 
       {/* Tab switcher */}
