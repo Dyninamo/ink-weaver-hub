@@ -21,6 +21,7 @@ import AdminDbStatus from "./pages/AdminDbStatus";
 import AdminTestAdvice from "./pages/AdminTestAdvice";
 import AdminRecompute from "./pages/AdminRecompute";
 import AdminVenueSubmissions from "./pages/AdminVenueSubmissions";
+import SocialFeed from "./pages/SocialFeed";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -85,6 +86,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route path="/social" element={<ProtectedRoute><SocialFeed /></ProtectedRoute>} />
             <Route path="/share/:token" element={<ShareView />} />
             <Route path="/admin/upload" element={<ProtectedRoute><AdminUpload /></ProtectedRoute>} />
             <Route path="/admin/db-status" element={<ProtectedRoute><AdminDbStatus /></ProtectedRoute>} />

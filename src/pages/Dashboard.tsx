@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Fish, LogOut, AlertCircle, ArrowRight, Clock, Share2, CheckSquare, Square, BookOpen } from "lucide-react";
+import { Fish, LogOut, AlertCircle, ArrowRight, Clock, Share2, CheckSquare, Square, BookOpen, Users } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -263,6 +263,10 @@ const Dashboard = () => {
           <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => navigate("/diary")}>
             <BookOpen className="w-4 h-4 mr-2" />
             My Diary
+          </Button>
+          <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => navigate("/social")}>
+            <Users className="w-4 h-4 mr-2" />
+            Social
           </Button>
         </div>
       </nav>
