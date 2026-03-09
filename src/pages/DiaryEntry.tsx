@@ -77,6 +77,8 @@ export default function DiaryEntry() {
   // Expanded events
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
   const [latestWeather, setLatestWeather] = useState<WeatherSnapshot | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [profileId, setProfileId] = useState<string | null>(null);
 
   // Load session + events
   const loadData = useCallback(async () => {
