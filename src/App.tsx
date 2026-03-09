@@ -21,6 +21,7 @@ import AdminDbStatus from "./pages/AdminDbStatus";
 import AdminTestAdvice from "./pages/AdminTestAdvice";
 import AdminRecompute from "./pages/AdminRecompute";
 import AdminVenueSubmissions from "./pages/AdminVenueSubmissions";
+import SocialFeed from "./pages/SocialFeed";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
