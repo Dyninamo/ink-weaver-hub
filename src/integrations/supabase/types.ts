@@ -678,6 +678,42 @@ export type Database = {
         }
         Relationships: []
       }
+      fish_witnesses: {
+        Row: {
+          fish_id: string
+          profile_id: string
+          witness_id: string
+          witnessed_at: string
+        }
+        Insert: {
+          fish_id: string
+          profile_id: string
+          witness_id?: string
+          witnessed_at?: string
+        }
+        Update: {
+          fish_id?: string
+          profile_id?: string
+          witness_id?: string
+          witnessed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fish_witnesses_fish_id_fkey"
+            columns: ["fish_id"]
+            isOneToOne: false
+            referencedRelation: "notable_fish"
+            referencedColumns: ["fish_id"]
+          },
+          {
+            foreignKeyName: "fish_witnesses_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       fisheries: {
         Row: {
           active: boolean | null
@@ -1205,6 +1241,92 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboard_entries: {
+        Row: {
+          created_at: string
+          entry_id: string
+          fish_id: string
+          group_id: string | null
+          length_cm: number | null
+          length_in: number | null
+          profile_id: string
+          rank: number | null
+          scope: string
+          season: string | null
+          species: string
+          venue_id: string | null
+          venue_percentile: number | null
+          verification_tier: number
+          weight_kg: number | null
+          weight_lb: number | null
+        }
+        Insert: {
+          created_at?: string
+          entry_id?: string
+          fish_id: string
+          group_id?: string | null
+          length_cm?: number | null
+          length_in?: number | null
+          profile_id: string
+          rank?: number | null
+          scope: string
+          season?: string | null
+          species: string
+          venue_id?: string | null
+          venue_percentile?: number | null
+          verification_tier: number
+          weight_kg?: number | null
+          weight_lb?: number | null
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          fish_id?: string
+          group_id?: string | null
+          length_cm?: number | null
+          length_in?: number | null
+          profile_id?: string
+          rank?: number | null
+          scope?: string
+          season?: string | null
+          species?: string
+          venue_id?: string | null
+          venue_percentile?: number | null
+          verification_tier?: number
+          weight_kg?: number | null
+          weight_lb?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_entries_fish_id_fkey"
+            columns: ["fish_id"]
+            isOneToOne: true
+            referencedRelation: "notable_fish"
+            referencedColumns: ["fish_id"]
+          },
+          {
+            foreignKeyName: "leaderboard_entries_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "social_groups"
+            referencedColumns: ["group_id"]
+          },
+          {
+            foreignKeyName: "leaderboard_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "leaderboard_entries_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
+      }
       leaders: {
         Row: {
           brand: string | null
@@ -1315,6 +1437,189 @@ export type Database = {
           your_notes?: string | null
         }
         Relationships: []
+      }
+      notable_fish: {
+        Row: {
+          check_edit_clean: boolean | null
+          check_location_pass: boolean | null
+          check_measure_in_frame: boolean | null
+          check_plausibility_pass: boolean | null
+          check_time_pass: boolean | null
+          confidence_score: number
+          exif_device: string | null
+          exif_edited: boolean | null
+          exif_latitude: number | null
+          exif_longitude: number | null
+          exif_subject_distance_m: number | null
+          exif_taken_at: string | null
+          fish_id: string
+          is_active: boolean
+          is_personal_best: boolean
+          is_platform_record: boolean
+          is_venue_alltime_record: boolean
+          is_venue_season_record: boolean
+          length_cm: number | null
+          length_in: number | null
+          measurement_entered_at: string
+          measurement_unit: string
+          n_witnesses: number
+          photo_uploaded_at: string | null
+          photo_url: string | null
+          platform_percentile: number | null
+          profile_id: string
+          session_id: string | null
+          species: string
+          submitted_at: string
+          updated_at: string
+          venue_id: string | null
+          venue_name: string
+          venue_percentile: number | null
+          verification_tier: number
+          weight_kg: number | null
+          weight_lb: number | null
+        }
+        Insert: {
+          check_edit_clean?: boolean | null
+          check_location_pass?: boolean | null
+          check_measure_in_frame?: boolean | null
+          check_plausibility_pass?: boolean | null
+          check_time_pass?: boolean | null
+          confidence_score?: number
+          exif_device?: string | null
+          exif_edited?: boolean | null
+          exif_latitude?: number | null
+          exif_longitude?: number | null
+          exif_subject_distance_m?: number | null
+          exif_taken_at?: string | null
+          fish_id?: string
+          is_active?: boolean
+          is_personal_best?: boolean
+          is_platform_record?: boolean
+          is_venue_alltime_record?: boolean
+          is_venue_season_record?: boolean
+          length_cm?: number | null
+          length_in?: number | null
+          measurement_entered_at: string
+          measurement_unit?: string
+          n_witnesses?: number
+          photo_uploaded_at?: string | null
+          photo_url?: string | null
+          platform_percentile?: number | null
+          profile_id: string
+          session_id?: string | null
+          species: string
+          submitted_at?: string
+          updated_at?: string
+          venue_id?: string | null
+          venue_name: string
+          venue_percentile?: number | null
+          verification_tier?: number
+          weight_kg?: number | null
+          weight_lb?: number | null
+        }
+        Update: {
+          check_edit_clean?: boolean | null
+          check_location_pass?: boolean | null
+          check_measure_in_frame?: boolean | null
+          check_plausibility_pass?: boolean | null
+          check_time_pass?: boolean | null
+          confidence_score?: number
+          exif_device?: string | null
+          exif_edited?: boolean | null
+          exif_latitude?: number | null
+          exif_longitude?: number | null
+          exif_subject_distance_m?: number | null
+          exif_taken_at?: string | null
+          fish_id?: string
+          is_active?: boolean
+          is_personal_best?: boolean
+          is_platform_record?: boolean
+          is_venue_alltime_record?: boolean
+          is_venue_season_record?: boolean
+          length_cm?: number | null
+          length_in?: number | null
+          measurement_entered_at?: string
+          measurement_unit?: string
+          n_witnesses?: number
+          photo_uploaded_at?: string | null
+          photo_url?: string | null
+          platform_percentile?: number | null
+          profile_id?: string
+          session_id?: string | null
+          species?: string
+          submitted_at?: string
+          updated_at?: string
+          venue_id?: string | null
+          venue_name?: string
+          venue_percentile?: number | null
+          verification_tier?: number
+          weight_kg?: number | null
+          weight_lb?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notable_fish_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "notable_fish_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notable_fish_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
+      }
+      notification_logs: {
+        Row: {
+          created_at: string
+          log_id: string
+          notification_type: string
+          profile_id: string
+          push_sent: boolean
+          push_sent_at: string | null
+          push_success: boolean | null
+          reference_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          log_id?: string
+          notification_type: string
+          profile_id: string
+          push_sent?: boolean
+          push_sent_at?: string | null
+          push_success?: boolean | null
+          reference_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          log_id?: string
+          notification_type?: string
+          profile_id?: string
+          push_sent?: boolean
+          push_sent_at?: string | null
+          push_success?: boolean | null
+          reference_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
       }
       prediction_params: {
         Row: {
@@ -2859,6 +3164,93 @@ export type Database = {
           },
         ]
       }
+      species_size_profiles: {
+        Row: {
+          created_at: string
+          lw_coefficient_a: number
+          lw_exponent_b: number
+          notes: string | null
+          record_length_cultivated_cm: number | null
+          record_length_cultivated_in: number | null
+          record_length_natural_cm: number | null
+          record_length_natural_in: number | null
+          record_notes: string | null
+          record_weight_cultivated_kg: number | null
+          record_weight_cultivated_lb: number | null
+          record_weight_natural_kg: number | null
+          record_weight_natural_lb: number | null
+          size_profile_id: number
+          source: string | null
+          species_code: string
+          species_name: string
+          tolerance_pct: number
+          typical_length_max_cm: number | null
+          typical_length_max_in: number | null
+          typical_length_min_cm: number | null
+          typical_length_min_in: number | null
+          typical_weight_max_kg: number | null
+          typical_weight_max_lb: number | null
+          typical_weight_min_kg: number | null
+          typical_weight_min_lb: number | null
+        }
+        Insert: {
+          created_at?: string
+          lw_coefficient_a: number
+          lw_exponent_b: number
+          notes?: string | null
+          record_length_cultivated_cm?: number | null
+          record_length_cultivated_in?: number | null
+          record_length_natural_cm?: number | null
+          record_length_natural_in?: number | null
+          record_notes?: string | null
+          record_weight_cultivated_kg?: number | null
+          record_weight_cultivated_lb?: number | null
+          record_weight_natural_kg?: number | null
+          record_weight_natural_lb?: number | null
+          size_profile_id?: number
+          source?: string | null
+          species_code: string
+          species_name: string
+          tolerance_pct?: number
+          typical_length_max_cm?: number | null
+          typical_length_max_in?: number | null
+          typical_length_min_cm?: number | null
+          typical_length_min_in?: number | null
+          typical_weight_max_kg?: number | null
+          typical_weight_max_lb?: number | null
+          typical_weight_min_kg?: number | null
+          typical_weight_min_lb?: number | null
+        }
+        Update: {
+          created_at?: string
+          lw_coefficient_a?: number
+          lw_exponent_b?: number
+          notes?: string | null
+          record_length_cultivated_cm?: number | null
+          record_length_cultivated_in?: number | null
+          record_length_natural_cm?: number | null
+          record_length_natural_in?: number | null
+          record_notes?: string | null
+          record_weight_cultivated_kg?: number | null
+          record_weight_cultivated_lb?: number | null
+          record_weight_natural_kg?: number | null
+          record_weight_natural_lb?: number | null
+          size_profile_id?: number
+          source?: string | null
+          species_code?: string
+          species_name?: string
+          tolerance_pct?: number
+          typical_length_max_cm?: number | null
+          typical_length_max_in?: number | null
+          typical_length_min_cm?: number | null
+          typical_length_min_in?: number | null
+          typical_weight_max_kg?: number | null
+          typical_weight_max_lb?: number | null
+          typical_weight_min_kg?: number | null
+          typical_weight_min_lb?: number | null
+        }
+        Relationships: []
+      }
       station_registry: {
         Row: {
           data_end_date: string | null
@@ -4034,6 +4426,59 @@ export type Database = {
           verified?: boolean | null
         }
         Relationships: []
+      }
+      verification_scores: {
+        Row: {
+          computed_at: string
+          fish_id: string
+          pts_exif_clean: number
+          pts_location_match: number
+          pts_measure_in_frame: number
+          pts_measurement_entered: number
+          pts_peer_witness: number
+          pts_photo_submitted: number
+          pts_plausibility_pass: number
+          pts_time_match: number
+          score_id: string
+          total_score: number
+        }
+        Insert: {
+          computed_at?: string
+          fish_id: string
+          pts_exif_clean?: number
+          pts_location_match?: number
+          pts_measure_in_frame?: number
+          pts_measurement_entered?: number
+          pts_peer_witness?: number
+          pts_photo_submitted?: number
+          pts_plausibility_pass?: number
+          pts_time_match?: number
+          score_id?: string
+          total_score?: number
+        }
+        Update: {
+          computed_at?: string
+          fish_id?: string
+          pts_exif_clean?: number
+          pts_location_match?: number
+          pts_measure_in_frame?: number
+          pts_measurement_entered?: number
+          pts_peer_witness?: number
+          pts_photo_submitted?: number
+          pts_plausibility_pass?: number
+          pts_time_match?: number
+          score_id?: string
+          total_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_scores_fish_id_fkey"
+            columns: ["fish_id"]
+            isOneToOne: true
+            referencedRelation: "notable_fish"
+            referencedColumns: ["fish_id"]
+          },
+        ]
       }
       water_level_daily: {
         Row: {
