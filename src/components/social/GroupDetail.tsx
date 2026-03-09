@@ -201,12 +201,31 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Feed placeholder */}
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-        <p className="text-muted-foreground text-sm max-w-xs">
-          No shared sessions yet. Share a session from your diary to start the conversation.
-        </p>
-      </div>
+      {/* Feed */}
+      {feedLoading ? (
+        <div className="flex justify-center py-8">
+          <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : feedCards.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+          <p className="text-muted-foreground text-sm max-w-xs">
+            No shared sessions yet. Share a session from your diary to start the conversation.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 px-4 py-3">
+          {feedCards.map((card) => (
+            <SharingCard
+              key={card.card_id}
+              card={card}
+              profileId={profileId}
+              reactionCount={card._reactionCount}
+              replyCount={card._replyCount}
+              userReacted={card._userReacted}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Invite dialog */}
       <InviteDialog

@@ -128,6 +128,20 @@ export default function DiaryEntry() {
     loadData();
   }, [loadData]);
 
+  // Fetch profile_id for sharing
+  useEffect(() => {
+    if (!user) return;
+    const fetchProfile = async () => {
+      const { data } = await supabase
+        .from("user_profiles")
+        .select("profile_id")
+        .eq("id", user.id)
+        .single();
+      if (data) setProfileId(data.profile_id);
+    };
+    fetchProfile();
+  }, [user]);
+
   const stats = calculateSessionStats(events);
   const isActive = session?.is_active === true;
 
