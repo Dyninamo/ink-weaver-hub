@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import InviteDialog from "./InviteDialog";
 import GroupSettings from "./GroupSettings";
+import SharingCard from "./SharingCard";
 
 interface GroupDetailProps {
   groupId: string;
