@@ -88,6 +88,8 @@ const App = () => (
               } 
             />
             <Route path="/social" element={<ProtectedRoute><SocialFeed /></ProtectedRoute>} />
+            <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+            <Route path="/leaderboard/:scope" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
             <Route path="/share/:token" element={<ShareView />} />
             <Route path="/admin/upload" element={<ProtectedRoute><AdminUpload /></ProtectedRoute>} />
             <Route path="/admin/db-status" element={<ProtectedRoute><AdminDbStatus /></ProtectedRoute>} />
