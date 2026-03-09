@@ -853,6 +853,24 @@ export default function DiaryEntry() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Share Session Dialog */}
+      {profileId && session && (
+        <ShareSessionDialog
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          sessionId={id!}
+          venueName={session.venue_name}
+          sessionDate={session.session_date}
+          venueId={null}
+          events={events}
+          weatherTemp={session.weather_temp}
+          weatherWind={session.weather_wind_speed ? `${session.weather_wind_speed}mph ${session.weather_wind_dir || ""}` : null}
+          weatherConditions={session.weather_conditions}
+          method={session.fishing_type}
+          profileId={profileId}
+        />
+      )}
     </div>
   );
 }
