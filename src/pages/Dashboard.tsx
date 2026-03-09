@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Fish, LogOut, AlertCircle, ArrowRight, Clock, Share2, CheckSquare, Square, BookOpen } from "lucide-react";
+import { Fish, LogOut, AlertCircle, ArrowRight, Clock, Share2, CheckSquare, Square, BookOpen, Users } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
