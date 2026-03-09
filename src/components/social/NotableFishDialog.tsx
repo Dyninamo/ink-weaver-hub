@@ -674,6 +674,16 @@ export default function NotableFishDialog({
             >
               Done
             </Button>
+            <Button
+              variant="link"
+              className="w-full text-sm"
+              onClick={() => {
+                onOpenChange(false);
+                navigate("/leaderboard/personal_best");
+              }}
+            >
+              View Leaderboard →
+            </Button>
           </div>
         )}
       </DialogContent>
