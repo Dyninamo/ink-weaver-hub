@@ -86,13 +86,13 @@ serve(async (req) => {
     );
 
     if (clear_first) {
-      const pk = pkCol[table];
-      // Delete all rows — works for both text and integer PKs
-      const { error: delError } = await supabase.from(table).delete().neq(pk, '___NEVER_MATCH___');
-      if (delError) {
-        console.error(`Delete error for ${table}:`, delError);
+      const { error: clearError } = await supabase.rpc('clear_table', {
+        target_table: table
+      });
+      if (clearError) {
+        console.error(`Clear error for ${table}:`, clearError);
         return new Response(
-          JSON.stringify({ inserted: 0, failed: 0, errors: [`Failed to clear table: ${delError.message}`] }),
+          JSON.stringify({ inserted: 0, failed: 0, errors: [`Failed to clear table: ${clearError.message}`] }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
