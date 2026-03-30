@@ -96,6 +96,11 @@ const SERIAL_ID_TABLES = new Set([
   'reports_raw',
   'harvested_events',
   'venues',
+  'pattern_weather_effects',
+  'pattern_fly_conditions',
+  'pattern_hatch_weather',
+  'pattern_discovery_meta',
+  'report_sources',
 ]);
 
 serve(async (req) => {
