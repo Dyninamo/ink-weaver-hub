@@ -60,6 +60,32 @@ const pkCol: Record<string, string> = {
   venues: 'id',
   counties: 'county_id',
   fisheries: 'fishery_id',
+  // Water-type advice
+  wt_advice_profiles: 'id',
+  wt_monthly_fly_advice: 'id',
+  wt_monthly_method_advice: 'id',
+  wt_condition_advice: 'id',
+  wt_seasonal_overview: 'id',
+  wt_where_to_fish: 'id',
+  wt_narrative_advice: 'id',
+  wt_advice_confidence: 'id',
+  // Report-level summaries
+  report_venue_profiles: 'venue_name',
+  report_seasonal_fly_rankings: 'venue_name',
+  report_method_rankings: 'venue_name',
+  report_condition_fly_rankings: 'venue_name',
+  report_advice_confidence: 'venue_name',
+  // Pattern discovery
+  pattern_weather_effects: 'pattern_id',
+  pattern_fly_conditions: 'pattern_id',
+  pattern_hatch_weather: 'pattern_id',
+  pattern_discovery_meta: 'run_id',
+  // Sources
+  report_sources: 'source_id',
+  source_venue_map: 'source_id',
+  // Venue/session maps
+  session_venue_map: 'id',
+  venue_spots: 'spot_id',
 };
 
 // Tables with SERIAL id columns — strip id from input so Postgres auto-generates
