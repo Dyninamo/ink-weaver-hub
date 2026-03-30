@@ -1621,6 +1621,231 @@ export type Database = {
           },
         ]
       }
+      pattern_discovery_meta: {
+        Row: {
+          min_confidence: number | null
+          min_samples: number | null
+          n_fly_patterns: number | null
+          n_hatch_patterns: number | null
+          n_patterns_discovered: number | null
+          n_reports: number | null
+          n_sessions: number | null
+          notes: string | null
+          run_date: string
+          run_id: number
+          script_version: string | null
+          significance_level: number | null
+        }
+        Insert: {
+          min_confidence?: number | null
+          min_samples?: number | null
+          n_fly_patterns?: number | null
+          n_hatch_patterns?: number | null
+          n_patterns_discovered?: number | null
+          n_reports?: number | null
+          n_sessions?: number | null
+          notes?: string | null
+          run_date: string
+          run_id?: never
+          script_version?: string | null
+          significance_level?: number | null
+        }
+        Update: {
+          min_confidence?: number | null
+          min_samples?: number | null
+          n_fly_patterns?: number | null
+          n_hatch_patterns?: number | null
+          n_patterns_discovered?: number | null
+          n_reports?: number | null
+          n_sessions?: number | null
+          notes?: string | null
+          run_date?: string
+          run_id?: never
+          script_version?: string | null
+          significance_level?: number | null
+        }
+        Relationships: []
+      }
+      pattern_fly_conditions: {
+        Row: {
+          condition_type: string
+          condition_value: string
+          confidence: number
+          created_at: string
+          fly_name: string
+          lift: number
+          month: number | null
+          n_mentions: number
+          pattern_id: number
+          pct_of_condition: number
+          pct_overall: number
+          rank_in_condition: number | null
+          water_type_id: number | null
+        }
+        Insert: {
+          condition_type: string
+          condition_value: string
+          confidence: number
+          created_at?: string
+          fly_name: string
+          lift: number
+          month?: number | null
+          n_mentions: number
+          pattern_id?: never
+          pct_of_condition: number
+          pct_overall: number
+          rank_in_condition?: number | null
+          water_type_id?: number | null
+        }
+        Update: {
+          condition_type?: string
+          condition_value?: string
+          confidence?: number
+          created_at?: string
+          fly_name?: string
+          lift?: number
+          month?: number | null
+          n_mentions?: number
+          pattern_id?: never
+          pct_of_condition?: number
+          pct_overall?: number
+          rank_in_condition?: number | null
+          water_type_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pattern_fly_conditions_water_type_id_fkey"
+            columns: ["water_type_id"]
+            isOneToOne: false
+            referencedRelation: "water_types"
+            referencedColumns: ["water_type_id"]
+          },
+        ]
+      }
+      pattern_hatch_weather: {
+        Row: {
+          confidence: number
+          created_at: string
+          fly_lift: number | null
+          hatch_intensity: string
+          month: number
+          n_observations: number
+          pattern_id: number
+          recommended_flies: string | null
+          species_id: number
+          species_name: string
+          temp_band: string | null
+          water_type_id: number | null
+        }
+        Insert: {
+          confidence: number
+          created_at?: string
+          fly_lift?: number | null
+          hatch_intensity: string
+          month: number
+          n_observations: number
+          pattern_id?: never
+          recommended_flies?: string | null
+          species_id: number
+          species_name: string
+          temp_band?: string | null
+          water_type_id?: number | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          fly_lift?: number | null
+          hatch_intensity?: string
+          month?: number
+          n_observations?: number
+          pattern_id?: never
+          recommended_flies?: string | null
+          species_id?: number
+          species_name?: string
+          temp_band?: string | null
+          water_type_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pattern_hatch_weather_water_type_id_fkey"
+            columns: ["water_type_id"]
+            isOneToOne: false
+            referencedRelation: "water_types"
+            referencedColumns: ["water_type_id"]
+          },
+        ]
+      }
+      pattern_weather_effects: {
+        Row: {
+          baseline_catch: number
+          ci_lower: number | null
+          ci_upper: number | null
+          cohen_d: number | null
+          condition_value: string
+          confidence: number
+          created_at: string
+          effect_size: number
+          is_interaction: boolean | null
+          mean_catch: number
+          month: number | null
+          n_sessions: number
+          n_venues: number | null
+          p_value: number | null
+          pattern_id: number
+          source: string
+          variable: string
+          water_type_id: number | null
+        }
+        Insert: {
+          baseline_catch: number
+          ci_lower?: number | null
+          ci_upper?: number | null
+          cohen_d?: number | null
+          condition_value: string
+          confidence: number
+          created_at?: string
+          effect_size: number
+          is_interaction?: boolean | null
+          mean_catch: number
+          month?: number | null
+          n_sessions: number
+          n_venues?: number | null
+          p_value?: number | null
+          pattern_id?: never
+          source: string
+          variable: string
+          water_type_id?: number | null
+        }
+        Update: {
+          baseline_catch?: number
+          ci_lower?: number | null
+          ci_upper?: number | null
+          cohen_d?: number | null
+          condition_value?: string
+          confidence?: number
+          created_at?: string
+          effect_size?: number
+          is_interaction?: boolean | null
+          mean_catch?: number
+          month?: number | null
+          n_sessions?: number
+          n_venues?: number | null
+          p_value?: number | null
+          pattern_id?: never
+          source?: string
+          variable?: string
+          water_type_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pattern_weather_effects_water_type_id_fkey"
+            columns: ["water_type_id"]
+            isOneToOne: false
+            referencedRelation: "water_types"
+            referencedColumns: ["water_type_id"]
+          },
+        ]
+      }
       prediction_params: {
         Row: {
           last_validated: string | null
@@ -1861,6 +2086,66 @@ export type Database = {
           month?: number
           rank?: number | null
           venue_name?: string
+        }
+        Relationships: []
+      }
+      report_sources: {
+        Row: {
+          check_interval_days: number
+          created_at: string
+          discovery_strategy: string
+          extract_strategy: string
+          hub_url: string
+          is_active: boolean
+          last_checked: string | null
+          last_new_report: string | null
+          n_reports_total: number
+          n_venues: number
+          notes: string | null
+          source_domain: string
+          source_id: number
+          source_name: string
+          source_type: string
+          split_strategy: string
+          updated_at: string
+        }
+        Insert: {
+          check_interval_days?: number
+          created_at?: string
+          discovery_strategy?: string
+          extract_strategy?: string
+          hub_url: string
+          is_active?: boolean
+          last_checked?: string | null
+          last_new_report?: string | null
+          n_reports_total?: number
+          n_venues?: number
+          notes?: string | null
+          source_domain: string
+          source_id?: never
+          source_name: string
+          source_type?: string
+          split_strategy?: string
+          updated_at?: string
+        }
+        Update: {
+          check_interval_days?: number
+          created_at?: string
+          discovery_strategy?: string
+          extract_strategy?: string
+          hub_url?: string
+          is_active?: boolean
+          last_checked?: string | null
+          last_new_report?: string | null
+          n_reports_total?: number
+          n_venues?: number
+          notes?: string | null
+          source_domain?: string
+          source_id?: never
+          source_name?: string
+          source_type?: string
+          split_strategy?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3103,6 +3388,38 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["profile_id"]
+          },
+        ]
+      }
+      source_venue_map: {
+        Row: {
+          created_at: string
+          is_primary: boolean
+          source_id: number
+          venue_name: string
+          venue_pattern: string | null
+        }
+        Insert: {
+          created_at?: string
+          is_primary?: boolean
+          source_id: number
+          venue_name: string
+          venue_pattern?: string | null
+        }
+        Update: {
+          created_at?: string
+          is_primary?: boolean
+          source_id?: number
+          venue_name?: string
+          venue_pattern?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_venue_map_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "report_sources"
+            referencedColumns: ["source_id"]
           },
         ]
       }

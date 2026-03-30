@@ -7,15 +7,33 @@ const corsHeaders = {
 };
 
 const ALLOWED_TABLES = [
+  // Stillwater analysis
   'stillwater_venue_profiles', 'stillwater_seasonal_baselines',
   'stillwater_fly_recommendations', 'stillwater_fly_rankings',
   'stillwater_condition_modifiers', 'stillwater_advice_confidence',
+  // River analysis
   'river_section_profiles', 'river_seasonal_baselines',
   'river_fly_recommendations', 'river_recommendation_lookup',
   'river_regional_defaults', 'river_seasonal_flies',
   'river_condition_modifiers', 'river_species_composition',
   'river_advice_confidence',
+  // Raw / crawl
   'reports_raw', 'harvested_events', 'venues', 'counties', 'fisheries',
+  // Water-type advice
+  'wt_advice_profiles', 'wt_monthly_fly_advice', 'wt_monthly_method_advice',
+  'wt_condition_advice', 'wt_seasonal_overview', 'wt_where_to_fish',
+  'wt_narrative_advice', 'wt_advice_confidence',
+  // Report-level summaries
+  'report_venue_profiles', 'report_seasonal_fly_rankings',
+  'report_method_rankings', 'report_condition_fly_rankings',
+  'report_advice_confidence',
+  // Pattern discovery
+  'pattern_weather_effects', 'pattern_fly_conditions',
+  'pattern_hatch_weather', 'pattern_discovery_meta',
+  // Sources
+  'report_sources', 'source_venue_map',
+  // Venue/session maps
+  'session_venue_map', 'venue_spots',
 ] as const;
 
 type AllowedTable = typeof ALLOWED_TABLES[number];
@@ -42,6 +60,32 @@ const pkCol: Record<string, string> = {
   venues: 'id',
   counties: 'county_id',
   fisheries: 'fishery_id',
+  // Water-type advice
+  wt_advice_profiles: 'id',
+  wt_monthly_fly_advice: 'id',
+  wt_monthly_method_advice: 'id',
+  wt_condition_advice: 'id',
+  wt_seasonal_overview: 'id',
+  wt_where_to_fish: 'id',
+  wt_narrative_advice: 'id',
+  wt_advice_confidence: 'id',
+  // Report-level summaries
+  report_venue_profiles: 'venue_name',
+  report_seasonal_fly_rankings: 'venue_name',
+  report_method_rankings: 'venue_name',
+  report_condition_fly_rankings: 'venue_name',
+  report_advice_confidence: 'venue_name',
+  // Pattern discovery
+  pattern_weather_effects: 'pattern_id',
+  pattern_fly_conditions: 'pattern_id',
+  pattern_hatch_weather: 'pattern_id',
+  pattern_discovery_meta: 'run_id',
+  // Sources
+  report_sources: 'source_id',
+  source_venue_map: 'source_id',
+  // Venue/session maps
+  session_venue_map: 'id',
+  venue_spots: 'spot_id',
 };
 
 // Tables with SERIAL id columns — strip id from input so Postgres auto-generates
@@ -52,6 +96,11 @@ const SERIAL_ID_TABLES = new Set([
   'reports_raw',
   'harvested_events',
   'venues',
+  'pattern_weather_effects',
+  'pattern_fly_conditions',
+  'pattern_hatch_weather',
+  'pattern_discovery_meta',
+  'report_sources',
 ]);
 
 serve(async (req) => {
