@@ -5326,6 +5326,7 @@ export type Database = {
       }
     }
     Functions: {
+      clear_table: { Args: { target_table: string }; Returns: undefined }
       get_my_group_ids: { Args: never; Returns: string[] }
       get_my_profile_id: { Args: never; Returns: string }
       is_group_admin: { Args: { target_group_id: string }; Returns: boolean }

@@ -38,55 +38,6 @@ const ALLOWED_TABLES = [
 
 type AllowedTable = typeof ALLOWED_TABLES[number];
 
-// First column of PK for each table (used for clear_first delete)
-const pkCol: Record<string, string> = {
-  stillwater_venue_profiles: 'venue_id',
-  stillwater_seasonal_baselines: 'venue_id',
-  stillwater_fly_recommendations: 'venue_id',
-  stillwater_fly_rankings: 'id',
-  stillwater_condition_modifiers: 'venue_id',
-  stillwater_advice_confidence: 'venue_id',
-  river_section_profiles: 'section_id',
-  river_seasonal_baselines: 'section_id',
-  river_fly_recommendations: 'id',
-  river_recommendation_lookup: 'id',
-  river_regional_defaults: 'region_id',
-  river_seasonal_flies: 'region_id',
-  river_condition_modifiers: 'section_id',
-  river_species_composition: 'section_id',
-  river_advice_confidence: 'section_id',
-  reports_raw: 'id',
-  harvested_events: 'id',
-  venues: 'id',
-  counties: 'county_id',
-  fisheries: 'fishery_id',
-  // Water-type advice
-  wt_advice_profiles: 'id',
-  wt_monthly_fly_advice: 'id',
-  wt_monthly_method_advice: 'id',
-  wt_condition_advice: 'id',
-  wt_seasonal_overview: 'id',
-  wt_where_to_fish: 'id',
-  wt_narrative_advice: 'id',
-  wt_advice_confidence: 'id',
-  // Report-level summaries
-  report_venue_profiles: 'venue_name',
-  report_seasonal_fly_rankings: 'venue_name',
-  report_method_rankings: 'venue_name',
-  report_condition_fly_rankings: 'venue_name',
-  report_advice_confidence: 'venue_name',
-  // Pattern discovery
-  pattern_weather_effects: 'pattern_id',
-  pattern_fly_conditions: 'pattern_id',
-  pattern_hatch_weather: 'pattern_id',
-  pattern_discovery_meta: 'run_id',
-  // Sources
-  report_sources: 'source_id',
-  source_venue_map: 'source_id',
-  // Venue/session maps
-  session_venue_map: 'id',
-  venue_spots: 'spot_id',
-};
 
 // Tables with SERIAL id columns — strip id from input so Postgres auto-generates
 const SERIAL_ID_TABLES = new Set([
@@ -135,13 +86,13 @@ serve(async (req) => {
     );
 
     if (clear_first) {
-      const pk = pkCol[table];
-      // Delete all rows — works for both text and integer PKs
-      const { error: delError } = await supabase.from(table).delete().neq(pk, '___NEVER_MATCH___');
-      if (delError) {
-        console.error(`Delete error for ${table}:`, delError);
+      const { error: clearError } = await supabase.rpc('clear_table', {
+        target_table: table
+      });
+      if (clearError) {
+        console.error(`Clear error for ${table}:`, clearError);
         return new Response(
-          JSON.stringify({ inserted: 0, failed: 0, errors: [`Failed to clear table: ${delError.message}`] }),
+          JSON.stringify({ inserted: 0, failed: 0, errors: [`Failed to clear table: ${clearError.message}`] }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
