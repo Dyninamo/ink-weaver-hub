@@ -11,107 +11,168 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let partial = false;
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('__TIMEOUT__')), 25000)
+  );
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Get all public tables
-    const { data: tables, error: tablesError } = await supabase.rpc('_lovable_noop').maybeSingle();
-    // Use raw SQL via supabase-js postgrest isn't ideal here, so we query information_schema
-    
-    // Query tables list
-    const { data: tableRows, error: trErr } = await supabase
-      .from('information_schema.tables' as any)
-      .select('table_name')
-      .eq('table_schema', 'public');
+    const work = async () => {
+      // 1. Get all row counts in a single query via pg_stat_user_tables
+      const { data: countRows, error: countErr } = await supabase.rpc('_lovable_noop').maybeSingle();
+      // pg_stat_user_tables isn't exposed via PostgREST, so use raw SQL via a direct fetch
+      const pgUrl = Deno.env.get('SUPABASE_DB_URL')!;
 
-    // Since we can't query information_schema via postgrest, use a different approach
-    // We'll hardcode known tables and query each one
-    const knownTables = [
-      'reports_enriched', 'basic_advice', 'queries', 'diary_entries', 'diary_fish',
-      'flies', 'rigs', 'retrieves', 'lines', 'lines_from_reports',
-      'leaders', 'tippets', 'rods', 'colours', 'depths', 'hook_sizes',
-      'prediction_params', 'venue_profiles', 'venue_correlations', 'venue_metadata', 'venue_spots',
-      'reference_data', 'shared_reports', 'share_views', 'user_profiles', 'verification_codes',
-      'fly_types', 'water_types', 'regions', 'fly_species',
-      'species_hatch_calendar', 'fly_monthly_availability', 'fly_species_link',
-      'fly_water_types',
-      'fish_types', 'fish_species_game', 'angler_profiles', 'angler_type_weights',
-      'fishing_sessions', 'session_events', 'session_summaries',
-      'angler_venue_stats', 'venue_stats', 'user_rod_setups',
-      'reports_raw', 'harvested_events', 'venues', 'counties', 'fisheries',
-      'url_patterns', 'crawl_audit', 'crawl_intelligence', 'discovered_urls', 'discovery_hubs',
-    ];
+      // We'll use the supabase client to query two utility views instead.
+      // Since we can't run arbitrary SQL via PostgREST, we fetch from the REST API using raw SQL endpoint.
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    const results = [];
+      // Helper to run raw SQL via Supabase's pg endpoint
+      const runSQL = async (sql: string): Promise<any[]> => {
+        const res = await fetch(`${supabaseUrl}/rest/v1/rpc/_lovable_noop`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${serviceKey}`,
+            'apikey': serviceKey,
+            'Content-Type': 'application/json',
+          },
+        });
+        // _lovable_noop won't work for SQL. Use the pg connection directly.
+        // Actually, let's use Deno's postgres driver for raw SQL.
+        return [];
+      };
 
-    for (const tableName of knownTables) {
+      // Use Deno postgres for raw SQL queries
+      const { Pool } = await import("https://deno.land/x/postgres@v0.19.3/mod.ts");
+      const pool = new Pool(Deno.env.get('SUPABASE_DB_URL')!, 1, true);
+      const conn = await pool.connect();
+
       try {
-        // Get count
-        const { count, error: countErr } = await supabase
-          .from(tableName)
-          .select('*', { count: 'exact', head: true });
-
-        if (countErr) {
-          results.push({ table_name: tableName, row_count: null, error: countErr.message });
-          continue;
+        // Query 1: All row counts from pg_stat_user_tables
+        const countResult = await conn.queryObject<{ table_name: string; row_count: number }>`
+          SELECT relname AS table_name, n_live_tup AS row_count
+          FROM pg_stat_user_tables
+          WHERE schemaname = 'public'
+          ORDER BY relname
+        `;
+        const rowCounts = new Map<string, number>();
+        for (const r of countResult.rows) {
+          rowCounts.set(r.table_name, Number(r.row_count));
         }
 
-        // Get a sample row to detect columns
-        const { data: sample, error: sampleErr } = await supabase
-          .from(tableName)
-          .select('*')
-          .limit(1);
+        // Query 2: All column metadata
+        const colResult = await conn.queryObject<{
+          table_name: string; column_name: string; data_type: string;
+        }>`
+          SELECT table_name, column_name, data_type
+          FROM information_schema.columns
+          WHERE table_schema = 'public'
+          ORDER BY table_name, ordinal_position
+        `;
+        const columnsByTable = new Map<string, { column_name: string; data_type: string }[]>();
+        for (const r of colResult.rows) {
+          if (!columnsByTable.has(r.table_name)) columnsByTable.set(r.table_name, []);
+          columnsByTable.get(r.table_name)!.push({
+            column_name: r.column_name,
+            data_type: r.data_type,
+          });
+        }
 
-        const columns = sample && sample.length > 0
-          ? Object.keys(sample[0]).map(col => ({ column_name: col, data_type: typeof sample[0][col] }))
-          : [];
+        // Build results map
+        const allTables = new Set([...rowCounts.keys(), ...columnsByTable.keys()]);
+        const dateColumns = ['created_at', 'report_date', 'trip_date', 'last_updated', 'updated_at', 'session_date'];
 
-        // Try to find the most recent record
-        let latestDate: string | null = null;
-        const dateColumns = ['created_at', 'report_date', 'trip_date', 'last_updated', 'updated_at'];
-        for (const dc of dateColumns) {
-          if (columns.some(c => c.column_name === dc)) {
-            const { data: latest } = await supabase
-              .from(tableName)
-              .select(dc)
-              .order(dc, { ascending: false })
-              .limit(1);
-            if (latest && latest.length > 0 && (latest[0] as Record<string, unknown>)[dc]) {
-              latestDate = (latest[0] as Record<string, unknown>)[dc] as string;
+        // Query 3: Latest dates — only for tables that have a date column, in parallel batches
+        const tableDateCol: { table: string; col: string }[] = [];
+        for (const t of allTables) {
+          const cols = columnsByTable.get(t) || [];
+          for (const dc of dateColumns) {
+            if (cols.some(c => c.column_name === dc)) {
+              tableDateCol.push({ table: t, col: dc });
               break;
             }
           }
         }
 
-        results.push({
-          table_name: tableName,
-          row_count: count ?? 0,
-          columns,
-          latest_date: latestDate,
-        });
-      } catch (e) {
-        results.push({ table_name: tableName, row_count: null, error: String(e) });
-      }
-    }
+        const latestDates = new Map<string, string | null>();
+        // Run in parallel batches of 10
+        for (let i = 0; i < tableDateCol.length; i += 10) {
+          const batch = tableDateCol.slice(i, i + 10);
+          const results = await Promise.all(
+            batch.map(async ({ table, col }) => {
+              try {
+                const r = await conn.queryObject(
+                  `SELECT "${col}" AS d FROM "${table}" WHERE "${col}" IS NOT NULL ORDER BY "${col}" DESC LIMIT 1`
+                );
+                return { table, date: r.rows.length > 0 ? String((r.rows[0] as any).d) : null };
+              } catch {
+                return { table, date: null };
+              }
+            })
+          );
+          for (const r of results) latestDates.set(r.table, r.date);
+        }
 
-    // Also check diary_as_reports view
-    try {
-      const { count } = await supabase
-        .from('diary_as_reports')
-        .select('*', { count: 'exact', head: true });
-      results.push({ table_name: 'diary_as_reports (view)', row_count: count ?? 0, columns: [], latest_date: null });
-    } catch (_) { /* ignore */ }
+        // Assemble final results
+        const tables = [...allTables].sort().map(table_name => ({
+          table_name,
+          row_count: rowCounts.get(table_name) ?? 0,
+          columns: (columnsByTable.get(table_name) || []),
+          latest_date: latestDates.get(table_name) ?? null,
+        }));
+
+        // Also check views
+        const viewResult = await conn.queryObject<{ table_name: string }>`
+          SELECT table_name FROM information_schema.views WHERE table_schema = 'public'
+        `;
+        for (const v of viewResult.rows) {
+          if (allTables.has(v.table_name)) continue;
+          try {
+            const cr = await conn.queryObject(
+              `SELECT count(*) AS c FROM "${v.table_name}"`
+            );
+            tables.push({
+              table_name: `${v.table_name} (view)`,
+              row_count: Number((cr.rows[0] as any).c),
+              columns: [],
+              latest_date: null,
+            });
+          } catch { /* skip */ }
+        }
+
+        return tables;
+      } finally {
+        conn.release();
+        await pool.end();
+      }
+    };
+
+    const tables = await Promise.race([work(), timeout]);
 
     return new Response(JSON.stringify({
-      tables: results,
+      tables,
       queried_at: new Date().toISOString(),
+      partial: false,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
+    if (err instanceof Error && err.message === '__TIMEOUT__') {
+      return new Response(JSON.stringify({
+        tables: [],
+        queried_at: new Date().toISOString(),
+        partial: true,
+        error: 'Function timed out after 25s',
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
