@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Fish } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
