@@ -109,9 +109,9 @@ export default function VenueSubmissionForm({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (name.trim().length < 3) {
       setSimilarVenues([]);
+      setDuplicateOverridden(false);
       return;
     }
-    setDuplicateOverridden(false);
     debounceRef.current = setTimeout(async () => {
       setCheckingDuplicates(true);
       const { data } = await supabase
@@ -123,6 +123,9 @@ export default function VenueSubmissionForm({
       if (data) {
         const matches = data.filter((v) => stringSimilarity(v.name, name.trim()));
         setSimilarVenues(matches as SimilarVenue[]);
+        if (matches.length > 0) {
+          setDuplicateOverridden(false);
+        }
       }
       setCheckingDuplicates(false);
     }, 500);

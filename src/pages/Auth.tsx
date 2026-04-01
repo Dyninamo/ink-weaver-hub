@@ -62,7 +62,7 @@ const Auth = () => {
     };
 
     checkOAuthUser();
-  }, [navigate]);
+  }, [navigate, redirect]);
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
