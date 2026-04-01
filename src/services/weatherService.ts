@@ -40,7 +40,7 @@ export async function getWeatherForecast(
       throw new Error('No weather data returned from API');
     }
     
-    console.log('Weather forecast received:', data);
+    
     return data as WeatherData;
     
   } catch (error) {
