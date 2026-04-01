@@ -919,7 +919,7 @@ export default function DiaryEntry() {
           onOpenChange={setNotableOpen}
           sessionId={id!}
           userId={user.id}
-          venueId={null}
+          venueId={venueId}
           venueName={session.venue_name}
           prefillSpecies={notablePrefill}
         />
