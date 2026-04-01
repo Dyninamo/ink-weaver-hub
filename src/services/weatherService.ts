@@ -1,22 +1,17 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { WeatherData } from "./adviceService";
 
-// Fallback weather data generator
-function generateFallbackWeather(): WeatherData {
-  const baseTemp = 10 + Math.random() * 8; // 10-18°C
-  const baseWind = 5 + Math.random() * 15; // 5-20mph
-  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  const conditions = ['Clear', 'Partly Cloudy', 'Cloudy', 'Overcast'];
-  
+function createUnavailableWeather(): WeatherData {
   return {
-    temperature: Math.round(baseTemp),
-    windSpeed: Math.round(baseWind),
-    windDirection: directions[Math.floor(Math.random() * directions.length)],
-    conditions: conditions[Math.floor(Math.random() * conditions.length)],
+    temperature: 0,
+    windSpeed: 0,
+    windDirection: '',
+    conditions: 'Unavailable',
     precipitation: 0,
-    precipitationProbability: Math.round(Math.random() * 60), // 0-60%
-    humidity: 60 + Math.round(Math.random() * 30), // 60-90%
-    pressure: 1005 + Math.round(Math.random() * 20), // 1005-1025 hPa
+    precipitationProbability: 0,
+    humidity: 0,
+    pressure: 0,
+    isFallback: true,
   };
 }
 
@@ -25,8 +20,6 @@ export async function getWeatherForecast(
   date: string
 ): Promise<WeatherData> {
   try {
-    
-    
     const { data, error } = await supabase.functions.invoke('get-weather-forecast', {
       body: { venue, date }
     });
@@ -40,14 +33,10 @@ export async function getWeatherForecast(
       throw new Error('No weather data returned from API');
     }
     
-    
     return data as WeatherData;
     
   } catch (error) {
     console.error('Error fetching weather forecast:', error);
-    
-    
-    // Return fallback data if API fails
-    return generateFallbackWeather();
+    return createUnavailableWeather();
   }
 }
