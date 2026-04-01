@@ -425,7 +425,7 @@ const Dashboard = () => {
       </main>
 
       {/* Debug Panel */}
-      <DebugPanel />
+      {import.meta.env.DEV && <DebugPanel />}
 
       {/* Share Dialog */}
       <ShareDialog
