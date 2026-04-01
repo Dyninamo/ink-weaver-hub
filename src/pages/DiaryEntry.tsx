@@ -902,7 +902,7 @@ export default function DiaryEntry() {
           sessionId={id!}
           venueName={session.venue_name}
           sessionDate={session.session_date}
-          venueId={null}
+          venueId={venueId}
           events={events}
           weatherTemp={session.weather_temp}
           weatherWind={session.weather_wind_speed ? `${session.weather_wind_speed}mph ${session.weather_wind_dir || ""}` : null}
