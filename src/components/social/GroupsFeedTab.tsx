@@ -44,14 +44,16 @@ const GroupsFeedTab = ({ userId }: GroupsFeedTabProps) => {
 
     try {
       // Get profile
-      let { data: profile } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
         .select("profile_id")
         .eq("id", userId)
         .single();
 
-      if (!profile) {
-        const { data: newProfile } = await supabase
+      let profile = profileData;
+
+      if (profileError && profileError.code === "PGRST116") {
+        const { data: newProfile, error: createError } = await supabase
           .from("user_profiles")
           .insert({
             id: userId,
@@ -62,10 +64,19 @@ const GroupsFeedTab = ({ userId }: GroupsFeedTabProps) => {
           })
           .select("profile_id")
           .single();
+        if (createError) {
+          setError("Unable to load your profile. Please try again.");
+          setLoading(false);
+          return;
+        }
         profile = newProfile;
+      } else if (profileError) {
+        setError("Unable to load your profile. Please try again.");
+        setLoading(false);
+        return;
       }
 
-      if (!profile) { setLoading(false); return; }
+      if (!profile) { setError("Unable to load your profile. Please try again."); setLoading(false); return; }
       setProfileId(profile.profile_id);
 
       // Active memberships
