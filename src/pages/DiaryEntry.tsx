@@ -83,6 +83,7 @@ export default function DiaryEntry() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [notableOpen, setNotableOpen] = useState(false);
   const [notablePrefill, setNotablePrefill] = useState<string | null>(null);
+  const [venueId, setVenueId] = useState<string | null>(null);
 
   // Load session + events
   const loadData = useCallback(async () => {
@@ -95,6 +96,17 @@ export default function DiaryEntry() {
       ]);
       setSession(s);
       setEvents(e);
+
+      // Resolve venue_id from venues_new
+      if (s.venue_name) {
+        const { data: venue } = await supabase
+          .from('venues_new')
+          .select('venue_id')
+          .ilike('name', s.venue_name)
+          .limit(1)
+          .maybeSingle();
+        if (venue) setVenueId(venue.venue_id);
+      }
 
       // Derive current setup from most recent change/catch event
       const setupEvents = [...e].reverse();
@@ -890,7 +902,7 @@ export default function DiaryEntry() {
           sessionId={id!}
           venueName={session.venue_name}
           sessionDate={session.session_date}
-          venueId={null}
+          venueId={venueId}
           events={events}
           weatherTemp={session.weather_temp}
           weatherWind={session.weather_wind_speed ? `${session.weather_wind_speed}mph ${session.weather_wind_dir || ""}` : null}
@@ -907,7 +919,7 @@ export default function DiaryEntry() {
           onOpenChange={setNotableOpen}
           sessionId={id!}
           userId={user.id}
-          venueId={null}
+          venueId={venueId}
           venueName={session.venue_name}
           prefillSpecies={notablePrefill}
         />
