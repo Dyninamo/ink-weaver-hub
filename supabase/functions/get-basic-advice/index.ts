@@ -116,9 +116,12 @@ serve(async (req) => {
 
     // Parse rod average range from "1.7 - 7.3" string format
     const rangeMatch = result.rod_average_range?.match(/([\d.]+)\s*-\s*([\d.]+)/);
+    const predicted = result.expected_rod_average ?? 0;
     const range: [number, number] = rangeMatch
       ? [parseFloat(rangeMatch[1]), parseFloat(rangeMatch[2])]
-      : [0, 0];
+      : predicted > 0
+        ? [Math.max(0, +(predicted * 0.5).toFixed(1)), +(predicted * 1.5).toFixed(1)]
+        : [0, 0];
 
     const confidence = (result.report_count ?? 0) >= 15 ? 'HIGH'
       : (result.report_count ?? 0) >= 8 ? 'MEDIUM' : 'LOW';
