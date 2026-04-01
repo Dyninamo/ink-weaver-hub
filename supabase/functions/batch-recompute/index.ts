@@ -647,21 +647,29 @@ Deno.serve(async (req) => {
 
     // Cascade: angler stats
     let anglerStatsUpdated = 0
+    let anglerStatsFailed = 0
     for (const pair of affectedPairs) {
       const [userId, venueId] = pair.split('|')
       try {
         await computeAnglerStatsInline(supabase, userId, venueId)
         anglerStatsUpdated++
-      } catch { /* skip */ }
+      } catch (err) {
+        anglerStatsFailed++
+        console.error(`Angler stats failed for ${userId}/${venueId}:`, err)
+      }
     }
 
     // Cascade: venue stats
     let venueStatsUpdated = 0
+    let venueStatsFailed = 0
     for (const venueId of affectedVenues) {
       try {
         await computeVenueStatsInline(supabase, venueId)
         venueStatsUpdated++
-      } catch { /* skip */ }
+      } catch (err) {
+        venueStatsFailed++
+        console.error(`Venue stats failed for ${venueId}:`, err)
+      }
     }
 
     const remaining = needCompute.length - batch.length
@@ -675,7 +683,9 @@ Deno.serve(async (req) => {
         total_fish: totalFishAll,
         errors,
         angler_stats_updated: anglerStatsUpdated,
+        angler_stats_failed: anglerStatsFailed,
         venue_stats_updated: venueStatsUpdated,
+        venue_stats_failed: venueStatsFailed,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

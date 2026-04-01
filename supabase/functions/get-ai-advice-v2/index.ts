@@ -774,6 +774,7 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
       adviceText += `Top flies: ${rankedFlies.slice(0, 3).map((f) => f.name).join(", ") || "none recorded"}.\n\n`;
       adviceText += `[AI generation skipped — test mode]`;
     } else {
+      let aiSuccess = false;
       try {
         const lovableKey = Deno.env.get("LOVABLE_API_KEY");
         if (lovableKey) {
@@ -796,6 +797,7 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
           if (aiResponse.ok) {
             const aiData = await aiResponse.json();
             adviceText = aiData.choices?.[0]?.message?.content ?? "";
+            if (adviceText) aiSuccess = true;
           } else {
             const errBody = await aiResponse.text();
             console.error("AI gateway error:", aiResponse.status, errBody);
@@ -854,6 +856,7 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
     // ── Step 7: Return response ────────────────────────────────
     const response = {
       advice: adviceText,
+      ai_generated: aiSuccess,
       prediction: {
         rod_average: rodAvg,
         methods: rankedMethods.map((m) => ({
