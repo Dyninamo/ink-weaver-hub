@@ -98,7 +98,7 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
     );
     
     if (filtered.length !== (locations || []).length) {
-      console.warn(`FishingMap: Filtered ${(locations || []).length - filtered.length} invalid locations`);
+      // filtered invalid locations
     }
     
     return filtered;
