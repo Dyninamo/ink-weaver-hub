@@ -229,20 +229,26 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth`,
-        },
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
 
-      if (error) {
+      if (result.error) {
         toast({
           title: "OAuth error",
-          description: error.message || "Unable to sign in with Google. Please try again.",
+          description: result.error.message || "Unable to sign in with Google. Please try again.",
           variant: "destructive",
         });
+        return;
       }
+
+      if (result.redirected) {
+        return;
+      }
+
+      // Session set — redirect
+      const redirectTo = redirect || "/dashboard";
+      navigate(redirectTo);
     } catch (error) {
       toast({
         title: "Network error",
