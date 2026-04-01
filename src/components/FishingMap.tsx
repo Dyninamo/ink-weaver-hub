@@ -132,7 +132,7 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
 
     // Invalidate size after first paint to ensure correct layout
     setTimeout(() => map.invalidateSize(), 100);
-    console.log("Leaflet map initialized for:", venueName);
+    
 
     return () => {
       map.remove();
