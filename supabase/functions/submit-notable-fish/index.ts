@@ -69,10 +69,49 @@ Deno.serve(async (req) => {
     let finalLengthCm = length_cm
     let finalWeightKg = weight_kg
 
+    const a = speciesProfile.lw_coefficient_a
+    const b = speciesProfile.lw_exponent_b
+
+    // Guard: coefficients must be positive for the L-W formula to work
+    if (!a || a <= 0 || !b || b <= 0) {
+      return new Response(
+        JSON.stringify({ error: `Invalid L-W coefficients for ${species} (a=${a}, b=${b})` }),
+        { status: 500, headers }
+      )
+    }
+
     if (length_cm && !weight_kg) {
-      finalWeightKg = speciesProfile.lw_coefficient_a * Math.pow(length_cm, speciesProfile.lw_exponent_b)
+      finalWeightKg = a * Math.pow(length_cm, b)
     } else if (weight_kg && !length_cm) {
-      finalLengthCm = Math.pow(weight_kg / speciesProfile.lw_coefficient_a, 1 / speciesProfile.lw_exponent_b)
+      finalLengthCm = Math.pow(weight_kg / a, 1 / b)
+    }
+
+    // Sanity check: results must be finite positive numbers
+    if (finalWeightKg != null && (!Number.isFinite(finalWeightKg) || finalWeightKg <= 0)) {
+      return new Response(
+        JSON.stringify({ error: `Computed weight is invalid (${finalWeightKg}). Check your measurements.` }),
+        { status: 400, headers }
+      )
+    }
+    if (finalLengthCm != null && (!Number.isFinite(finalLengthCm) || finalLengthCm <= 0)) {
+      return new Response(
+        JSON.stringify({ error: `Computed length is invalid (${finalLengthCm}). Check your measurements.` }),
+        { status: 400, headers }
+      )
+    }
+
+    // Upper bounds: no UK game fish exceeds 70lb / 150cm
+    if (finalWeightKg && finalWeightKg > 32) {
+      return new Response(
+        JSON.stringify({ error: `Weight ${(finalWeightKg * 2.20462).toFixed(1)}lb exceeds plausible maximum for ${species}` }),
+        { status: 400, headers }
+      )
+    }
+    if (finalLengthCm && finalLengthCm > 150) {
+      return new Response(
+        JSON.stringify({ error: `Length ${finalLengthCm.toFixed(1)}cm exceeds plausible maximum for ${species}` }),
+        { status: 400, headers }
+      )
     }
 
     // Imperial conversions
