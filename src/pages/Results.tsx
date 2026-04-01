@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 import type { AdviceV2Response, FishingAdviceResponse } from "@/services/adviceService";
 import FlySelector from "@/components/FlySelector";
 import { enrichFliesForSelector } from "@/utils/enrichFlies";
-import { MOCK_FLIES } from "@/data/mockFlies";
 import type { RecommendedFly } from "@/types/flySelector";
+import { toast } from "sonner";
 
 export default function Results() {
   const location = useLocation();
