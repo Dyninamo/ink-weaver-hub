@@ -98,7 +98,7 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
     );
     
     if (filtered.length !== (locations || []).length) {
-      console.warn(`FishingMap: Filtered ${(locations || []).length - filtered.length} invalid locations`);
+      // filtered invalid locations
     }
     
     return filtered;
@@ -132,7 +132,7 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
 
     // Invalidate size after first paint to ensure correct layout
     setTimeout(() => map.invalidateSize(), 100);
-    console.log("Leaflet map initialized for:", venueName);
+    
 
     return () => {
       map.remove();
@@ -189,7 +189,7 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
       }
       setTimeout(() => map.invalidateSize(), 100);
-      console.log("Leaflet: markers updated and bounds set");
+      
     } catch (e) {
       console.error("Leaflet: error updating bounds", e);
     }

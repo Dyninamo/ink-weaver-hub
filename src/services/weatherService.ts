@@ -25,7 +25,7 @@ export async function getWeatherForecast(
   date: string
 ): Promise<WeatherData> {
   try {
-    console.log(`Fetching weather forecast for ${venue} on ${date}`);
+    
     
     const { data, error } = await supabase.functions.invoke('get-weather-forecast', {
       body: { venue, date }
@@ -40,12 +40,12 @@ export async function getWeatherForecast(
       throw new Error('No weather data returned from API');
     }
     
-    console.log('Weather forecast received:', data);
+    
     return data as WeatherData;
     
   } catch (error) {
     console.error('Error fetching weather forecast:', error);
-    console.warn('Falling back to generated weather data');
+    
     
     // Return fallback data if API fails
     return generateFallbackWeather();

@@ -162,7 +162,7 @@ export async function getFishingAdvice(
   try {
     return await getAdviceV2(venue, date)
   } catch (err) {
-    console.warn('v2 advice failed, falling back to legacy:', err)
+    console.error('v2 advice failed, falling back to legacy:', err)
     return await getBasicAdvice(venue, date, _weatherData)
   }
 }
