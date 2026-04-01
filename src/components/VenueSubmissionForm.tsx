@@ -289,6 +289,10 @@ export default function VenueSubmissionForm({
         <h3 className="font-semibold text-foreground">Add a water</h3>
       </div>
 
+      {formError && (
+        <p className="text-sm text-destructive">{formError}</p>
+      )}
+
       {/* Name */}
       <div>
         <Label>Venue name *</Label>
