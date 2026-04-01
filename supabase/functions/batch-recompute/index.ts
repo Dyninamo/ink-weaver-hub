@@ -683,7 +683,9 @@ Deno.serve(async (req) => {
         total_fish: totalFishAll,
         errors,
         angler_stats_updated: anglerStatsUpdated,
+        angler_stats_failed: anglerStatsFailed,
         venue_stats_updated: venueStatsUpdated,
+        venue_stats_failed: venueStatsFailed,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
