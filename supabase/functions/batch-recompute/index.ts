@@ -573,20 +573,7 @@ Deno.serve(async (req) => {
     if (venueFilter) totalQuery = totalQuery.eq('venue_name', venueFilter)
     const { count: totalCompleted } = await totalQuery
 
-    // Count sessions needing compute
-    let needQuery = supabase
-      .from('fishing_sessions')
-      .select('id, venue_name')
-      .eq('is_active', false)
-      .not('id', 'in', `(select session_id from session_summaries)`)
-
-    // Since we can't do subquery with supabase-js, fetch existing summary session_ids
-    const { data: existingSummaries } = await supabase
-      .from('session_summaries')
-      .select('session_id')
-
-    const existingIds = new Set((existingSummaries || []).map((s: any) => s.session_id))
-
+    // Fetch candidate sessions (already limited to 1000)
     let sessionsQuery = supabase
       .from('fishing_sessions')
       .select('id, venue_name, session_date, user_id')
@@ -596,6 +583,20 @@ Deno.serve(async (req) => {
 
     if (venueFilter) sessionsQuery = sessionsQuery.eq('venue_name', venueFilter)
     const { data: allSessions } = await sessionsQuery
+
+    // Check only candidate IDs against session_summaries (chunked to avoid URL limits)
+    const candidateIds = (allSessions || []).map((s: any) => s.id)
+    const existingIds = new Set<string>()
+    for (let i = 0; i < candidateIds.length; i += 200) {
+      const chunk = candidateIds.slice(i, i + 200)
+      const { data: existing } = await supabase
+        .from('session_summaries')
+        .select('session_id')
+        .in('session_id', chunk)
+      if (existing) {
+        for (const row of existing) existingIds.add(row.session_id)
+      }
+    }
 
     const needCompute = (allSessions || []).filter((s: any) => !existingIds.has(s.id))
 
