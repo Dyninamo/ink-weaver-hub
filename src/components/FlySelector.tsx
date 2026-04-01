@@ -63,12 +63,32 @@ export default function FlySelector({ flies, venueName, tripDate, onClose }: Fly
     setActiveVariation((prev) => ({ ...prev, [rank]: varIdx }));
   }
 
-  function handleConfirm() {
-    toast({
-      title: "Order confirmed!",
-      description: `${totalFlies} flies for £${totalCost.toFixed(2)}`,
+  function handleCopyList() {
+    const lines = flies
+      .filter((f) => (quantities[f.rank] ?? 0) > 0)
+      .map((f) => {
+        const qty = quantities[f.rank] ?? 0;
+        const variation = activeVariation[f.rank];
+        const varText =
+          variation != null && f.variations?.[variation]
+            ? ` (${f.variations[variation].label})`
+            : "";
+        return `${qty}x ${f.name}${varText} - Hook ${f.hookSize}`;
+      });
+
+    const text = `Fly selection for ${venueName} (${formatDate(tripDate)}):\n${lines.join("\n")}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Fly list copied!",
+        description: "Paste it into a message or take it to your local tackle shop.",
+      });
+    }).catch(() => {
+      toast({
+        title: "Fly list",
+        description: text,
+      });
     });
-    onClose();
   }
 
   const hasDiaryData = flies.some((f) => f.source === "diary");
