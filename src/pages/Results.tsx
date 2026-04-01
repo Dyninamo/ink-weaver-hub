@@ -67,19 +67,17 @@ export default function Results() {
       const tacticalFlies = tactical?.flies ?? [];
       const predictionFlies = prediction?.flies ?? [];
 
-      let flies: RecommendedFly[];
-      if (tacticalFlies.length > 0) {
-        flies = await enrichFliesForSelector(tacticalFlies, predictionFlies);
-      } else {
-        flies = MOCK_FLIES;
+      if (tacticalFlies.length === 0 && predictionFlies.length === 0) {
+        toast.info("No specific fly recommendations available for this advice.");
+        return;
       }
 
+      const flies = await enrichFliesForSelector(tacticalFlies, predictionFlies);
       setSelectorFlies(flies);
       setShowFlySelector(true);
     } catch (err) {
       console.error("Failed to enrich flies:", err);
-      setSelectorFlies(MOCK_FLIES);
-      setShowFlySelector(true);
+      toast.error("Unable to load fly recommendations. Please try again.");
     } finally {
       setLoadingFlies(false);
     }
