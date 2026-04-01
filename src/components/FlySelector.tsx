@@ -54,21 +54,7 @@ export default function FlySelector({ flies, venueName, tripDate, onClose }: Fly
     setQuantities((prev) => {
       const current = prev[rank] ?? 0;
       const next = current + delta;
-      if (next < 0) return prev;
-      if (next > 6) return prev;
-      // Check minimum 12 when decreasing
-      if (delta < 0) {
-        const currentTotal = Object.values(prev).reduce((s, q) => s + q, 0);
-        const newTotal = currentTotal + delta;
-        if (newTotal < 12) {
-          toast({
-            title: "Minimum 12 flies",
-            description: "You need at least 12 flies in your selection.",
-            variant: "destructive",
-          });
-          return prev;
-        }
-      }
+      if (next < 0 || next > 6) return prev;
       return { ...prev, [rank]: next };
     });
   }
