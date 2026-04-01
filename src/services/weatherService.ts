@@ -45,7 +45,7 @@ export async function getWeatherForecast(
     
   } catch (error) {
     console.error('Error fetching weather forecast:', error);
-    console.warn('Falling back to generated weather data');
+    
     
     // Return fallback data if API fails
     return generateFallbackWeather();

@@ -189,7 +189,7 @@ const FishingMap = ({ locations, venueName }: FishingMapProps) => {
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
       }
       setTimeout(() => map.invalidateSize(), 100);
-      console.log("Leaflet: markers updated and bounds set");
+      
     } catch (e) {
       console.error("Leaflet: error updating bounds", e);
     }

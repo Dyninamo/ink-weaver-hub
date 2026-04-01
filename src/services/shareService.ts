@@ -207,7 +207,7 @@ export async function nativeShare(
   } catch (error: any) {
     // User cancelled share dialog
     if (error.name === 'AbortError') {
-      console.log('Share cancelled by user');
+      
       return;
     }
     
