@@ -246,14 +246,14 @@ export default function FlySelector({ flies, venueName, tripDate, onClose }: Fly
       <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur-sm px-4 py-3 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold">{totalFlies} flies selected</p>
-          <p className="text-xs text-muted-foreground">Est. £{totalCost.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Copy list to share or take to your local shop</p>
         </div>
         <Button
-          onClick={handleConfirm}
-          disabled={totalFlies < 12}
+          onClick={handleCopyList}
+          disabled={totalFlies === 0}
           className="min-h-[44px] px-6"
         >
-          Confirm Order
+          Copy Fly List
         </Button>
       </div>
     </div>
