@@ -569,23 +569,34 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 3. Look up venue_id from venue_metadata by matching venue name
-    const { data: venues } = await supabase
-      .from('venue_metadata')
-      .select('id, name')
+    // 3. Look up venue_id from session_venue_map, then fallback to venues_new
+    const { data: venueMap } = await supabase
+      .from('session_venue_map')
+      .select('venue_id')
+      .eq('session_venue_name', session.venue_name)
+      .limit(1)
+      .maybeSingle()
 
-    const venueName = session.venue_name?.toLowerCase() || ''
-    const venue = (venues || []).find((v: any) => {
-      const vmName = (v.name || '').toLowerCase()
-      return venueName.includes(vmName) || vmName.includes(venueName)
-    })
+    let venueId = venueMap?.venue_id || null
 
-    if (!venue) {
+    if (!venueId) {
+      const { data: venueRow } = await supabase
+        .from('venues_new')
+        .select('venue_id')
+        .ilike('name', session.venue_name || '')
+        .limit(1)
+        .maybeSingle()
+      venueId = venueRow?.venue_id || null
+    }
+
+    if (!venueId) {
       return new Response(
-        JSON.stringify({ success: false, error: `No venue match for "${session.venue_name}". Known venues: ${(venues || []).map((v: any) => v.name).join(', ')}` }),
+        JSON.stringify({ success: false, error: `No venue match for "${session.venue_name}"` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    const venue = { id: venueId }
 
     // 4. Segment weather_log into weather periods
     const weatherLog: WeatherSnapshot[] = session.weather_log || []

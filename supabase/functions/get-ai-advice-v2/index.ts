@@ -856,6 +856,7 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
     // ── Step 7: Return response ────────────────────────────────
     const response = {
       advice: adviceText,
+      ai_generated: aiSuccess,
       prediction: {
         rod_average: rodAvg,
         methods: rankedMethods.map((m) => ({
