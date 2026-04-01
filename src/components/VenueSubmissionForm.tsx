@@ -83,12 +83,24 @@ export default function VenueSubmissionForm({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Load counties & regions
+  const [formError, setFormError] = useState<string | null>(null);
+
   useEffect(() => {
-    supabase.from("counties").select("county_id, county_name, region_id, country").order("county_name").then(({ data }) => {
-      if (data) setCounties(data);
+    supabase.from("counties").select("county_id, county_name, region_id, country").order("county_name").then(({ data, error }) => {
+      if (error) {
+        console.error("Failed to load counties:", error.message);
+        setFormError("Unable to load form data. Please refresh the page.");
+      } else if (data) {
+        setCounties(data);
+      }
     });
-    supabase.from("regions").select("region_id, region_name, country").order("sort_order").then(({ data }) => {
-      if (data) setRegions(data);
+    supabase.from("regions").select("region_id, region_name, country").order("sort_order").then(({ data, error }) => {
+      if (error) {
+        console.error("Failed to load regions:", error.message);
+        setFormError("Unable to load form data. Please refresh the page.");
+      } else if (data) {
+        setRegions(data);
+      }
     });
   }, []);
 
@@ -97,9 +109,9 @@ export default function VenueSubmissionForm({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (name.trim().length < 3) {
       setSimilarVenues([]);
+      setDuplicateOverridden(false);
       return;
     }
-    setDuplicateOverridden(false);
     debounceRef.current = setTimeout(async () => {
       setCheckingDuplicates(true);
       const { data } = await supabase
@@ -111,6 +123,9 @@ export default function VenueSubmissionForm({
       if (data) {
         const matches = data.filter((v) => stringSimilarity(v.name, name.trim()));
         setSimilarVenues(matches as SimilarVenue[]);
+        if (matches.length > 0) {
+          setDuplicateOverridden(false);
+        }
       }
       setCheckingDuplicates(false);
     }, 500);
@@ -273,6 +288,10 @@ export default function VenueSubmissionForm({
         </button>
         <h3 className="font-semibold text-foreground">Add a water</h3>
       </div>
+
+      {formError && (
+        <p className="text-sm text-destructive">{formError}</p>
+      )}
 
       {/* Name */}
       <div>
