@@ -25,7 +25,7 @@ export async function getWeatherForecast(
   date: string
 ): Promise<WeatherData> {
   try {
-    console.log(`Fetching weather forecast for ${venue} on ${date}`);
+    
     
     const { data, error } = await supabase.functions.invoke('get-weather-forecast', {
       body: { venue, date }
