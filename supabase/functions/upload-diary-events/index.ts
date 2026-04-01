@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     if (error) {
       console.error("Upsert error:", error);
       return new Response(JSON.stringify({ error: error.message, inserted: 0, failed: events.length }), {
-        status: 200,
+        status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
