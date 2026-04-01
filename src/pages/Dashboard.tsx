@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import DebugPanel from "@/components/DebugPanel";
+
 import VenueSearch from "@/components/VenueSearch";
 import { getFishingAdvice, AdviceServiceError, type FishingAdviceResponse } from "@/services/adviceService";
 import { supabase } from "@/integrations/supabase/client";
@@ -424,7 +425,7 @@ const Dashboard = () => {
       </main>
 
       {/* Debug Panel */}
-      <DebugPanel />
+      {import.meta.env.DEV && <DebugPanel />}
 
       {/* Share Dialog */}
       <ShareDialog
