@@ -105,24 +105,27 @@ const AutocompleteTagInput = ({
         .select("id, usage_count")
         .eq("category", category)
         .eq("value", trimmed)
-        .then(({ data: rows }) => {
-          if (rows && rows.length > 0) {
-            supabase
-              .from("reference_data")
-              .update({ usage_count: (rows[0].usage_count ?? 0) + 1 })
-              .eq("id", rows[0].id)
-              .then(() => {});
-          }
+        .then(({ data: rows, error }) => {
+          if (error || !rows?.length) return;
+          supabase
+            .from("reference_data")
+            .update({ usage_count: (rows[0].usage_count ?? 0) + 1 })
+            .eq("id", rows[0].id)
+            .then(({ error: updateErr }) => {
+              if (updateErr) console.warn("reference_data usage update failed:", updateErr.message);
+            });
         });
     } else {
       // Upsert new custom value with usage_count=1, or bump if conflict
       supabase
         .from("reference_data")
         .upsert(
-          { category, value: trimmed, venue: category === "spot" ? venue || null : null, usage_count: 1 } as any,
+          { category, value: trimmed, venue: category === "spot" ? venue || null : null, usage_count: 1 } as never,
           { onConflict: "category,value,venue" }
         )
-        .then(() => {});
+        .then(({ error: upsertErr }) => {
+          if (upsertErr) console.warn("reference_data upsert failed:", upsertErr.message);
+        });
     }
 
     if (singleSelect) {

@@ -32,6 +32,7 @@ const GroupsFeedTab = ({ userId }: GroupsFeedTabProps) => {
   const [groups, setGroups] = useState<GroupRow[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedGroupRole, setSelectedGroupRole] = useState<string>("member");
@@ -39,17 +40,20 @@ const GroupsFeedTab = ({ userId }: GroupsFeedTabProps) => {
   const fetchGroups = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
+    setError(null);
 
     try {
       // Get profile
-      let { data: profile } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
         .select("profile_id")
         .eq("id", userId)
         .single();
 
-      if (!profile) {
-        const { data: newProfile } = await supabase
+      let profile = profileData;
+
+      if (profileError && profileError.code === "PGRST116") {
+        const { data: newProfile, error: createError } = await supabase
           .from("user_profiles")
           .insert({
             id: userId,
@@ -60,10 +64,19 @@ const GroupsFeedTab = ({ userId }: GroupsFeedTabProps) => {
           })
           .select("profile_id")
           .single();
+        if (createError) {
+          setError("Unable to load your profile. Please try again.");
+          setLoading(false);
+          return;
+        }
         profile = newProfile;
+      } else if (profileError) {
+        setError("Unable to load your profile. Please try again.");
+        setLoading(false);
+        return;
       }
 
-      if (!profile) { setLoading(false); return; }
+      if (!profile) { setError("Unable to load your profile. Please try again."); setLoading(false); return; }
       setProfileId(profile.profile_id);
 
       // Active memberships
@@ -161,6 +174,17 @@ const GroupsFeedTab = ({ userId }: GroupsFeedTabProps) => {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
         <p className="text-muted-foreground">Sign in to see group activity</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-destructive text-sm">{error}</p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={() => { setError(null); fetchGroups(); }}>
+          Retry
+        </Button>
       </div>
     );
   }
