@@ -40,15 +40,17 @@ Deno.serve(async (req) => {
       const newProfileId = crypto.randomUUID();
       const { data: newProfile, error: profileError } = await supabase
         .from("user_profiles")
-        .update({ profile_id: newProfileId, display_name: displayName })
-        .eq("id", user_id)
+        .upsert(
+          { id: user_id, profile_id: newProfileId, display_name: displayName },
+          { onConflict: "id" }
+        )
         .select("profile_id")
         .single();
 
-      if (profileError) {
+      if (profileError || !newProfile) {
         console.error("Profile backfill error:", profileError);
         return new Response(
-          JSON.stringify({ error: profileError.message }),
+          JSON.stringify({ error: profileError?.message || "Profile backfill returned no data" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
