@@ -32,6 +32,7 @@ const GroupsFeedTab = ({ userId }: GroupsFeedTabProps) => {
   const [groups, setGroups] = useState<GroupRow[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedGroupRole, setSelectedGroupRole] = useState<string>("member");
