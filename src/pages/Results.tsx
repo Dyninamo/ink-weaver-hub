@@ -552,9 +552,9 @@ export default function Results() {
             )}
           </Button>
           <p className="text-xs text-muted-foreground">
-            {(tactical?.flies?.length ?? 0) > 0
-              ? "Based on diary session data for this venue"
-              : "Demo selection — log sessions to get personalised picks"}
+            {(tactical?.flies?.length ?? 0) > 0 || (prediction?.flies?.length ?? 0) > 0
+              ? "Based on session and report data for this venue"
+              : "Log sessions to unlock personalised fly picks"}
           </p>
         </div>
 
