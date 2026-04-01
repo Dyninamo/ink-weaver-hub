@@ -21,7 +21,7 @@ const CATEGORY_COLOURS: Record<string, { border: string; bg: string; text: strin
   Other: { border: "border-l-neutral-400", bg: "bg-neutral-400", text: "text-neutral-700 bg-neutral-100" },
 };
 
-const PRICE_PER_FLY = 1.2;
+
 
 function formatDate(dateStr: string): string {
   try {
