@@ -40,6 +40,7 @@ const GroupsFeedTab = ({ userId }: GroupsFeedTabProps) => {
   const fetchGroups = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
+    setError(null);
 
     try {
       // Get profile
