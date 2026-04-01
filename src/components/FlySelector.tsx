@@ -48,7 +48,7 @@ export default function FlySelector({ flies, venueName, tripDate, onClose }: Fly
     () => Object.values(quantities).reduce((s, q) => s + q, 0),
     [quantities]
   );
-  const totalCost = totalFlies * PRICE_PER_FLY;
+  
 
   function adjustQty(rank: number, delta: number) {
     setQuantities((prev) => {
