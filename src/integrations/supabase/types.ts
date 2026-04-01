@@ -1939,6 +1939,42 @@ export type Database = {
         }
         Relationships: []
       }
+      query_cache: {
+        Row: {
+          advice_text: string | null
+          cache_key: string
+          created_at: string
+          expires_at: string
+          id: string
+          response_data: Json | null
+          venue: string | null
+          weather_signature: string | null
+          week_num: number | null
+        }
+        Insert: {
+          advice_text?: string | null
+          cache_key: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          response_data?: Json | null
+          venue?: string | null
+          weather_signature?: string | null
+          week_num?: number | null
+        }
+        Update: {
+          advice_text?: string | null
+          cache_key?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          response_data?: Json | null
+          venue?: string | null
+          weather_signature?: string | null
+          week_num?: number | null
+        }
+        Relationships: []
+      }
       reference_data: {
         Row: {
           category: string
