@@ -178,6 +178,17 @@ const GroupsFeedTab = ({ userId }: GroupsFeedTabProps) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-destructive text-sm">{error}</p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={() => { setError(null); fetchGroups(); }}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
