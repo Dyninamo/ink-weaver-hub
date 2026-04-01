@@ -21,7 +21,7 @@ const CATEGORY_COLOURS: Record<string, { border: string; bg: string; text: strin
   Other: { border: "border-l-neutral-400", bg: "bg-neutral-400", text: "text-neutral-700 bg-neutral-100" },
 };
 
-const PRICE_PER_FLY = 1.2;
+
 
 function formatDate(dateStr: string): string {
   try {
@@ -48,27 +48,13 @@ export default function FlySelector({ flies, venueName, tripDate, onClose }: Fly
     () => Object.values(quantities).reduce((s, q) => s + q, 0),
     [quantities]
   );
-  const totalCost = totalFlies * PRICE_PER_FLY;
+  
 
   function adjustQty(rank: number, delta: number) {
     setQuantities((prev) => {
       const current = prev[rank] ?? 0;
       const next = current + delta;
-      if (next < 0) return prev;
-      if (next > 6) return prev;
-      // Check minimum 12 when decreasing
-      if (delta < 0) {
-        const currentTotal = Object.values(prev).reduce((s, q) => s + q, 0);
-        const newTotal = currentTotal + delta;
-        if (newTotal < 12) {
-          toast({
-            title: "Minimum 12 flies",
-            description: "You need at least 12 flies in your selection.",
-            variant: "destructive",
-          });
-          return prev;
-        }
-      }
+      if (next < 0 || next > 6) return prev;
       return { ...prev, [rank]: next };
     });
   }
@@ -77,12 +63,32 @@ export default function FlySelector({ flies, venueName, tripDate, onClose }: Fly
     setActiveVariation((prev) => ({ ...prev, [rank]: varIdx }));
   }
 
-  function handleConfirm() {
-    toast({
-      title: "Order confirmed!",
-      description: `${totalFlies} flies for £${totalCost.toFixed(2)}`,
+  function handleCopyList() {
+    const lines = flies
+      .filter((f) => (quantities[f.rank] ?? 0) > 0)
+      .map((f) => {
+        const qty = quantities[f.rank] ?? 0;
+        const variation = activeVariation[f.rank];
+        const varText =
+          variation != null && f.variations?.[variation]
+            ? ` (${f.variations[variation].label})`
+            : "";
+        return `${qty}x ${f.name}${varText} - Hook ${f.hookSize}`;
+      });
+
+    const text = `Fly selection for ${venueName} (${formatDate(tripDate)}):\n${lines.join("\n")}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Fly list copied!",
+        description: "Paste it into a message or take it to your local tackle shop.",
+      });
+    }).catch(() => {
+      toast({
+        title: "Fly list",
+        description: text,
+      });
     });
-    onClose();
   }
 
   const hasDiaryData = flies.some((f) => f.source === "diary");
@@ -240,14 +246,14 @@ export default function FlySelector({ flies, venueName, tripDate, onClose }: Fly
       <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur-sm px-4 py-3 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold">{totalFlies} flies selected</p>
-          <p className="text-xs text-muted-foreground">Est. £{totalCost.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Copy list to share or take to your local shop</p>
         </div>
         <Button
-          onClick={handleConfirm}
-          disabled={totalFlies < 12}
+          onClick={handleCopyList}
+          disabled={totalFlies === 0}
           className="min-h-[44px] px-6"
         >
-          Confirm Order
+          Copy Fly List
         </Button>
       </div>
     </div>
