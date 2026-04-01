@@ -10,6 +10,7 @@ export interface WeatherData {
   precipitationProbability: number
   humidity: number
   pressure: number
+  isFallback?: boolean
 }
 
 export interface Location {
