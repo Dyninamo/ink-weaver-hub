@@ -151,4 +151,22 @@ const InviteDialog = ({
   );
 };
 
+function ShareInviteButton({ groupId, groupName }: { groupId: string; groupName: string }) {
+  const { shareGroupInvite } = useShareLink();
+  const [sharing, setSharing] = useState(false);
+
+  const handleShare = async () => {
+    setSharing(true);
+    await shareGroupInvite(groupId, groupName);
+    setSharing(false);
+  };
+
+  return (
+    <Button variant="outline" className="flex-1 gap-2" disabled={sharing} onClick={handleShare}>
+      <Share2 className="h-4 w-4" />
+      {sharing ? "Sharing…" : "Share Invite"}
+    </Button>
+  );
+}
+
 export default InviteDialog;
