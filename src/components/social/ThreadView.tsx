@@ -184,11 +184,18 @@ const ThreadView = ({ open, onOpenChange, cardId, profileId, cardSummary }: Thre
           ) : (
             replies.map((reply) => (
               <div key={reply.reply_id} className="space-y-1">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-sm font-medium text-foreground">{reply.display_name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(reply.created_at), "d MMM, HH:mm")}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <AvatarCircle
+                    displayName={reply.display_name}
+                    profileId={reply.profile_id}
+                    size={28}
+                  />
+                  <div className="flex items-baseline justify-between flex-1">
+                    <span className="text-sm font-medium text-foreground">{reply.display_name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(reply.created_at), "d MMM, HH:mm")}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-sm text-foreground">{reply.body}</p>
                 <button
