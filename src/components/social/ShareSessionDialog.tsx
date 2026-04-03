@@ -5,7 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Share2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useShareLink } from "@/hooks/useShareLink";
 import { format } from "date-fns";
 import type { SessionEvent } from "@/services/diaryService";
 
