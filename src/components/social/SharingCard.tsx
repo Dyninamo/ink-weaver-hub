@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Thermometer, Wind, Cloud, CloudRain, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThreadView from "./ThreadView";
+import AvatarCircle from "@/components/AvatarCircle";
 
 interface SharingCardProps {
   card: {
     card_id: string;
+    card_profile_id?: string;
     venue_name: string;
     session_date: string;
     n_fish: number;
@@ -24,6 +26,7 @@ interface SharingCardProps {
     personal_note: string | null;
     created_at: string;
     display_name: string;
+    avatar_url?: string | null;
   };
   profileId: string;
   reactionCount: number;
