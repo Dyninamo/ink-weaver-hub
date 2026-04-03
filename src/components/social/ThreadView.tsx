@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Send } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import AvatarCircle from "@/components/AvatarCircle";
 
 interface ThreadViewProps {
   open: boolean;
