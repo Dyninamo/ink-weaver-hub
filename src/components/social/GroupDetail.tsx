@@ -71,7 +71,7 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
     setFeedLoading(true);
     const { data: cards } = await supabase
       .from("social_cards")
-      .select("*, user_profiles!social_cards_profile_id_fkey(display_name)")
+      .select("*, user_profiles!social_cards_profile_id_fkey(display_name, avatar_url, profile_id)")
       .eq("group_id", groupId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
