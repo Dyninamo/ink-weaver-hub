@@ -38,6 +38,12 @@ Deno.serve(async (req) => {
       return json({ error: "session_id and venue_id required" }, 400);
     }
 
+    // Validate email format if provided
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email_override && !EMAIL_RE.test(email_override)) {
+      return json({ error: "Invalid email format" }, 400);
+    }
+
     // 1. Determine email
     let emailTo: string | null = email_override || null;
     let emailSource: string = email_override ? "user_submitted" : "scraped";
