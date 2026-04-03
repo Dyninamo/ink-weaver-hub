@@ -4457,6 +4457,47 @@ export type Database = {
           },
         ]
       }
+      venue_email_searches: {
+        Row: {
+          completed_at: string | null
+          email_found: string | null
+          root_url: string | null
+          search_id: string
+          searched_at: string
+          session_id: string
+          status: string
+          venue_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          email_found?: string | null
+          root_url?: string | null
+          search_id?: string
+          searched_at?: string
+          session_id: string
+          status?: string
+          venue_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          email_found?: string | null
+          root_url?: string | null
+          search_id?: string
+          searched_at?: string
+          session_id?: string
+          status?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_email_searches_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
+      }
       venue_metadata: {
         Row: {
           created_at: string | null
@@ -4483,6 +4524,53 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      venue_outreach: {
+        Row: {
+          created_at: string
+          email_source: string
+          email_to: string
+          error_message: string | null
+          outreach_id: string
+          sent_at: string | null
+          session_id: string
+          status: string
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_source: string
+          email_to: string
+          error_message?: string | null
+          outreach_id?: string
+          sent_at?: string | null
+          session_id: string
+          status?: string
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          email_source?: string
+          email_to?: string
+          error_message?: string | null
+          outreach_id?: string
+          sent_at?: string | null
+          session_id?: string
+          status?: string
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_outreach_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
       }
       venue_profiles: {
         Row: {
@@ -4684,6 +4772,8 @@ export type Database = {
       venues_new: {
         Row: {
           aliases: Json | null
+          contact_email: string | null
+          contact_email_source: string | null
           country: string
           county: string | null
           created_at: string
@@ -4719,6 +4809,8 @@ export type Database = {
         }
         Insert: {
           aliases?: Json | null
+          contact_email?: string | null
+          contact_email_source?: string | null
           country?: string
           county?: string | null
           created_at?: string
@@ -4754,6 +4846,8 @@ export type Database = {
         }
         Update: {
           aliases?: Json | null
+          contact_email?: string | null
+          contact_email_source?: string | null
           country?: string
           county?: string | null
           created_at?: string

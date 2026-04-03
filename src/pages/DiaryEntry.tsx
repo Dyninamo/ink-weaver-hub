@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import CatchModal from "@/components/diary/CatchModal";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
 import NotableFishDialog from "@/components/social/NotableFishDialog";
+import VenueOutreachDialog from "@/components/diary/VenueOutreachDialog";
 import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
 import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
@@ -84,6 +85,9 @@ export default function DiaryEntry() {
   const [notableOpen, setNotableOpen] = useState(false);
   const [notablePrefill, setNotablePrefill] = useState<string | null>(null);
   const [venueId, setVenueId] = useState<string | null>(null);
+  const [outreachOpen, setOutreachOpen] = useState(false);
+  const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
+  const outreachChecked = useRef(false);
 
   // Load session + events
   const loadData = useCallback(async () => {
@@ -238,8 +242,53 @@ export default function DiaryEntry() {
         would_return: wouldReturn ?? undefined,
         notes: sessionNotes || undefined,
       });
-      toast.success("Session complete!");
       setEndOpen(false);
+
+      // Check outreach eligibility before showing "Session complete"
+      if (venueId && !outreachChecked.current) {
+        outreachChecked.current = true;
+        try {
+          // Check opted out
+          const { data: optedOut } = await supabase
+            .from("venue_outreach")
+            .select("outreach_id")
+            .eq("venue_id", venueId)
+            .eq("status", "opted_out")
+            .limit(1)
+            .maybeSingle();
+
+          if (!optedOut) {
+            // Check cooldown
+            const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
+            const { data: recentSend } = await supabase
+              .from("venue_outreach")
+              .select("outreach_id")
+              .eq("venue_id", venueId)
+              .eq("status", "sent")
+              .gte("sent_at", ninetyDaysAgo)
+              .limit(1)
+              .maybeSingle();
+
+            if (!recentSend) {
+              // Eligible — check for email
+              const { data: venueData } = await supabase
+                .from("venues_new")
+                .select("contact_email")
+                .eq("venue_id", venueId)
+                .single();
+
+              setOutreachEmail(venueData?.contact_email || null);
+              setOutreachOpen(true);
+              loadData();
+              return; // Don't show toast yet — outreach dialog is up
+            }
+          }
+        } catch (err) {
+          console.warn("Outreach check failed (non-critical):", err);
+        }
+      }
+
+      toast.success("Session complete!");
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to end session");
@@ -922,6 +971,21 @@ export default function DiaryEntry() {
           venueId={venueId}
           venueName={session.venue_name}
           prefillSpecies={notablePrefill}
+        />
+      )}
+
+      {/* Venue Outreach Dialog */}
+      {venueId && session && (
+        <VenueOutreachDialog
+          open={outreachOpen}
+          onClose={() => {
+            setOutreachOpen(false);
+            toast.success("Session complete!");
+          }}
+          venueName={session.venue_name}
+          venueId={venueId}
+          sessionId={id!}
+          contactEmail={outreachEmail}
         />
       )}
     </div>
