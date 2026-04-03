@@ -3215,6 +3215,60 @@ export type Database = {
           },
         ]
       }
+      share_links: {
+        Row: {
+          card_snapshot: Json
+          created_at: string
+          expires_at: string | null
+          group_id: string | null
+          link_id: string
+          profile_id: string | null
+          session_id: string | null
+          token: string
+          type: string
+          view_count: number
+        }
+        Insert: {
+          card_snapshot: Json
+          created_at?: string
+          expires_at?: string | null
+          group_id?: string | null
+          link_id?: string
+          profile_id?: string | null
+          session_id?: string | null
+          token: string
+          type: string
+          view_count?: number
+        }
+        Update: {
+          card_snapshot?: Json
+          created_at?: string
+          expires_at?: string | null
+          group_id?: string | null
+          link_id?: string
+          profile_id?: string | null
+          session_id?: string | null
+          token?: string
+          type?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_links_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "social_groups"
+            referencedColumns: ["group_id"]
+          },
+          {
+            foreignKeyName: "share_links_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["profile_id"]
+          },
+        ]
+      }
       share_views: {
         Row: {
           id: string
@@ -5365,6 +5419,7 @@ export type Database = {
       clear_table: { Args: { target_table: string }; Returns: undefined }
       get_my_group_ids: { Args: never; Returns: string[] }
       get_my_profile_id: { Args: never; Returns: string }
+      increment_share_view: { Args: { p_token: string }; Returns: undefined }
       is_group_admin: { Args: { target_group_id: string }; Returns: boolean }
     }
     Enums: {

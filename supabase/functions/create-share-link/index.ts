@@ -1,251 +1,188 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface CreateShareRequest {
-  queryIds: string[];
+const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+function generateToken(length = 8): string {
+  const arr = new Uint8Array(length);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => CHARS[b % CHARS.length]).join('');
 }
 
-interface ShareResult {
-  queryId: string;
-  shareToken: string;
-  shareUrl: string;
-  shortUrl?: string;
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
 }
 
-function generateShareToken(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const length = 12;
-  let token = '';
-  
-  const randomValues = new Uint8Array(length);
-  crypto.getRandomValues(randomValues);
-  
-  for (let i = 0; i < length; i++) {
-    token += chars[randomValues[i] % chars.length];
-  }
-  
-  return token;
-}
-
-async function shortenUrlWithBitly(longUrl: string, bitlyToken: string): Promise<string | null> {
-  try {
-    console.log('Attempting to shorten URL with Bitly:', longUrl);
-    
-    const response = await fetch('https://api-ssl.bitly.com/v4/shorten', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${bitlyToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        long_url: longUrl,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('Bitly API error:', response.status, await response.text());
-      return null;
-    }
-
-    const data = await response.json();
-    console.log('Bitly shortened URL:', data.link);
-    return data.link;
-  } catch (error) {
-    console.error('Error shortening URL with Bitly:', error);
-    return null;
-  }
-}
-
-serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get authorization header
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    // Verify auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('No authorization header provided');
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get authenticated user
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
     if (authError || !user) {
-      console.error('Authentication failed:', authError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Authenticated user:', user.id);
+    // Get profile
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('profile_id, display_name')
+      .eq('id', user.id)
+      .single();
 
-    // Parse request body
-    const body: CreateShareRequest = await req.json();
-    
-    if (!body.queryIds || !Array.isArray(body.queryIds) || body.queryIds.length === 0) {
-      console.error('Invalid request: no queryIds provided');
+    if (!profile) {
       return new Response(
-        JSON.stringify({ error: 'queryIds array is required and must not be empty' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Profile not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Processing share request for queries:', body.queryIds);
+    const body = await req.json();
+    const { type, session_id, group_id, card_snapshot } = body;
 
-    const results: ShareResult[] = [];
-    const bitlyToken = Deno.env.get('BITLY_API_TOKEN');
-    const baseUrl = Deno.env.get('VITE_SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 
-                    `https://${Deno.env.get('VITE_SUPABASE_PROJECT_ID')}.lovableproject.com`;
+    if (!type || !['session', 'group_invite'].includes(type)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid type. Must be "session" or "group_invite"' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    for (const queryId of body.queryIds) {
-      try {
-        // Verify query belongs to user
-        const { data: query, error: queryError } = await supabase
-          .from('queries')
-          .select('id, user_id')
-          .eq('id', queryId)
-          .eq('user_id', user.id)
-          .single();
+    let token: string;
+    let snapshot = card_snapshot;
 
-        if (queryError || !query) {
-          console.error(`Query ${queryId} not found or not authorized:`, queryError);
-          return new Response(
-            JSON.stringify({ 
-              error: `Query ${queryId} not found or you do not have permission to share it` 
-            }),
-            { 
-              status: 404, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
+    if (type === 'session') {
+      if (!session_id || !card_snapshot) {
+        return new Response(
+          JSON.stringify({ error: 'session_id and card_snapshot required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      token = generateToken(8);
+    } else {
+      // group_invite
+      if (!group_id) {
+        return new Response(
+          JSON.stringify({ error: 'group_id required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-        console.log(`Query ${queryId} verified for user ${user.id}`);
+      // Fetch group info for snapshot
+      const { data: group } = await supabase
+        .from('social_groups')
+        .select('group_name, invite_code')
+        .eq('group_id', group_id)
+        .single();
 
-        // Check if share already exists
-        const { data: existingShare } = await supabase
-          .from('shared_reports')
-          .select('*')
-          .eq('query_id', queryId)
-          .eq('created_by', user.id)
-          .maybeSingle();
+      if (!group) {
+        return new Response(
+          JSON.stringify({ error: 'Group not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-        let shareToken: string;
-        let shareUrl: string;
-        let shortUrl: string | undefined;
+      // Generate invite_code if group doesn't have one
+      let inviteCode = group.invite_code;
+      if (!inviteCode) {
+        const hex = generateToken(4).toLowerCase();
+        inviteCode = `${slugify(group.group_name)}-${hex}`;
+        await supabase
+          .from('social_groups')
+          .update({ invite_code: inviteCode })
+          .eq('group_id', group_id);
+      }
 
-        if (existingShare) {
-          // Return existing share
-          console.log(`Using existing share for query ${queryId}`);
-          shareToken = existingShare.share_token;
-          shareUrl = `${baseUrl}/share/${shareToken}`;
-          shortUrl = existingShare.short_url || undefined;
-        } else {
-          // Generate new share token
-          shareToken = generateShareToken();
-          
-          // Set expiration to 30 days from now
-          const expiresAt = new Date();
-          expiresAt.setDate(expiresAt.getDate() + 30);
+      // Count members
+      const { count } = await supabase
+        .from('group_memberships')
+        .select('*', { count: 'exact', head: true })
+        .eq('group_id', group_id)
+        .eq('status', 'active');
 
-          shareUrl = `${baseUrl}/share/${shareToken}`;
+      token = inviteCode;
+      snapshot = {
+        group_name: group.group_name,
+        member_count: count || 0,
+        inviter_name: profile.display_name,
+      };
+    }
 
-          // Try to shorten URL with Bitly if token is available
-          if (bitlyToken) {
-            shortUrl = await shortenUrlWithBitly(shareUrl, bitlyToken) || undefined;
-          }
-
-          // Create shared_reports record
-          const { error: insertError } = await supabase
-            .from('shared_reports')
-            .insert({
-              query_id: queryId,
-              share_token: shareToken,
-              created_by: user.id,
-              expires_at: expiresAt.toISOString(),
-              short_url: shortUrl || null,
-            });
-
-          if (insertError) {
-            console.error(`Error creating share for query ${queryId}:`, insertError);
-            throw insertError;
-          }
-
-          console.log(`Created new share for query ${queryId} with token ${shareToken}`);
-        }
-
-        results.push({
-          queryId,
-          shareToken: shareToken,
-          shareUrl,
-          shortUrl,
+    // Insert share link (retry once on token collision)
+    let inserted = false;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { error: insertError } = await supabase
+        .from('share_links')
+        .insert({
+          token,
+          type,
+          profile_id: profile.profile_id,
+          session_id: type === 'session' ? session_id : null,
+          group_id: type === 'group_invite' ? group_id : null,
+          card_snapshot: snapshot,
         });
 
-      } catch (error) {
-        console.error(`Error processing query ${queryId}:`, error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (!insertError) {
+        inserted = true;
+        break;
+      }
+
+      console.error('Insert error (attempt ' + attempt + '):', insertError);
+
+      // Token collision — regenerate (session only; group uses invite_code)
+      if (type === 'session') {
+        token = generateToken(10);
+      } else {
         return new Response(
-          JSON.stringify({ 
-            error: `Failed to create share for query ${queryId}`,
-            details: errorMessage 
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
+          JSON.stringify({ error: 'Failed to create share link' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
 
-    console.log('Successfully created shares:', results);
+    if (!inserted) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to create share link' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const prefix = type === 'session' ? 's' : 'g';
+    const url = `https://itscatching.uk/${prefix}/${token}`;
 
     return new Response(
-      JSON.stringify({ shareLinks: results }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ url, token }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error('Unexpected error in create-share-link function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  } catch (err) {
+    console.error('Unexpected error in create-share-link:', err);
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        details: errorMessage 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ error: 'Internal error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
