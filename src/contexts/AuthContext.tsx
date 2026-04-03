@@ -5,6 +5,9 @@ import { useToast } from "@/hooks/use-toast";
 
 interface UserProfile {
   id: string;
+  profile_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
   mobile_number: string | null;
   mobile_verified: boolean;
   two_factor_enabled: boolean;
