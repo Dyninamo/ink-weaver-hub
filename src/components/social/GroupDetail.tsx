@@ -22,6 +22,7 @@ interface Member {
   membership_id: string;
   profile_id: string;
   display_name: string;
+  avatar_url?: string | null;
   role: string;
 }
 
