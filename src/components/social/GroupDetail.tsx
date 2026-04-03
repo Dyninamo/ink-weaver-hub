@@ -106,6 +106,8 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
         cards.map((c) => ({
           ...c,
           display_name: (c as any).user_profiles?.display_name ?? "Unknown",
+          avatar_url: (c as any).user_profiles?.avatar_url ?? null,
+          card_profile_id: (c as any).user_profiles?.profile_id ?? "",
           _reactionCount: reactionCounts.get(c.card_id)?.count || 0,
           _userReacted: reactionCounts.get(c.card_id)?.userReacted || false,
           _replyCount: replyCounts.get(c.card_id) || 0,
