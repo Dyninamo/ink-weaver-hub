@@ -173,6 +173,12 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
             .map((member) => (
               <div key={member.membership_id} className="flex items-center justify-between py-2 px-1 rounded hover:bg-muted/50">
                 <div className="flex items-center gap-2">
+                  <AvatarCircle
+                    displayName={member.display_name}
+                    profileId={member.profile_id}
+                    avatarUrl={member.avatar_url}
+                    size={32}
+                  />
                   <span className="text-sm text-foreground">{member.display_name}</span>
                   {member.role === "admin" && (
                     <Badge variant="secondary" className="text-xs">Admin</Badge>
