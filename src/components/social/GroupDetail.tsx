@@ -61,6 +61,7 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
           membership_id: m.membership_id,
           profile_id: m.profile_id,
           display_name: (m as any).user_profiles?.display_name ?? "Unknown",
+          avatar_url: (m as any).user_profiles?.avatar_url ?? null,
           role: m.role,
         }))
       );
