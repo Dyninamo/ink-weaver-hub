@@ -85,6 +85,9 @@ export default function DiaryEntry() {
   const [notableOpen, setNotableOpen] = useState(false);
   const [notablePrefill, setNotablePrefill] = useState<string | null>(null);
   const [venueId, setVenueId] = useState<string | null>(null);
+  const [outreachOpen, setOutreachOpen] = useState(false);
+  const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
+  const outreachChecked = useRef(false);
 
   // Load session + events
   const loadData = useCallback(async () => {
