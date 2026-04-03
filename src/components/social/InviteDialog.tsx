@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Copy, UserPlus } from "lucide-react";
+import { Copy, UserPlus, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useShareLink } from "@/hooks/useShareLink";
 
 interface InviteDialogProps {
   open: boolean;
@@ -133,18 +134,39 @@ const InviteDialog = ({
 
           <Separator />
 
-          {/* Copy link */}
+          {/* Share links */}
           <div className="space-y-2">
             <Label>Or share invite link</Label>
-            <Button variant="outline" className="w-full gap-2" onClick={handleCopyLink}>
-              <Copy className="h-4 w-4" />
-              Copy Link
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 gap-2" onClick={handleCopyLink}>
+                <Copy className="h-4 w-4" />
+                Copy Link
+              </Button>
+              <ShareInviteButton groupId={groupId} groupName={groupName} />
+            </div>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 };
+
+function ShareInviteButton({ groupId, groupName }: { groupId: string; groupName: string }) {
+  const { shareGroupInvite } = useShareLink();
+  const [sharing, setSharing] = useState(false);
+
+  const handleShare = async () => {
+    setSharing(true);
+    await shareGroupInvite(groupId, groupName);
+    setSharing(false);
+  };
+
+  return (
+    <Button variant="outline" className="flex-1 gap-2" disabled={sharing} onClick={handleShare}>
+      <Share2 className="h-4 w-4" />
+      {sharing ? "Sharing…" : "Share Invite"}
+    </Button>
+  );
+}
 
 export default InviteDialog;

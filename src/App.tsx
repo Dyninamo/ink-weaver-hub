@@ -23,6 +23,8 @@ import AdminRecompute from "./pages/AdminRecompute";
 import AdminVenueSubmissions from "./pages/AdminVenueSubmissions";
 import SocialFeed from "./pages/SocialFeed";
 import Leaderboard from "./pages/Leaderboard";
+import SessionShareView from "./pages/SessionShareView";
+import GroupJoinView from "./pages/GroupJoinView";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -91,6 +93,8 @@ const App = () => (
             <Route path="/leaderboard" element={<ProtectedRoute requireDisplayName><Leaderboard /></ProtectedRoute>} />
             <Route path="/leaderboard/:scope" element={<ProtectedRoute requireDisplayName><Leaderboard /></ProtectedRoute>} />
             <Route path="/share/:token" element={<ShareView />} />
+            <Route path="/social/session/:shareToken" element={<SessionShareView />} />
+            <Route path="/social/join/:inviteCode" element={<GroupJoinView />} />
             <Route path="/admin/upload" element={<ProtectedRoute><AdminUpload /></ProtectedRoute>} />
             <Route path="/admin/db-status" element={<ProtectedRoute><AdminDbStatus /></ProtectedRoute>} />
             <Route path="/admin/test-advice" element={<ProtectedRoute><AdminTestAdvice /></ProtectedRoute>} />
