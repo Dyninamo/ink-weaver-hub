@@ -242,8 +242,53 @@ export default function DiaryEntry() {
         would_return: wouldReturn ?? undefined,
         notes: sessionNotes || undefined,
       });
-      toast.success("Session complete!");
       setEndOpen(false);
+
+      // Check outreach eligibility before showing "Session complete"
+      if (venueId && !outreachChecked.current) {
+        outreachChecked.current = true;
+        try {
+          // Check opted out
+          const { data: optedOut } = await supabase
+            .from("venue_outreach")
+            .select("outreach_id")
+            .eq("venue_id", venueId)
+            .eq("status", "opted_out")
+            .limit(1)
+            .maybeSingle();
+
+          if (!optedOut) {
+            // Check cooldown
+            const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
+            const { data: recentSend } = await supabase
+              .from("venue_outreach")
+              .select("outreach_id")
+              .eq("venue_id", venueId)
+              .eq("status", "sent")
+              .gte("sent_at", ninetyDaysAgo)
+              .limit(1)
+              .maybeSingle();
+
+            if (!recentSend) {
+              // Eligible — check for email
+              const { data: venueData } = await supabase
+                .from("venues_new")
+                .select("contact_email")
+                .eq("venue_id", venueId)
+                .single();
+
+              setOutreachEmail(venueData?.contact_email || null);
+              setOutreachOpen(true);
+              loadData();
+              return; // Don't show toast yet — outreach dialog is up
+            }
+          }
+        } catch (err) {
+          console.warn("Outreach check failed (non-critical):", err);
+        }
+      }
+
+      toast.success("Session complete!");
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to end session");
