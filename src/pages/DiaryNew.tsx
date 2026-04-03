@@ -205,6 +205,22 @@ export default function DiaryNew() {
         console.warn("Affiliation call failed (non-critical):", affiliationErr);
       }
 
+      // Fire-and-forget: background venue email search
+      const { data: matchedVenue } = await supabase
+        .from("venues_new")
+        .select("venue_id, contact_email")
+        .ilike("name", venue)
+        .limit(1)
+        .maybeSingle();
+
+      if (matchedVenue && !matchedVenue.contact_email) {
+        supabase.functions
+          .invoke("find-venue-email", {
+            body: { venue_id: matchedVenue.venue_id, session_id: session.id },
+          })
+          .catch(() => {});
+      }
+
       toast.success("Session started!");
       navigate(`/diary/${session.id}`);
     } catch (err: any) {
