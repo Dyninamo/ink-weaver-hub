@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import InviteDialog from "./InviteDialog";
 import GroupSettings from "./GroupSettings";
 import SharingCard from "./SharingCard";
+import AvatarCircle from "@/components/AvatarCircle";
 
 interface GroupDetailProps {
   groupId: string;
@@ -21,6 +22,7 @@ interface Member {
   membership_id: string;
   profile_id: string;
   display_name: string;
+  avatar_url?: string | null;
   role: string;
 }
 
@@ -48,7 +50,7 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
 
     const { data: memberData } = await supabase
       .from("group_memberships")
-      .select("membership_id, profile_id, role, user_profiles(display_name)")
+      .select("membership_id, profile_id, role, user_profiles(display_name, avatar_url)")
       .eq("group_id", groupId)
       .eq("status", "active")
       .order("role", { ascending: true });
@@ -59,6 +61,7 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
           membership_id: m.membership_id,
           profile_id: m.profile_id,
           display_name: (m as any).user_profiles?.display_name ?? "Unknown",
+          avatar_url: (m as any).user_profiles?.avatar_url ?? null,
           role: m.role,
         }))
       );
@@ -70,7 +73,7 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
     setFeedLoading(true);
     const { data: cards } = await supabase
       .from("social_cards")
-      .select("*, user_profiles!social_cards_profile_id_fkey(display_name)")
+      .select("*, user_profiles!social_cards_profile_id_fkey(display_name, avatar_url, profile_id)")
       .eq("group_id", groupId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
@@ -105,6 +108,8 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
         cards.map((c) => ({
           ...c,
           display_name: (c as any).user_profiles?.display_name ?? "Unknown",
+          avatar_url: (c as any).user_profiles?.avatar_url ?? null,
+          card_profile_id: (c as any).user_profiles?.profile_id ?? "",
           _reactionCount: reactionCounts.get(c.card_id)?.count || 0,
           _userReacted: reactionCounts.get(c.card_id)?.userReacted || false,
           _replyCount: replyCounts.get(c.card_id) || 0,
@@ -168,6 +173,12 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
             .map((member) => (
               <div key={member.membership_id} className="flex items-center justify-between py-2 px-1 rounded hover:bg-muted/50">
                 <div className="flex items-center gap-2">
+                  <AvatarCircle
+                    displayName={member.display_name}
+                    profileId={member.profile_id}
+                    avatarUrl={member.avatar_url}
+                    size={32}
+                  />
                   <span className="text-sm text-foreground">{member.display_name}</span>
                   {member.role === "admin" && (
                     <Badge variant="secondary" className="text-xs">Admin</Badge>

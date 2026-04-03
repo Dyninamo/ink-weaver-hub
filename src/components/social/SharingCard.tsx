@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Thermometer, Wind, Cloud, CloudRain, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThreadView from "./ThreadView";
+import AvatarCircle from "@/components/AvatarCircle";
 
 interface SharingCardProps {
   card: {
     card_id: string;
+    card_profile_id?: string;
     venue_name: string;
     session_date: string;
     n_fish: number;
@@ -24,6 +26,7 @@ interface SharingCardProps {
     personal_note: string | null;
     created_at: string;
     display_name: string;
+    avatar_url?: string | null;
   };
   profileId: string;
   reactionCount: number;
@@ -92,9 +95,17 @@ const SharingCard = ({ card, profileId, reactionCount, replyCount, userReacted }
         <CardContent className="p-4 space-y-2">
           {/* Header */}
           <div className="flex items-start justify-between">
-            <div>
-              <p className="font-semibold text-foreground text-sm">{card.display_name}</p>
-              <p className="text-sm text-muted-foreground">{card.venue_name}</p>
+            <div className="flex items-center gap-2">
+              <AvatarCircle
+                displayName={card.display_name}
+                profileId={card.card_profile_id || ''}
+                avatarUrl={card.avatar_url}
+                size={32}
+              />
+              <div>
+                <p className="font-semibold text-foreground text-sm">{card.display_name}</p>
+                <p className="text-sm text-muted-foreground">{card.venue_name}</p>
+              </div>
             </div>
             <span className="text-xs text-muted-foreground whitespace-nowrap">{formattedDate}</span>
           </div>

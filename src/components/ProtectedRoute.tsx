@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import DisplayNameGate from "@/components/DisplayNameGate";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireDisplayName?: boolean;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, requireDisplayName = false }: ProtectedRouteProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isLoading } = useAuth();
@@ -16,7 +18,6 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        // Save intended destination
         const redirectTo = `${location.pathname}${location.search}`;
         navigate(`/auth?redirect=${encodeURIComponent(redirectTo)}`, { replace: true });
       } else {
@@ -38,6 +39,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!shouldRender || !user) {
     return null;
+  }
+
+  if (requireDisplayName) {
+    return <DisplayNameGate>{children}</DisplayNameGate>;
   }
 
   return <>{children}</>;
