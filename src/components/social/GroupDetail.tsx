@@ -49,7 +49,7 @@ const GroupDetail = ({ groupId, profileId, userRole, onBack }: GroupDetailProps)
 
     const { data: memberData } = await supabase
       .from("group_memberships")
-      .select("membership_id, profile_id, role, user_profiles(display_name)")
+      .select("membership_id, profile_id, role, user_profiles(display_name, avatar_url)")
       .eq("group_id", groupId)
       .eq("status", "active")
       .order("role", { ascending: true });
