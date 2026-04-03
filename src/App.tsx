@@ -23,6 +23,8 @@ import AdminRecompute from "./pages/AdminRecompute";
 import AdminVenueSubmissions from "./pages/AdminVenueSubmissions";
 import SocialFeed from "./pages/SocialFeed";
 import Leaderboard from "./pages/Leaderboard";
+import SessionShareView from "./pages/SessionShareView";
+import GroupJoinView from "./pages/GroupJoinView";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
