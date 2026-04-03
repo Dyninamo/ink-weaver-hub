@@ -973,6 +973,21 @@ export default function DiaryEntry() {
           prefillSpecies={notablePrefill}
         />
       )}
+
+      {/* Venue Outreach Dialog */}
+      {venueId && session && (
+        <VenueOutreachDialog
+          open={outreachOpen}
+          onClose={() => {
+            setOutreachOpen(false);
+            toast.success("Session complete!");
+          }}
+          venueName={session.venue_name}
+          venueId={venueId}
+          sessionId={id!}
+          contactEmail={outreachEmail}
+        />
+      )}
     </div>
   );
 }
