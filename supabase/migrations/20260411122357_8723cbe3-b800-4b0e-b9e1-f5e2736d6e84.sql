@@ -1,0 +1,1 @@
+GRANT INSERT, UPDATE ON storage.objects TO anon;
