@@ -159,9 +159,9 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   autoComplete={mode === "sign_up" ? "new-password" : "current-password"}
-                  placeholder="Min 6 characters"
+                  placeholder="Min 8 characters"
                 />
               </div>
             )}
