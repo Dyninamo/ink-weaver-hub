@@ -4771,19 +4771,31 @@ export type Database = {
       }
       venues_new: {
         Row: {
+          acreage: number | null
+          address: string | null
           aliases: Json | null
+          archetype: string | null
           contact_email: string | null
           contact_email_source: string | null
           country: string
           county: string | null
           created_at: string
           display_context: string | null
+          email: string | null
+          enriched_at: string | null
+          enrichment_confidence: string | null
+          enrichment_source: string | null
           full_name: string
           has_diary: boolean
           has_passport: boolean
           has_reports: boolean
           is_active: boolean
+          is_club: boolean | null
+          is_day_ticket: boolean | null
+          is_private: boolean | null
           is_searchable: boolean
+          is_season: boolean | null
+          is_syndicate: boolean | null
           last_crawled: string | null
           last_successful_crawl: string | null
           latitude: number | null
@@ -4791,7 +4803,9 @@ export type Database = {
           longitude: number | null
           name: string
           parent_id: string | null
+          phone: string | null
           platform_type: string | null
+          postcode: string | null
           region_id: number
           river_name: string | null
           root_url: string | null
@@ -4803,24 +4817,38 @@ export type Database = {
           source: string | null
           source_id: string | null
           stillwater_profile_id: string | null
+          stillwater_size_class: string | null
           updated_at: string
           venue_id: string
           water_type_id: number
+          website: string | null
         }
         Insert: {
+          acreage?: number | null
+          address?: string | null
           aliases?: Json | null
+          archetype?: string | null
           contact_email?: string | null
           contact_email_source?: string | null
           country?: string
           county?: string | null
           created_at?: string
           display_context?: string | null
+          email?: string | null
+          enriched_at?: string | null
+          enrichment_confidence?: string | null
+          enrichment_source?: string | null
           full_name: string
           has_diary?: boolean
           has_passport?: boolean
           has_reports?: boolean
           is_active?: boolean
+          is_club?: boolean | null
+          is_day_ticket?: boolean | null
+          is_private?: boolean | null
           is_searchable?: boolean
+          is_season?: boolean | null
+          is_syndicate?: boolean | null
           last_crawled?: string | null
           last_successful_crawl?: string | null
           latitude?: number | null
@@ -4828,7 +4856,9 @@ export type Database = {
           longitude?: number | null
           name: string
           parent_id?: string | null
+          phone?: string | null
           platform_type?: string | null
+          postcode?: string | null
           region_id: number
           river_name?: string | null
           root_url?: string | null
@@ -4840,24 +4870,38 @@ export type Database = {
           source?: string | null
           source_id?: string | null
           stillwater_profile_id?: string | null
+          stillwater_size_class?: string | null
           updated_at?: string
           venue_id: string
           water_type_id: number
+          website?: string | null
         }
         Update: {
+          acreage?: number | null
+          address?: string | null
           aliases?: Json | null
+          archetype?: string | null
           contact_email?: string | null
           contact_email_source?: string | null
           country?: string
           county?: string | null
           created_at?: string
           display_context?: string | null
+          email?: string | null
+          enriched_at?: string | null
+          enrichment_confidence?: string | null
+          enrichment_source?: string | null
           full_name?: string
           has_diary?: boolean
           has_passport?: boolean
           has_reports?: boolean
           is_active?: boolean
+          is_club?: boolean | null
+          is_day_ticket?: boolean | null
+          is_private?: boolean | null
           is_searchable?: boolean
+          is_season?: boolean | null
+          is_syndicate?: boolean | null
           last_crawled?: string | null
           last_successful_crawl?: string | null
           latitude?: number | null
@@ -4865,7 +4909,9 @@ export type Database = {
           longitude?: number | null
           name?: string
           parent_id?: string | null
+          phone?: string | null
           platform_type?: string | null
+          postcode?: string | null
           region_id?: number
           river_name?: string | null
           root_url?: string | null
@@ -4877,9 +4923,11 @@ export type Database = {
           source?: string | null
           source_id?: string | null
           stillwater_profile_id?: string | null
+          stillwater_size_class?: string | null
           updated_at?: string
           venue_id?: string
           water_type_id?: number
+          website?: string | null
         }
         Relationships: [
           {
