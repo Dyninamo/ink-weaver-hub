@@ -1,0 +1,17 @@
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS acreage REAL;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS stillwater_size_class TEXT
+  CHECK (stillwater_size_class IN ('small', 'medium', 'large'));
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS postcode TEXT;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS archetype TEXT;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS website TEXT;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS is_day_ticket BOOLEAN;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS is_season BOOLEAN;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS is_syndicate BOOLEAN;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS is_club BOOLEAN;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS is_private BOOLEAN;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS enriched_at TIMESTAMPTZ;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS enrichment_confidence TEXT;
+ALTER TABLE venues_new ADD COLUMN IF NOT EXISTS enrichment_source TEXT;
