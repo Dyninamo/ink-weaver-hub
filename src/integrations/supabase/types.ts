@@ -1438,6 +1438,50 @@ export type Database = {
         }
         Relationships: []
       }
+      method_aliases: {
+        Row: {
+          canonical: string
+          category: string
+          raw: string
+        }
+        Insert: {
+          canonical: string
+          category: string
+          raw: string
+        }
+        Update: {
+          canonical?: string
+          category?: string
+          raw?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "method_aliases_canonical_fkey"
+            columns: ["canonical"]
+            isOneToOne: false
+            referencedRelation: "method_canonical"
+            referencedColumns: ["canonical"]
+          },
+        ]
+      }
+      method_canonical: {
+        Row: {
+          canonical: string
+          category: string
+          mentions: number
+        }
+        Insert: {
+          canonical: string
+          category: string
+          mentions?: number
+        }
+        Update: {
+          canonical?: string
+          category?: string
+          mentions?: number
+        }
+        Relationships: []
+      }
       notable_fish: {
         Row: {
           check_edit_clean: boolean | null
@@ -3946,6 +3990,60 @@ export type Database = {
         }
         Relationships: []
       }
+      stocking_records: {
+        Row: {
+          avg_weight_lb: number | null
+          confidence: number | null
+          created_at: string
+          date_precision: string | null
+          extraction_method: string | null
+          id: number
+          notes: string | null
+          quantity: number | null
+          season_total: number | null
+          source_report_rowid: number | null
+          species: string
+          stocking_date: string | null
+          supplier: string | null
+          venue_id: string | null
+          venue_name: string
+        }
+        Insert: {
+          avg_weight_lb?: number | null
+          confidence?: number | null
+          created_at?: string
+          date_precision?: string | null
+          extraction_method?: string | null
+          id?: number
+          notes?: string | null
+          quantity?: number | null
+          season_total?: number | null
+          source_report_rowid?: number | null
+          species?: string
+          stocking_date?: string | null
+          supplier?: string | null
+          venue_id?: string | null
+          venue_name: string
+        }
+        Update: {
+          avg_weight_lb?: number | null
+          confidence?: number | null
+          created_at?: string
+          date_precision?: string | null
+          extraction_method?: string | null
+          id?: number
+          notes?: string | null
+          quantity?: number | null
+          season_total?: number | null
+          source_report_rowid?: number | null
+          species?: string
+          stocking_date?: string | null
+          supplier?: string | null
+          venue_id?: string | null
+          venue_name?: string
+        }
+        Relationships: []
+      }
       tippets: {
         Row: {
           brand: string | null
@@ -4347,6 +4445,42 @@ export type Database = {
           },
         ]
       }
+      venue_clubs: {
+        Row: {
+          archetype: string | null
+          atoms: number | null
+          canonical_name: string | null
+          id: number
+          latitude: number | null
+          longitude: number | null
+          parent_canonical_name: string | null
+          parent_master_venue_id: string | null
+          region: string | null
+        }
+        Insert: {
+          archetype?: string | null
+          atoms?: number | null
+          canonical_name?: string | null
+          id?: number
+          latitude?: number | null
+          longitude?: number | null
+          parent_canonical_name?: string | null
+          parent_master_venue_id?: string | null
+          region?: string | null
+        }
+        Update: {
+          archetype?: string | null
+          atoms?: number | null
+          canonical_name?: string | null
+          id?: number
+          latitude?: number | null
+          longitude?: number | null
+          parent_canonical_name?: string | null
+          parent_master_venue_id?: string | null
+          region?: string | null
+        }
+        Relationships: []
+      }
       venue_correlations: {
         Row: {
           correlation: number | null
@@ -4644,6 +4778,42 @@ export type Database = {
           spots_recall_at4?: number | null
           temp_correlation?: number | null
           venue?: string
+        }
+        Relationships: []
+      }
+      venue_slices_cache: {
+        Row: {
+          archetype: string | null
+          atom_count: number | null
+          generated_at: string
+          id: number
+          slice_json: Json
+          slice_text: string | null
+          venue_id: string | null
+          venue_name: string
+          water_type: string | null
+        }
+        Insert: {
+          archetype?: string | null
+          atom_count?: number | null
+          generated_at: string
+          id?: number
+          slice_json: Json
+          slice_text?: string | null
+          venue_id?: string | null
+          venue_name: string
+          water_type?: string | null
+        }
+        Update: {
+          archetype?: string | null
+          atom_count?: number | null
+          generated_at?: string
+          id?: number
+          slice_json?: Json
+          slice_text?: string | null
+          venue_id?: string | null
+          venue_name?: string
+          water_type?: string | null
         }
         Relationships: []
       }
@@ -5188,6 +5358,57 @@ export type Database = {
         }
         Relationships: []
       }
+      weather_youtube: {
+        Row: {
+          cloud_cover_mean_pct: number | null
+          date: string | null
+          fetched_at: string | null
+          id: number
+          latitude: number | null
+          longitude: number | null
+          precip_mm: number | null
+          source: string | null
+          t_max_c: number | null
+          t_mean_c: number | null
+          t_min_c: number | null
+          venue_mentioned: string | null
+          wind_dir_dominant_deg: number | null
+          wind_speed_max_ms: number | null
+        }
+        Insert: {
+          cloud_cover_mean_pct?: number | null
+          date?: string | null
+          fetched_at?: string | null
+          id?: number
+          latitude?: number | null
+          longitude?: number | null
+          precip_mm?: number | null
+          source?: string | null
+          t_max_c?: number | null
+          t_mean_c?: number | null
+          t_min_c?: number | null
+          venue_mentioned?: string | null
+          wind_dir_dominant_deg?: number | null
+          wind_speed_max_ms?: number | null
+        }
+        Update: {
+          cloud_cover_mean_pct?: number | null
+          date?: string | null
+          fetched_at?: string | null
+          id?: number
+          latitude?: number | null
+          longitude?: number | null
+          precip_mm?: number | null
+          source?: string | null
+          t_max_c?: number | null
+          t_mean_c?: number | null
+          t_min_c?: number | null
+          venue_mentioned?: string | null
+          wind_dir_dominant_deg?: number | null
+          wind_speed_max_ms?: number | null
+        }
+        Relationships: []
+      }
       wt_advice_confidence: {
         Row: {
           confidence_score: number | null
@@ -5458,6 +5679,90 @@ export type Database = {
           source?: string
           topic?: string
           water_type_id?: number
+        }
+        Relationships: []
+      }
+      youtube_atoms: {
+        Row: {
+          atom_archetype: string | null
+          conditions: string | null
+          confidence: string | null
+          content: string | null
+          date_mentioned: string | null
+          date_resolved: string | null
+          date_source: string | null
+          domain: string | null
+          effective_archetype: string | null
+          flies_mentioned: string | null
+          flies_mentioned_raw: string | null
+          id: number
+          methods_mentioned: string | null
+          methods_mentioned_raw: string | null
+          month: number | null
+          species: string | null
+          tier: string | null
+          tier_original: string | null
+          title: string | null
+          venue_id: string | null
+          venue_mentioned: string | null
+          venue_mentioned_raw: string | null
+          video_id: string | null
+          water_type: string | null
+          weather_mentioned: string | null
+        }
+        Insert: {
+          atom_archetype?: string | null
+          conditions?: string | null
+          confidence?: string | null
+          content?: string | null
+          date_mentioned?: string | null
+          date_resolved?: string | null
+          date_source?: string | null
+          domain?: string | null
+          effective_archetype?: string | null
+          flies_mentioned?: string | null
+          flies_mentioned_raw?: string | null
+          id: number
+          methods_mentioned?: string | null
+          methods_mentioned_raw?: string | null
+          month?: number | null
+          species?: string | null
+          tier?: string | null
+          tier_original?: string | null
+          title?: string | null
+          venue_id?: string | null
+          venue_mentioned?: string | null
+          venue_mentioned_raw?: string | null
+          video_id?: string | null
+          water_type?: string | null
+          weather_mentioned?: string | null
+        }
+        Update: {
+          atom_archetype?: string | null
+          conditions?: string | null
+          confidence?: string | null
+          content?: string | null
+          date_mentioned?: string | null
+          date_resolved?: string | null
+          date_source?: string | null
+          domain?: string | null
+          effective_archetype?: string | null
+          flies_mentioned?: string | null
+          flies_mentioned_raw?: string | null
+          id?: number
+          methods_mentioned?: string | null
+          methods_mentioned_raw?: string | null
+          month?: number | null
+          species?: string | null
+          tier?: string | null
+          tier_original?: string | null
+          title?: string | null
+          venue_id?: string | null
+          venue_mentioned?: string | null
+          venue_mentioned_raw?: string | null
+          video_id?: string | null
+          water_type?: string | null
+          weather_mentioned?: string | null
         }
         Relationships: []
       }
