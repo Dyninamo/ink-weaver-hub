@@ -26,6 +26,9 @@ import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
 import LostModal from "@/components/diary/LostModal";
 import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
+import ChangeWhatPicker, { type ChangeField } from "@/components/diary/ChangeWhatPicker";
+import LineCascadePrompt from "@/components/diary/LineCascadePrompt";
+import RodPickerSheet, { type SessionRod } from "@/components/diary/RodPickerSheet";
 import ReadyView from "@/components/diary/ReadyView";
 import EndSessionView from "@/components/diary/EndSessionView";
 import {
