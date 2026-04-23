@@ -431,71 +431,78 @@ export default function FlyPicker({
           <div className="fp-step2-title">{selectedFly.name}</div>
         </div>
 
-        {showColourRow && (
-          <ChipRow
-            label="Colour"
-            options={selectedFly.colours}
-            value={colour}
-            onSelect={setColour}
-          />
-        )}
+        <div className="fp-step2-body">
+          {showColourRow && (
+            <ChipRow
+              label="Colour"
+              options={selectedFly.colours}
+              value={colour}
+              onSelect={setColour}
+            />
+          )}
 
-        {showAccentRow && (
-          <ChipRow
-            label="Accent"
-            options={accentOptions}
-            value={accent}
-            onSelect={setAccent}
-          />
-        )}
+          {showAccentRow && (
+            <ChipRow
+              label="Accent"
+              options={accentOptions}
+              value={accent}
+              onSelect={setAccent}
+            />
+          )}
 
-        {showWeightRow && (
-          <ChipRow
-            label="Weight"
-            options={selectedFly.weights}
-            value={weight}
-            onSelect={setWeight}
-          />
-        )}
+          {showWeightRow && (
+            <ChipRow
+              label="Weight"
+              options={selectedFly.weights}
+              value={weight}
+              onSelect={setWeight}
+            />
+          )}
 
-        {showHookStyleRow && (
-          <ChipRow
-            label="Hook style"
-            options={selectedFly.hook_styles}
-            value={hookStyle}
-            onSelect={setHookStyle}
-          />
-        )}
+          {showHookStyleRow && (
+            <ChipRow
+              label="Hook style"
+              options={selectedFly.hook_styles}
+              value={hookStyle}
+              onSelect={setHookStyle}
+            />
+          )}
 
-        {hookSizes.length > 0 && (
-          <>
-            <div className="fp-qual-label">Hook size</div>
-            <div className="fp-chip-row">
-              {hookSizes.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className="fp-chip"
-                  data-active={hookSize === s}
-                  onClick={() => setHookSize(s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+          {hookSizes.length > 0 && (
+            <>
+              <div className="fp-qual-label">Hook size</div>
+              <div className="fp-chip-row">
+                {hookSizes.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className="fp-chip"
+                    data-active={hookSize === s}
+                    onClick={() => setHookSize(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
-        <div className="fp-composed">{composed}</div>
+          <div className="fp-composed">
+            <span className="fp-composed-label">Composed:</span>{" "}
+            <strong>{composed}</strong>
+          </div>
+        </div>
 
-        <button
-          type="button"
-          className="fp-cta"
-          onClick={handleConfirm}
-          disabled={!composed}
-        >
-          {ctaLabel}
-        </button>
+        <div className="fp-step2-footer">
+          <button
+            type="button"
+            className="fp-cta"
+            onClick={handleConfirm}
+            disabled={!composed}
+          >
+            {ctaLabel}
+          </button>
+        </div>
       </div>
     );
   }
@@ -680,11 +687,6 @@ export default function FlyPicker({
         )}
       </div>
 
-      {value && (
-        <div className="fp-current">
-          Selected: <strong>{value}</strong>
-        </div>
-      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ interface EndSessionSyncingProps {
   isOnline: boolean;
 }
 
-type RowStatus = "done" | "active" | "pending";
+type RowStatus = "done" | "active" | "pending" | "queued";
 
 const ROWS: { label: string }[] = [
   { label: "GPS trail captured" },
@@ -30,6 +30,10 @@ function ChecklistRow({ status, label }: { status: RowStatus; label: string }) {
     iconColor = "var(--rose-500)";
     textColor = "var(--ink-700)";
     iconClass = "ec-check-icon ec-check-icon-pulse";
+  } else if (status === "queued") {
+    icon = "⋯";
+    iconColor = "var(--event-lost)";
+    textColor = "var(--ink-700)";
   } else {
     icon = "◦";
     iconColor = "var(--ink-300)";
@@ -73,10 +77,10 @@ export default function EndSessionSyncing({
 
         <div className="ec-checklist">
           {ROWS.map((row, idx) => {
-            // Offline: row 4 (index 3, "Syncing to cloud") stays pending
+            // Offline: row 4 (index 3, "Syncing to cloud") is queued, not pending
             let status: RowStatus;
             if (!isOnline && idx === 3) {
-              status = "pending";
+              status = "queued";
             } else if (step > idx + 1) {
               status = "done";
             } else if (step === idx + 1) {
