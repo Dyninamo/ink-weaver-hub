@@ -73,6 +73,10 @@ export default function DiaryEntry() {
   const [blankOpen, setBlankOpen] = useState(false);
   const [lostOpen, setLostOpen] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
+  const [whatPickerOpen, setWhatPickerOpen] = useState(false);
+  const [lineCascadeOpen, setLineCascadeOpen] = useState(false);
+  const [rodPickerOpen, setRodPickerOpen] = useState(false);
+  const [activeRodIndex, setActiveRodIndex] = useState<number>(1);
   const [endOpen, setEndOpen] = useState(false);
   const [implicitChangePrompt, setImplicitChangePrompt] = useState<{
     newSetup: CurrentSetup;
