@@ -157,3 +157,19 @@ All colors MUST be HSL.
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
+
+/* Design system: focus rings + reduced motion */
+*:focus-visible {
+  outline: 2px solid var(--gild-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+:focus:not(:focus-visible) { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
