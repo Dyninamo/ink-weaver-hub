@@ -400,7 +400,7 @@ export default function DiaryEntry() {
             onCatch={() => setCatchOpen(true)}
             onLost={() => setLostOpen(true)}
             onBlank={() => setBlankOpen(true)}
-            onChange={() => setChangeOpen(true)}
+            onChange={() => setWhatPickerOpen(true)}
             onEndSession={() => setEndOpen(true)}
           />
         </div>
@@ -822,7 +822,7 @@ export default function DiaryEntry() {
             size="lg"
             variant="outline"
             className="rounded-full h-14 px-5 bg-[#162230] border-diary-change/30 text-diary-change hover:bg-[#1E3044] shadow-lg"
-            onClick={() => setChangeOpen(true)}
+            onClick={() => setWhatPickerOpen(true)}
           >
             <RefreshCw className="h-5 w-5" />
           </Button>
