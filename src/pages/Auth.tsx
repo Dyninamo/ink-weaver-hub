@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { FishSymbol } from "lucide-react";
+import PasswordField, { PasswordStrengthMeter, scorePassword } from "@/components/auth/PasswordField";
 
 type AuthMode = "sign_in" | "sign_up" | "forgot";
 
