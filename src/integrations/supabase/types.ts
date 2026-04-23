@@ -934,6 +934,78 @@ export type Database = {
       }
       flies: {
         Row: {
+          accents: Json | null
+          aliases: Json | null
+          box_location: string | null
+          category: string
+          colours: Json | null
+          confidence_rating: number | null
+          family: string | null
+          hook_size_max: number | null
+          hook_size_min: number | null
+          hook_styles: Json | null
+          id: number
+          imitation: string | null
+          materials_summary: string | null
+          name: string
+          original_count: number | null
+          season_notes: string | null
+          sub_category: string | null
+          tactics_notes: string | null
+          tier_families: Json | null
+          tiers: Json | null
+          weights: Json | null
+        }
+        Insert: {
+          accents?: Json | null
+          aliases?: Json | null
+          box_location?: string | null
+          category: string
+          colours?: Json | null
+          confidence_rating?: number | null
+          family?: string | null
+          hook_size_max?: number | null
+          hook_size_min?: number | null
+          hook_styles?: Json | null
+          id: number
+          imitation?: string | null
+          materials_summary?: string | null
+          name: string
+          original_count?: number | null
+          season_notes?: string | null
+          sub_category?: string | null
+          tactics_notes?: string | null
+          tier_families?: Json | null
+          tiers?: Json | null
+          weights?: Json | null
+        }
+        Update: {
+          accents?: Json | null
+          aliases?: Json | null
+          box_location?: string | null
+          category?: string
+          colours?: Json | null
+          confidence_rating?: number | null
+          family?: string | null
+          hook_size_max?: number | null
+          hook_size_min?: number | null
+          hook_styles?: Json | null
+          id?: number
+          imitation?: string | null
+          materials_summary?: string | null
+          name?: string
+          original_count?: number | null
+          season_notes?: string | null
+          sub_category?: string | null
+          tactics_notes?: string | null
+          tier_families?: Json | null
+          tiers?: Json | null
+          weights?: Json | null
+        }
+        Relationships: []
+      }
+      flies_legacy_20260423: {
+        Row: {
           box_location: string | null
           confidence_rating: string | null
           created_at: string | null
