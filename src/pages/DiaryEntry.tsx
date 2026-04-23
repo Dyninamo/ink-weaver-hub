@@ -93,6 +93,11 @@ export default function DiaryEntry() {
   const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
   const outreachChecked = useRef(false);
 
+  // After ending an active session, show the editorial "wrap" screen.
+  // Distinct from `isActive=false` for older completed sessions loaded directly.
+  const [justEnded, setJustEnded] = useState(false);
+  const [venueReturnEmail, setVenueReturnEmail] = useState<string | null>(null);
+
   // Load session + events
   const loadData = useCallback(async () => {
     if (!id) return;
