@@ -34,15 +34,8 @@ const WIND_DIRECTIONS = [
   "N", "NE", "E", "SE", "S", "SW", "W", "NW", "Variable", "Calm",
 ] as const;
 
-const EMPTY_SETUP: CurrentSetup = {
-  style: null,
-  rig: null,
-  line_type: null,
-  retrieve: null,
-  flies_on_cast: null,
-  spot: null,
-  depth_zone: null,
-};
+const EMPTY_WIZARD: WizardResult | null = null;
+
 
 export default function DiaryNew() {
   const { user } = useAuth();
