@@ -356,9 +356,48 @@ export default function Diary() {
                           )}
                         </div>
 
-                        {/* Tally row */}
-                        <div className="flex items-center gap-3 text-xs">
-                          {isBlank ? (
+                        {/* Tally row — caught · lost · blanks */}
+                        <div className="flex items-center gap-3 text-xs flex-wrap">
+                          {fishCount > 0 && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ background: "var(--event-catch, hsl(var(--primary)))" }}
+                              />
+                              <strong
+                                className="font-semibold tabular-nums"
+                                style={{ color: "var(--event-catch-dark, hsl(var(--primary)))" }}
+                              >
+                                {fishCount}
+                              </strong>
+                              <span className="text-muted-foreground">caught</span>
+                            </span>
+                          )}
+                          {(session.stats?.totalLost ?? 0) > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1.5 tabular-nums"
+                              style={{ color: "var(--event-lost, hsl(var(--destructive)))" }}
+                            >
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ background: "var(--event-lost, hsl(var(--destructive)))" }}
+                              />
+                              {session.stats!.totalLost} lost
+                            </span>
+                          )}
+                          {(session.stats?.totalBlanks ?? 0) > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1.5 tabular-nums"
+                              style={{ color: "var(--event-blank, hsl(var(--muted-foreground)))" }}
+                            >
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ background: "var(--event-blank, hsl(var(--muted-foreground)))" }}
+                              />
+                              {session.stats!.totalBlanks} blanks
+                            </span>
+                          )}
+                          {isBlank && (session.stats?.totalLost ?? 0) === 0 && (session.stats?.totalBlanks ?? 0) === 0 && (
                             <span className="inline-flex items-center gap-1.5">
                               <span
                                 className="h-1.5 w-1.5 rounded-full"
@@ -368,17 +407,8 @@ export default function Diary() {
                                 Blank
                               </span>
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5">
-                              <span
-                                className="h-1.5 w-1.5 rounded-full"
-                                style={{ background: "var(--event-catch, hsl(var(--primary)))" }}
-                              />
-                              <strong className="font-semibold tabular-nums">{fishCount}</strong>
-                              <span className="text-muted-foreground">caught</span>
-                            </span>
                           )}
-                          {session.stats?.bestFly && (
+                          {session.stats?.bestFly && fishCount > 0 && (
                             <span className="text-muted-foreground/80 truncate">
                               · {session.stats.bestFly}
                             </span>
