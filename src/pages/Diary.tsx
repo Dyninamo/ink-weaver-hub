@@ -116,7 +116,7 @@ export default function Diary() {
     } finally {
       setLoading(false);
     }
-  }, [user, venueFilter, returnFilter, page]);
+  }, [user, venueFilter, page]);
 
   useEffect(() => {
     loadSessions();
