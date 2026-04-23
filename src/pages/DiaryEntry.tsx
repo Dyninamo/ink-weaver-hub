@@ -857,6 +857,19 @@ export default function DiaryEntry() {
         latestWeather={latestWeather}
       />
 
+      <LostModal
+        open={lostOpen}
+        onClose={() => setLostOpen(false)}
+        sessionId={id!}
+        currentSetup={currentSetup}
+        eventCount={events.length}
+        onSaved={() => {
+          loadData();
+          if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
+        }}
+        latestWeather={latestWeather}
+      />
+
       <ChangeSetupModal
         open={changeOpen}
         onClose={() => setChangeOpen(false)}
