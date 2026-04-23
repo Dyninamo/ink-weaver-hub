@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import {
   Plus, Fish, Clock, Star, ArrowRight, Play,
-  Calendar, ChevronLeft, ChevronRight, Settings2, Mail, CheckCircle2,
+  Calendar, ChevronLeft, ChevronRight, Settings2, Mail, CheckCircle2, User, Sparkles, Map as MapIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -145,7 +145,23 @@ export default function Diary() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold font-diary">Fishing Diary</h1>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/map")}
+              title="Discover waters"
+            >
+              <MapIcon className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/queries")}
+              title="Ask the Ghillie"
+            >
+              <Sparkles className="h-5 w-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -153,6 +169,14 @@ export default function Diary() {
               title="Rod setups"
             >
               <Settings2 className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/settings")}
+              title="Settings"
+            >
+              <User className="h-5 w-5" />
             </Button>
           </div>
         </div>

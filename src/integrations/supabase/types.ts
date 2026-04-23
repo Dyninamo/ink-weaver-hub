@@ -4504,6 +4504,71 @@ export type Database = {
           },
         ]
       }
+      user_queries: {
+        Row: {
+          answer_chips: Json | null
+          answer_narrative: string | null
+          applied_at: string | null
+          cached_until: string | null
+          confidence: string | null
+          created_at: string
+          model: string | null
+          query_id: string
+          question: string
+          session_id: string | null
+          surface: string
+          updated_at: string
+          user_id: string
+          venue_id: string | null
+          venue_name: string | null
+          weather_snapshot: Json | null
+        }
+        Insert: {
+          answer_chips?: Json | null
+          answer_narrative?: string | null
+          applied_at?: string | null
+          cached_until?: string | null
+          confidence?: string | null
+          created_at?: string
+          model?: string | null
+          query_id?: string
+          question: string
+          session_id?: string | null
+          surface?: string
+          updated_at?: string
+          user_id: string
+          venue_id?: string | null
+          venue_name?: string | null
+          weather_snapshot?: Json | null
+        }
+        Update: {
+          answer_chips?: Json | null
+          answer_narrative?: string | null
+          applied_at?: string | null
+          cached_until?: string | null
+          confidence?: string | null
+          created_at?: string
+          model?: string | null
+          query_id?: string
+          question?: string
+          session_id?: string | null
+          surface?: string
+          updated_at?: string
+          user_id?: string
+          venue_id?: string | null
+          venue_name?: string | null
+          weather_snapshot?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_queries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_rod_setups: {
         Row: {
           created_at: string | null
