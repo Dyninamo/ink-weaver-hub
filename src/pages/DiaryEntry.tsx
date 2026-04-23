@@ -800,6 +800,8 @@ export default function DiaryEntry() {
           </Button>
         </div>
       )}
+      </div>
+      )}
 
       {/* ============================================================ */}
       {/* MODALS                                                        */}
