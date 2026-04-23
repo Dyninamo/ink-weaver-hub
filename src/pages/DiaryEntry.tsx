@@ -47,11 +47,9 @@ import {
   formatFliesOnCast,
   normaliseFliesOnCast,
   pollSessionWeather,
-  addEvent,
   type FishingSession,
   type SessionEvent,
   type CurrentSetup,
-  type FliesOnCast,
   type WeatherSnapshot,
 } from "@/services/diaryService";
 
