@@ -4,6 +4,7 @@ import {
   searchFlies,
   getVenueWaterTypeId,
   defaultCategoryForStyle,
+  composeFlyDisplayName,
   WATER_TYPE_LABELS,
   MONTH_LABELS,
   SINKING_LINES,
@@ -11,9 +12,15 @@ import {
   type Suitability,
 } from "@/services/flyService";
 
+export interface FlyPickerResult {
+  pattern: string;
+  size: number | null;
+}
+
 interface FlyPickerProps {
   value: string | null;
-  onChange: (value: string) => void;
+  /** Now receives composed pattern + chosen hook size. */
+  onChange: (result: FlyPickerResult) => void;
   currentStyle?: string | null;
   currentLine?: string | null;
   /** Optional explicit water_type_id (1-7). Falls back to venueName lookup. */
@@ -118,6 +125,41 @@ function SkeletonRows() {
   );
 }
 
+// ---------- Qualifier chip row ----------
+
+function ChipRow({
+  label,
+  options,
+  value,
+  onSelect,
+}: {
+  label: string;
+  options: string[];
+  value: string | null;
+  onSelect: (v: string) => void;
+}) {
+  return (
+    <>
+      <div className="fp-qual-label">{label}</div>
+      <div className="fp-chip-row">
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            className="fp-chip"
+            data-active={value === opt}
+            onClick={() => onSelect(opt)}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ---------- main component ----------
+
 export default function FlyPicker({
   value,
   onChange,
@@ -185,6 +227,17 @@ export default function FlyPicker({
     return () => clearTimeout(t);
   }, [searchInput]);
 
+  // Two-step state
+  const [step, setStep] = useState<1 | 2>(1);
+  const [selectedFly, setSelectedFly] = useState<FlyWithSuitability | null>(null);
+
+  // Qualifier state — reset when selectedFly changes
+  const [colour, setColour] = useState<string | null>(null);
+  const [accent, setAccent] = useState<string | null>(null);
+  const [weight, setWeight] = useState<string | null>(null);
+  const [hookStyle, setHookStyle] = useState<string | null>(null);
+  const [hookSize, setHookSize] = useState<number | null>(null);
+
   // Tree data (browse mode)
   const [tree, setTree] = useState<{
     main: FlyWithSuitability[];
@@ -192,11 +245,11 @@ export default function FlyPicker({
     occasional: FlyWithSuitability[];
     other: FlyWithSuitability[];
   } | null>(null);
-  // No-water-type fallback: all flies of a category as one list
   const [flatBrowse, setFlatBrowse] = useState<FlyWithSuitability[] | null>(null);
   const [loadingTree, setLoadingTree] = useState(false);
 
   useEffect(() => {
+    if (step !== 1) return;
     if (debouncedQuery) return;
     if (resolvingWater) return;
     let cancelled = false;
@@ -205,18 +258,8 @@ export default function FlyPicker({
     setFlatBrowse(null);
 
     if (waterTypeId == null) {
-      // Fetch all flies in category as a single unbanded list (suitability = 'never').
-      searchFlies({ query: "", waterTypeId: null, month }) // empty query returns []
-        .catch(() => [])
-        .then(() => {
-          // Use a quick category-only fetch via getFlyTree with arbitrary water type wouldn't work;
-          // do a direct search with no query is empty → use a tiny helper: reuse searchFlies-like
-          // approach by importing nothing extra. Instead, just call getFlyTree with a sentinel
-          // water type id (0) which will yield 0 monthly matches -> all flies fall into 'other'.
-          return import("@/services/flyService").then((m) =>
-            m.getFlyTree({ waterTypeId: 0, month, category })
-          );
-        })
+      import("@/services/flyService")
+        .then((m) => m.getFlyTree({ waterTypeId: 0, month, category }))
         .then((res) => {
           if (cancelled) return;
           const all = [...res.main, ...res.secondary, ...res.occasional, ...res.other].sort(
@@ -245,7 +288,7 @@ export default function FlyPicker({
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, waterTypeId, month, category, resolvingWater]);
+  }, [debouncedQuery, waterTypeId, month, category, resolvingWater, step]);
 
   // Search results
   const [searchResults, setSearchResults] = useState<
@@ -254,6 +297,7 @@ export default function FlyPicker({
   const [loadingSearch, setLoadingSearch] = useState(false);
 
   useEffect(() => {
+    if (step !== 1) return;
     if (!debouncedQuery) {
       setSearchResults([]);
       return;
@@ -271,7 +315,7 @@ export default function FlyPicker({
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, waterTypeId, month]);
+  }, [debouncedQuery, waterTypeId, month, step]);
 
   // Collapsible bands in browse mode
   const [showOccasional, setShowOccasional] = useState(false);
@@ -281,10 +325,184 @@ export default function FlyPicker({
   const monthLabel = MONTH_LABELS[month - 1];
   const waterLabel = waterTypeId ? WATER_TYPE_LABELS[waterTypeId] : null;
 
+  // ---------- Step 2 init ----------
+
+  // Compute the hook-size range (chips) and middle default.
+  const hookSizes: number[] = useMemo(() => {
+    if (!selectedFly) return [];
+    const min = selectedFly.hook_size_min;
+    const max = selectedFly.hook_size_max;
+    if (min == null && max == null) return [];
+    const lo = Math.min(min ?? max!, max ?? min!);
+    const hi = Math.max(min ?? max!, max ?? min!);
+    // Hook sizes — even integers in this range, descending feel doesn't matter; just enumerate.
+    const arr: number[] = [];
+    for (let s = lo; s <= hi; s += 2) arr.push(s);
+    if (arr.length === 0) arr.push(lo);
+    return arr;
+  }, [selectedFly]);
+
+  // Render-decision flags
+  const showColourRow = !!selectedFly && selectedFly.colours.length > 1;
+  const accentOptions = useMemo(() => {
+    if (!selectedFly || selectedFly.accents.length === 0) return [];
+    return ["none", ...selectedFly.accents];
+  }, [selectedFly]);
+  const showAccentRow = accentOptions.length > 0;
+  const showWeightRow = !!selectedFly && selectedFly.weights.length > 1;
+  const showHookStyleRow = !!selectedFly && selectedFly.hook_styles.length > 1;
+
+  // Initialise qualifier state when a new fly is picked.
+  useEffect(() => {
+    if (!selectedFly) return;
+    // Colour
+    if (selectedFly.colours.length === 0) setColour(null);
+    else setColour(selectedFly.colours[0]);
+    // Accent — default "none" when row will render, else null
+    if (selectedFly.accents.length === 0) setAccent(null);
+    else setAccent("none");
+    // Weight
+    if (selectedFly.weights.length === 0) setWeight(null);
+    else setWeight(selectedFly.weights[0]);
+    // Hook style: prefer barbless, else standard, else first
+    const styles = selectedFly.hook_styles;
+    if (styles.length === 0) setHookStyle(null);
+    else if (styles.includes("barbless")) setHookStyle("barbless");
+    else if (styles.includes("standard")) setHookStyle("standard");
+    else setHookStyle(styles[0]);
+    // Hook size — middle of min..max (rounded down on even step)
+    if (hookSizes.length > 0) {
+      const mid = hookSizes[Math.floor(hookSizes.length / 2)];
+      setHookSize(mid);
+    } else {
+      setHookSize(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFly]);
+
+  // Composed name (live)
+  const composed = useMemo(() => {
+    if (!selectedFly) return "";
+    return composeFlyDisplayName({
+      name: selectedFly.name,
+      colour: colour,
+      accent: accent,
+      weight: weight,
+    });
+  }, [selectedFly, colour, accent, weight]);
+
+  const ctaLabel = useMemo(() => {
+    if (!selectedFly) return "";
+    const sizePart = hookSize != null ? ` · #${hookSize}` : "";
+    return `Add ${composed}${sizePart}`;
+  }, [composed, hookSize, selectedFly]);
+
   const handlePick = (fly: FlyWithSuitability) => {
-    onChange(fly.name);
+    setSelectedFly(fly);
+    setStep(2);
   };
 
+  const handleBack = () => {
+    setStep(1);
+    setSelectedFly(null);
+    // search/category state preserved deliberately
+  };
+
+  const handleConfirm = () => {
+    if (!selectedFly) return;
+    onChange({ pattern: composed, size: hookSize });
+  };
+
+  // ============================================================
+  // STEP 2 render
+  // ============================================================
+  if (step === 2 && selectedFly) {
+    return (
+      <div className="fp-step2">
+        <div className="fp-step2-header">
+          <button
+            type="button"
+            className="fp-back"
+            aria-label="Back to fly list"
+            onClick={handleBack}
+          >
+            ‹
+          </button>
+          <div className="fp-step2-title">{selectedFly.name}</div>
+        </div>
+
+        {showColourRow && (
+          <ChipRow
+            label="Colour"
+            options={selectedFly.colours}
+            value={colour}
+            onSelect={setColour}
+          />
+        )}
+
+        {showAccentRow && (
+          <ChipRow
+            label="Accent"
+            options={accentOptions}
+            value={accent}
+            onSelect={setAccent}
+          />
+        )}
+
+        {showWeightRow && (
+          <ChipRow
+            label="Weight"
+            options={selectedFly.weights}
+            value={weight}
+            onSelect={setWeight}
+          />
+        )}
+
+        {showHookStyleRow && (
+          <ChipRow
+            label="Hook style"
+            options={selectedFly.hook_styles}
+            value={hookStyle}
+            onSelect={setHookStyle}
+          />
+        )}
+
+        {hookSizes.length > 0 && (
+          <>
+            <div className="fp-qual-label">Hook size</div>
+            <div className="fp-chip-row">
+              {hookSizes.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="fp-chip"
+                  data-active={hookSize === s}
+                  onClick={() => setHookSize(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div className="fp-composed">{composed}</div>
+
+        <button
+          type="button"
+          className="fp-cta"
+          onClick={handleConfirm}
+          disabled={!composed}
+        >
+          {ctaLabel}
+        </button>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // STEP 1 render
+  // ============================================================
   return (
     <div className="fp-root">
       {/* Tabs */}
