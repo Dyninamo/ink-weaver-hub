@@ -24,8 +24,10 @@ import NotableFishDialog from "@/components/social/NotableFishDialog";
 import VenueOutreachDialog from "@/components/diary/VenueOutreachDialog";
 import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
+import LostModal from "@/components/diary/LostModal";
 import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
 import ReadyView from "@/components/diary/ReadyView";
+import EndSessionView from "@/components/diary/EndSessionView";
 import {
   getSession,
   getSessionEvents,
@@ -66,6 +68,7 @@ export default function DiaryEntry() {
   // Modal state
   const [catchOpen, setCatchOpen] = useState(false);
   const [blankOpen, setBlankOpen] = useState(false);
+  const [lostOpen, setLostOpen] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   const [implicitChangePrompt, setImplicitChangePrompt] = useState<{
@@ -371,7 +374,7 @@ export default function DiaryEntry() {
             events={events}
             currentSetup={currentSetup}
             onCatch={() => setCatchOpen(true)}
-            onLost={() => setBlankOpen(true)}
+            onLost={() => setLostOpen(true)}
             onBlank={() => setBlankOpen(true)}
             onChange={() => setChangeOpen(true)}
             onEndSession={() => setEndOpen(true)}
