@@ -889,6 +889,75 @@ export default function DiaryEntry() {
         latestWeather={latestWeather}
       />
 
+      {/* Change · what picker */}
+      <ChangeWhatPicker
+        open={whatPickerOpen}
+        onClose={() => setWhatPickerOpen(false)}
+        onPick={(field: ChangeField) => {
+          setWhatPickerOpen(false);
+          if (field === "rod") {
+            setRodPickerOpen(true);
+          } else if (field === "line") {
+            // Line change → open Change modal, then cascade after save
+            setChangeOpen(true);
+          } else {
+            setChangeOpen(true);
+          }
+        }}
+      />
+
+      {/* Change · line cascade prompt (shown after a line change is saved) */}
+      <LineCascadePrompt
+        open={lineCascadeOpen}
+        onClose={() => setLineCascadeOpen(false)}
+        newLineName={currentSetup.line_type || "new line"}
+        currentLeader={currentSetup.rig}
+        currentFlies={
+          currentSetup.flies_on_cast
+            ? Object.values(currentSetup.flies_on_cast as Record<string, string>)
+                .filter(Boolean)
+                .join(" · ")
+            : null
+        }
+        onContinue={({ updateLeader, updateFlies }) => {
+          setLineCascadeOpen(false);
+          if (updateLeader || updateFlies) {
+            // Re-open change modal so user can update the cascading bits
+            setChangeOpen(true);
+          }
+        }}
+      />
+
+      {/* Rod picker bottom sheet */}
+      <RodPickerSheet
+        open={rodPickerOpen}
+        onClose={() => setRodPickerOpen(false)}
+        sessionId={id!}
+        events={events}
+        activeRodIndex={activeRodIndex}
+        onSwitchRod={async (rod: SessionRod) => {
+          setActiveRodIndex(rod.rod_index);
+          setRodPickerOpen(false);
+          // Restore that rod's setup into currentSetup
+          setCurrentSetup({
+            style: rod.style,
+            rig: null,
+            line_type: rod.line_name,
+            retrieve: null,
+            flies_on_cast: null,
+            spot: currentSetup.spot,
+            depth_zone: null,
+          } as CurrentSetup);
+          toast.success(`Switched to ${rod.name || `Rod ${rod.rod_index}`}`);
+        }}
+        onSetupNewRod={() => {
+          setRodPickerOpen(false);
+          // Re-uses Change modal to capture the new rod's full rig
+          setChangeOpen(true);
+          toast.info("Set up your new rod — it'll be added to the rod list");
+        }}
+      />
+
       {/* Implicit Change Prompt */}
       <Dialog
         open={implicitChangePrompt !== null}
