@@ -32,6 +32,8 @@ import RodPickerSheet, { type SessionRod } from "@/components/diary/RodPickerShe
 import ReadyView from "@/components/diary/ReadyView";
 import CoachBanner from "@/components/diary/CoachBanner";
 import EndSessionView from "@/components/diary/EndSessionView";
+import EndSessionConfirm from "@/components/diary/EndSessionConfirm";
+import EndSessionSyncing from "@/components/diary/EndSessionSyncing";
 import {
   getSession,
   getSessionEvents,
