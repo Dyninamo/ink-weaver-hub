@@ -30,6 +30,18 @@ import Leaderboard from "./pages/Leaderboard";
 import SessionShareView from "./pages/SessionShareView";
 import GroupJoinView from "./pages/GroupJoinView";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AppShell from "./layouts/AppShell";
+
+const Shelled = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <AppShell>{children}</AppShell>
+  </ProtectedRoute>
+);
+const ShelledNamed = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute requireDisplayName>
+    <AppShell>{children}</AppShell>
+  </ProtectedRoute>
+);
 
 const queryClient = new QueryClient();
 
@@ -47,95 +59,55 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route 
               path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><Dashboard /></Shelled>} 
             />
             <Route 
               path="/results" 
-              element={
-                <ProtectedRoute>
-                  <Results />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><Results /></Shelled>} 
             />
             <Route 
               path="/diary" 
-              element={
-                <ProtectedRoute>
-                  <Diary />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><Diary /></Shelled>} 
             />
             <Route 
               path="/diary/new" 
-              element={
-                <ProtectedRoute>
-                  <DiaryNew />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><DiaryNew /></Shelled>} 
             />
             <Route 
               path="/diary/:id" 
-              element={
-                <ProtectedRoute>
-                  <DiaryEntry />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><DiaryEntry /></Shelled>} 
             />
             <Route 
               path="/diary/settings/setups" 
-              element={
-                <ProtectedRoute>
-                  <DiarySetups />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><DiarySetups /></Shelled>} 
             />
             <Route 
               path="/settings" 
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><Settings /></Shelled>} 
             />
             <Route 
               path="/queries" 
-              element={
-                <ProtectedRoute>
-                  <Queries />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><Queries /></Shelled>} 
             />
             <Route 
               path="/map" 
-              element={
-                <ProtectedRoute>
-                  <MapPage />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><MapPage /></Shelled>} 
             />
             <Route 
               path="/venue/:venueId" 
-              element={
-                <ProtectedRoute>
-                  <VenueDetail />
-                </ProtectedRoute>
-              } 
+              element={<Shelled><VenueDetail /></Shelled>} 
             />
-            <Route path="/social" element={<ProtectedRoute requireDisplayName><SocialFeed /></ProtectedRoute>} />
-            <Route path="/leaderboard" element={<ProtectedRoute requireDisplayName><Leaderboard /></ProtectedRoute>} />
-            <Route path="/leaderboard/:scope" element={<ProtectedRoute requireDisplayName><Leaderboard /></ProtectedRoute>} />
+            <Route path="/social" element={<ShelledNamed><SocialFeed /></ShelledNamed>} />
+            <Route path="/leaderboard" element={<ShelledNamed><Leaderboard /></ShelledNamed>} />
+            <Route path="/leaderboard/:scope" element={<ShelledNamed><Leaderboard /></ShelledNamed>} />
             <Route path="/share/:token" element={<ShareView />} />
             <Route path="/social/session/:shareToken" element={<SessionShareView />} />
             <Route path="/social/join/:inviteCode" element={<GroupJoinView />} />
-            <Route path="/admin/upload" element={<ProtectedRoute><AdminUpload /></ProtectedRoute>} />
-            <Route path="/admin/db-status" element={<ProtectedRoute><AdminDbStatus /></ProtectedRoute>} />
-            <Route path="/admin/test-advice" element={<ProtectedRoute><AdminTestAdvice /></ProtectedRoute>} />
-            <Route path="/admin/recompute" element={<ProtectedRoute><AdminRecompute /></ProtectedRoute>} />
-            <Route path="/admin/venue-submissions" element={<ProtectedRoute><AdminVenueSubmissions /></ProtectedRoute>} />
+            <Route path="/admin/upload" element={<Shelled><AdminUpload /></Shelled>} />
+            <Route path="/admin/db-status" element={<Shelled><AdminDbStatus /></Shelled>} />
+            <Route path="/admin/test-advice" element={<Shelled><AdminTestAdvice /></Shelled>} />
+            <Route path="/admin/recompute" element={<Shelled><AdminRecompute /></Shelled>} />
+            <Route path="/admin/venue-submissions" element={<Shelled><AdminVenueSubmissions /></Shelled>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

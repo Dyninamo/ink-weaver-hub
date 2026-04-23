@@ -19,7 +19,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  ArrowLeft,
   Mail,
   ChevronRight,
   Download,
@@ -198,15 +197,10 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-full bg-background">
       <div className="max-w-[420px] mx-auto p-4 space-y-4 pb-12">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
-        </div>
+        {/* Page title (shell owns the chrome header) */}
+        <h1 className="text-xl font-semibold tracking-tight pt-1">Settings</h1>
 
         {/* Profile card */}
         <Card>
