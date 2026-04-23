@@ -14,9 +14,11 @@ const OnboardingGate = ({ children }: OnboardingGateProps) => {
   const { user, profile, isProfileLoading } = useAuth();
   const [completedThisSession, setCompletedThisSession] = useState(false);
 
-  // Wait for profile to load before deciding
+  // Wait for the FIRST profile load before deciding. Subsequent refreshes
+  // (e.g. after the wizard saves a step) must NOT unmount the wizard, or its
+  // local step state resets and the user gets stuck on step 1.
   if (!user) return <>{children}</>;
-  if (isProfileLoading || !profile) return null;
+  if (!profile) return null;
 
   // Only show wizard for brand-new users; 'started' and 'done' skip it.
   // (After the wizard, profile transitions to 'started' and the in-diary
