@@ -19,7 +19,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  ArrowLeft,
   Mail,
   ChevronRight,
   Download,
