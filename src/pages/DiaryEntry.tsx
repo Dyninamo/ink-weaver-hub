@@ -51,7 +51,7 @@ type ViewTab = "timeline" | "fish" | "stats";
 
 export default function DiaryEntry() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
   const [session, setSession] = useState<FishingSession | null>(null);
@@ -107,6 +107,8 @@ export default function DiaryEntry() {
   // Distinct from `isActive=false` for older completed sessions loaded directly.
   const [justEnded, setJustEnded] = useState(false);
   const [venueReturnEmail, setVenueReturnEmail] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Load session + events
   const loadData = useCallback(async () => {
@@ -326,14 +328,27 @@ export default function DiaryEntry() {
     }
   }
 
-  async function handleDeleteSession() {
-    if (!id || !confirm("Delete this session and all its events? This cannot be undone.")) return;
+  function handleDeleteSession() {
+    if (!id) return;
+    if (profile?.confirm_delete_enabled === false) {
+      void doDelete();
+    } else {
+      setDeleteConfirmOpen(true);
+    }
+  }
+
+  async function doDelete() {
+    if (!id) return;
+    setDeleting(true);
     try {
       await deleteSession(id);
       toast.success("Session deleted");
       navigate("/diary");
     } catch (err: any) {
       toast.error(err.message || "Failed to delete");
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmOpen(false);
     }
   }
 
@@ -529,6 +544,40 @@ export default function DiaryEntry() {
           </div>
         </div>
 
+        {/* Rig block — paper-100 band with current setup (completed sessions only) */}
+        {!isActive && (currentSetup.style || currentSetup.line_type || currentSetup.rig) && (
+          <div
+            className="rounded-md p-3 space-y-1.5 border-l-4"
+            style={{
+              background: "var(--paper-100, hsl(var(--muted) / 0.4))",
+              borderLeftColor: "var(--ink-300, hsl(var(--border)))",
+            }}
+          >
+            <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-muted-foreground">
+              Rod 1
+            </p>
+            <p className="text-sm font-medium font-diary leading-snug">
+              {[currentSetup.style, currentSetup.rig, currentSetup.line_type]
+                .filter(Boolean)
+                .join(" · ") || "Setup not recorded"}
+            </p>
+            {currentSetup.flies_on_cast && (
+              <p className="text-xs text-muted-foreground italic leading-relaxed">
+                {Object.values(currentSetup.flies_on_cast as Record<string, string>)
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+            {(currentSetup.retrieve || currentSetup.spot || currentSetup.depth_zone) && (
+              <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground/80 font-medium">
+                {[currentSetup.retrieve, currentSetup.spot, currentSetup.depth_zone]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Satisfaction (completed only) */}
         {!isActive && session.satisfaction_score && (
           <div className="flex items-center gap-2 justify-center">
@@ -689,7 +738,17 @@ export default function DiaryEntry() {
                       {event.rig_position && <p>Position: {event.rig_position}</p>}
                       {event.blank_reason && <p>Reason: {event.blank_reason}</p>}
                       {event.change_reason && <p>Reason: {event.change_reason}</p>}
-                      {event.notes && <p className="italic">"{event.notes}"</p>}
+                      {event.notes && (
+                        <div
+                          className="mt-2 px-3 py-2 rounded-sm border-l-2 italic text-[13px] leading-relaxed text-foreground/80"
+                          style={{
+                            background: "var(--paper-100, hsl(var(--muted) / 0.5))",
+                            borderLeftColor: "var(--ink-300, hsl(var(--border)))",
+                          }}
+                        >
+                          “{event.notes}”
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1177,6 +1236,61 @@ export default function DiaryEntry() {
           onSent={() => loadData()}
         />
       )}
+      {/* Delete-session confirm dialog (rust-accented) */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={(o) => !deleting && setDeleteConfirmOpen(o)}>
+        <DialogContent className="max-w-[380px]">
+          <DialogHeader>
+            <DialogTitle
+              className="font-diary"
+              style={{ color: "var(--rust-700, hsl(var(--destructive)))" }}
+            >
+              Delete this session?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              <span className="font-medium text-foreground">
+                {session?.venue_name} · {formatDate(session?.session_date ?? "")}
+              </span>
+              <br />
+              {stats.totalFish > 0 ? `${stats.totalFish} fish` : "No fish"}
+              {stats.totalBlanks > 0 ? ` · ${stats.totalBlanks} blank${stats.totalBlanks !== 1 ? "s" : ""}` : ""}
+              {events.length > 0 ? ` · ${events.length} event${events.length !== 1 ? "s" : ""}` : ""}
+            </p>
+            <p className="text-xs uppercase tracking-[0.14em] font-semibold text-muted-foreground">
+              Cannot be undone.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 min-h-[44px]"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 min-h-[44px]"
+                onClick={doDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+            <button
+              type="button"
+              className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground transition-colors block mx-auto pt-1"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                navigate("/settings");
+              }}
+            >
+              Turn off in Settings ›
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -336,6 +336,7 @@ export function calculateSessionStats(events: SessionEvent[]) {
   const catches = events.filter(e => e.event_type === 'catch');
   const blanks = events.filter(e => e.event_type === 'blank');
   const changes = events.filter(e => e.event_type === 'change');
+  const losts = events.filter(e => e.event_type === 'got_away');
 
   const totalFish = catches.length;
   const species = catches.reduce((acc, c) => {
@@ -360,6 +361,7 @@ export function calculateSessionStats(events: SessionEvent[]) {
     totalFish,
     totalBlanks: blanks.length,
     totalChanges: changes.length,
+    totalLost: losts.length,
     species,
     flies,
     styles,
