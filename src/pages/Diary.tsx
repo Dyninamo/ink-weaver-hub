@@ -29,6 +29,8 @@ const PAGE_SIZE = 10;
 interface SessionCard extends FishingSession {
   stats?: {
     totalFish: number;
+    totalLost: number;
+    totalBlanks: number;
     bestFly: string | null;
     bestStyle: string | null;
     totalChanges: number;
@@ -97,6 +99,8 @@ export default function Diary() {
               ...session,
               stats: {
                 totalFish: stats.totalFish,
+                totalLost: stats.totalLost,
+                totalBlanks: stats.totalBlanks,
                 bestFly: stats.bestFly,
                 bestStyle: stats.bestStyle,
                 totalChanges: stats.totalChanges,
