@@ -369,12 +369,22 @@ export function calculateSessionStats(events: SessionEvent[]) {
 // ============================================================
 
 export async function getRefFlies(options?: { waterType?: string; topCategory?: string }) {
-  let query = supabase.from('flies').select('pattern_name, top_category, sub_category, hook_size_min, hook_size_max, water_type');
-  if (options?.waterType) query = query.eq('water_type', options.waterType);
-  if (options?.topCategory) query = query.eq('top_category', options.topCategory);
-  const { data, error } = await query.order('pattern_name');
+  // v2 flies schema: name, category, sub_category, hook_size_min/max (int), colours (jsonb[])
+  // waterType is no longer a flies-table column; filtering by water type is now handled
+  // via the fly_water_types join table (out of scope for this picker — return all flies).
+  let query = supabase.from('flies').select('name, category, sub_category, hook_size_min, hook_size_max');
+  if (options?.topCategory) query = query.eq('category', options.topCategory);
+  const { data, error } = await query.order('name');
   if (error) throw error;
-  return data;
+  // Map to legacy-shaped objects so callers don't have to change yet.
+  return (data ?? []).map((f) => ({
+    pattern_name: f.name,
+    top_category: f.category,
+    sub_category: f.sub_category,
+    hook_size_min: f.hook_size_min != null ? String(f.hook_size_min) : null,
+    hook_size_max: f.hook_size_max != null ? String(f.hook_size_max) : null,
+    water_type: null as string | null,
+  }));
 }
 
 export async function getRefRigs(options?: { style?: string; waterType?: string }) {
