@@ -110,15 +110,18 @@ export default function DiaryEntry() {
       setSession(s);
       setEvents(e);
 
-      // Resolve venue_id from venues_new
+      // Resolve venue_id + return_email from venues_new
       if (s.venue_name) {
         const { data: venue } = await supabase
           .from('venues_new')
-          .select('venue_id')
+          .select('venue_id, return_email')
           .ilike('name', s.venue_name)
           .limit(1)
           .maybeSingle();
-        if (venue) setVenueId(venue.venue_id);
+        if (venue) {
+          setVenueId(venue.venue_id);
+          setVenueReturnEmail((venue as any).return_email ?? null);
+        }
       }
 
       // Derive current setup from most recent change/catch event
