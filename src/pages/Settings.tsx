@@ -377,7 +377,7 @@ export default function Settings() {
             <AlertDialogTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full text-amber-700 dark:text-amber-500 border-amber-300/60 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                className="w-full text-destructive border-destructive/40 hover:bg-destructive/5"
               >
                 <LogOut className="h-4 w-4 mr-2" /> Sign out
               </Button>
