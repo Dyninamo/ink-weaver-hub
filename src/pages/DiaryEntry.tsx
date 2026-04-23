@@ -351,16 +351,34 @@ export default function DiaryEntry() {
   async function doDelete() {
     if (!id) return;
     setDeleting(true);
-    try {
-      await deleteSession(id);
-      toast.success("Session deleted");
-      navigate("/diary");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete");
-    } finally {
-      setDeleting(false);
-      setDeleteConfirmOpen(false);
-    }
+    // Soft-undo: snapshot the session id, navigate immediately, defer the
+    // actual DELETE by 8s. Tapping Undo cancels the timer and returns the
+    // user to the timeline (the row is still in the DB, never went away).
+    const sessionId = id;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      if (cancelled) return;
+      try {
+        await deleteSession(sessionId);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to delete");
+      }
+    }, 8000);
+    setDeleting(false);
+    setDeleteConfirmOpen(false);
+    navigate("/diary");
+    toast("Session deleted.", {
+      duration: 8000,
+      action: {
+        label: "UNDO",
+        onClick: () => {
+          cancelled = true;
+          window.clearTimeout(timer);
+          toast.success("Restored.");
+          navigate(`/diary/${sessionId}`);
+        },
+      },
+    });
   }
 
   // --- Helpers ---
