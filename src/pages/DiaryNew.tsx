@@ -5,14 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Play, Bookmark, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import SetupWizard, { type WizardResult } from "@/components/diary/SetupWizard";
 import {
   createSession,
   addEvent,
-  type RodSetup,
 } from "@/services/diaryService";
 
 type Phase = "header" | "setup";
