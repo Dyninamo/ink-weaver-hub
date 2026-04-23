@@ -15,8 +15,11 @@ interface OnboardingWizardProps {
 
 type Step = 1 | 2 | 3 | 4;
 
-const SPECIES_OPTIONS = ["Rainbow trout", "Brown trout", "Grayling", "Sea trout", "Salmon"];
-const ROD_WEIGHTS = [3, 4, 5, 6, 7, 8];
+// Per-water-type species (per spec B2)
+const STILLWATER_SPECIES = ["Rainbow trout", "Brown trout", "Brook trout"];
+const RIVER_SPECIES = ["Brown trout", "Grayling", "Sea trout", "Rainbow trout"];
+const STILLWATER_RODS = [6, 7, 8, 9, 10];
+const RIVER_RODS = [3, 4, 5, 6, 7];
 const LINE_OPTIONS = ["Floating", "Midge tip", "Slow intermediate", "Fast intermediate", "Sinking"];
 
 interface VenueResult {
@@ -35,7 +38,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
   // B2 — defaults
   const [stillSpecies, setStillSpecies] = useState("Rainbow trout");
-  const [stillRod, setStillRod] = useState(7);
+  const [stillRod, setStillRod] = useState(8);
   const [stillLine, setStillLine] = useState("Floating");
   const [riverSpecies, setRiverSpecies] = useState("Brown trout");
   const [riverRod, setRiverRod] = useState(5);
@@ -100,7 +103,9 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     } else if (step === 3) {
       updates.home_venue_id = selectedVenue?.venue_id ?? null;
     } else if (step === 4) {
-      updates.coach_stage = "done";
+      // B4 -> coach_stage = 'started'; CoachBanner on Ready view will then
+      // appear and write 'done' on dismiss.
+      updates.coach_stage = "started";
     }
 
     const { error } = await supabase
@@ -142,18 +147,20 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             <h1 className="text-lg font-semibold tracking-tight">It's Catching!</h1>
           </div>
 
-          {/* Progress dots */}
-          <div className="flex items-center justify-center gap-1.5">
-            {[1, 2, 3, 4].map((s) => (
-              <div
-                key={s}
-                className={cn(
-                  "h-1.5 rounded-full transition-all",
-                  s === step ? "w-8 bg-primary" : s < step ? "w-4 bg-primary/40" : "w-4 bg-muted"
-                )}
-              />
-            ))}
-          </div>
+          {/* Progress dots — three real steps (B1-B3); B4 is a welcome card */}
+          {step < 4 && (
+            <div className="flex items-center justify-center gap-1.5">
+              {[1, 2, 3].map((s) => (
+                <div
+                  key={s}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all",
+                    s === step ? "w-8 bg-primary" : s < step ? "w-4 bg-primary/40" : "w-4 bg-muted"
+                  )}
+                />
+              ))}
+            </div>
+          )}
 
           <h2 className="text-xl font-semibold text-center pt-1">{stepTitle}</h2>
         </CardHeader>
@@ -182,8 +189,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                   Stillwater
                 </div>
-                <SelectChips label="Species" value={stillSpecies} options={SPECIES_OPTIONS} onSelect={setStillSpecies} />
-                <SelectChips label="Rod weight" value={String(stillRod)} options={ROD_WEIGHTS.map(String)} onSelect={(v) => setStillRod(Number(v))} suffix="#" />
+                <SelectChips label="Species" value={stillSpecies} options={STILLWATER_SPECIES} onSelect={setStillSpecies} />
+                <SelectChips label="Rod weight" value={String(stillRod)} options={STILLWATER_RODS.map(String)} onSelect={(v) => setStillRod(Number(v))} suffix="#" />
                 <SelectChips label="Usual line" value={stillLine} options={LINE_OPTIONS} onSelect={setStillLine} />
               </div>
 
@@ -192,8 +199,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                   River
                 </div>
-                <SelectChips label="Species" value={riverSpecies} options={SPECIES_OPTIONS} onSelect={setRiverSpecies} />
-                <SelectChips label="Rod weight" value={String(riverRod)} options={ROD_WEIGHTS.map(String)} onSelect={(v) => setRiverRod(Number(v))} suffix="#" />
+                <SelectChips label="Species" value={riverSpecies} options={RIVER_SPECIES} onSelect={setRiverSpecies} />
+                <SelectChips label="Rod weight" value={String(riverRod)} options={RIVER_RODS.map(String)} onSelect={(v) => setRiverRod(Number(v))} suffix="#" />
                 <SelectChips label="Usual line" value={riverLine} options={LINE_OPTIONS} onSelect={setRiverLine} />
               </div>
 
