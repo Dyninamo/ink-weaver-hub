@@ -51,7 +51,7 @@ type ViewTab = "timeline" | "fish" | "stats";
 
 export default function DiaryEntry() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
   const [session, setSession] = useState<FishingSession | null>(null);
@@ -107,6 +107,8 @@ export default function DiaryEntry() {
   // Distinct from `isActive=false` for older completed sessions loaded directly.
   const [justEnded, setJustEnded] = useState(false);
   const [venueReturnEmail, setVenueReturnEmail] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Load session + events
   const loadData = useCallback(async () => {
@@ -326,14 +328,27 @@ export default function DiaryEntry() {
     }
   }
 
-  async function handleDeleteSession() {
-    if (!id || !confirm("Delete this session and all its events? This cannot be undone.")) return;
+  function handleDeleteSession() {
+    if (!id) return;
+    if (profile?.confirm_delete_enabled === false) {
+      void doDelete();
+    } else {
+      setDeleteConfirmOpen(true);
+    }
+  }
+
+  async function doDelete() {
+    if (!id) return;
+    setDeleting(true);
     try {
       await deleteSession(id);
       toast.success("Session deleted");
       navigate("/diary");
     } catch (err: any) {
       toast.error(err.message || "Failed to delete");
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmOpen(false);
     }
   }
 
