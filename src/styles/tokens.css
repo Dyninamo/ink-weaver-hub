@@ -1,0 +1,128 @@
+/*
+  DO NOT EDIT — generated from tokens.json.
+  It's Catching! — Vintage Angling Almanack — Design Tokens.
+  Single source of truth for colour, type, spacing, radius, shadow,
+  motion, and z-index across the PWA and RN app.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Colour */
+  --paper-50: #FCFCF9;
+  --paper-100: #F4F4EE;
+  --paper-200: #E2E2D6;
+  --paper-300: #C8C8BA;
+  --ink-300: #97A088;
+  --ink-500: #6B7B5C;
+  --ink-700: #4A6741;
+  --ink-900: #2E3B25;
+  --rose-500: #D26478;
+  --rose-700: #B04556;
+  --gild-500: #B8864A;
+  --gild-700: #8E642E;
+  --event-catch: #7A9869;
+  --event-catch-dark: #5E7A4E;
+  --event-lost: #B15A2E;
+  --event-blank: #5A6170;
+
+  /* Type */
+  --font-family: 'Manrope', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-base: 15px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 26px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 34px;
+  --font-size-5xl: 38px;
+  --font-size-score: 96px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-heavy: 800;
+  --tracking-tight: -0.025em;
+  --tracking-snug: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.10em;
+  --tracking-wider: 0.12em;
+  --tracking-widest: 0.14em;
+  --tracking-caps: 0.16em;
+  --leading-tight: 1.08;
+  --leading-snug: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.55;
+
+  /* Spacing (4 px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-18: 72px;
+  --space-24: 96px;
+
+  /* Radius + border */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-full: 9999px;
+  --border-width: 1px;
+
+  /* Motion */
+  --motion-instant: 120ms;
+  --motion-fast: 140ms;
+  --motion-normal: 160ms;
+  --motion-input: 180ms;
+  --motion-enter: 400ms;
+  --motion-enter-slow: 480ms;
+  --motion-enter-lazy: 560ms;
+  --motion-pulse: 2000ms;
+  --ease-standard: ease;
+  --ease-out: ease-out;
+  --ease-in-out: ease-in-out;
+
+  /* Z-index */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-overlay: 20;
+  --z-modal: 30;
+  --z-tooltip: 40;
+
+  /* Shadows (themed) */
+  --shadow-ink: 0 1px 0 rgba(46, 59, 37, 0.06), 0 4px 12px -6px rgba(46, 59, 37, 0.18);
+  --shadow-pressed: 0 1px 0 rgba(46, 59, 37, 0.04) inset;
+  --shadow-float: 0 8px 24px -8px rgba(46, 59, 37, 0.4);
+}
+
+/* DUSK — low-light theme. Enable via data-theme="dusk". */
+[data-theme="dusk"] {
+  --paper-50: #1A2015;
+  --paper-100: #232B1D;
+  --paper-200: #2E3B25;
+  --paper-300: #3A4A30;
+  --ink-300: #7A8070;
+  --ink-500: #A8A89A;
+  --ink-700: #E2E2D6;
+  --ink-900: #FCFCF9;
+  --rose-500: #C8657A;
+  --rose-700: #A04556;
+  --gild-500: #C99966;
+  --gild-700: #B18452;
+  --event-catch: #8FA878;
+  --event-catch-dark: #6E8C5A;
+  --event-lost: #C9704A;
+  --event-blank: #7A8094;
+  --shadow-ink: 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 12px -6px rgba(0, 0, 0, 0.55);
+  --shadow-pressed: 0 1px 0 rgba(0, 0, 0, 0.35) inset;
+  --shadow-float: 0 8px 24px -8px rgba(0, 0, 0, 0.8);
+}
