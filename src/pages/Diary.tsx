@@ -288,7 +288,23 @@ export default function Diary() {
           </div>
         ) : (
           <div className="space-y-3">
-            {sessions.map((session) => {
+            {sessions
+              .filter((s) => {
+                if (!search) return true;
+                const hay = [
+                  s.venue_name,
+                  s.spot_name,
+                  s.notes,
+                  s.plan,
+                  s.area,
+                  s.beat,
+                ]
+                  .filter(Boolean)
+                  .join(" ")
+                  .toLowerCase();
+                return hay.includes(search);
+              })
+              .map((session) => {
               const d = new Date(session.session_date + "T00:00:00");
               const dd = d.getDate().toString().padStart(2, "0");
               const mmm = d.toLocaleString("en-GB", { month: "short" }).toUpperCase();
