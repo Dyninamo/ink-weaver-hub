@@ -12,6 +12,16 @@ interface UserProfile {
   mobile_verified: boolean;
   two_factor_enabled: boolean;
   created_at: string;
+  coach_stage?: string | null;
+  home_venue_id?: string | null;
+  stillwater_default_species?: string | null;
+  stillwater_default_rod_weight?: number | null;
+  stillwater_default_line?: string | null;
+  river_default_species?: string | null;
+  river_default_rod_weight?: number | null;
+  river_default_line?: string | null;
+  confirm_delete_enabled?: boolean;
+  coach_banner_dismissed?: boolean;
 }
 
 interface AuthContextType {

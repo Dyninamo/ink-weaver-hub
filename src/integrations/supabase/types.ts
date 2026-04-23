@@ -4365,6 +4365,9 @@ export type Database = {
           angler_id: string | null
           avatar_url: string | null
           bio: string | null
+          coach_banner_dismissed: boolean
+          coach_stage: string
+          confirm_delete_enabled: boolean
           created_at: string | null
           default_keep_limit: number | null
           default_leader_id: number | null
@@ -4376,6 +4379,7 @@ export type Database = {
           default_size_units: string | null
           default_tippet_strength_unit: string | null
           display_name: string
+          home_venue_id: string | null
           id: string
           location: string | null
           mobile_number: string | null
@@ -4386,6 +4390,12 @@ export type Database = {
           notify_platform_record: boolean
           notify_venue_card: boolean
           profile_id: string
+          river_default_line: string | null
+          river_default_rod_weight: number | null
+          river_default_species: string | null
+          stillwater_default_line: string | null
+          stillwater_default_rod_weight: number | null
+          stillwater_default_species: string | null
           two_factor_enabled: boolean | null
           updated_at: string
         }
@@ -4393,6 +4403,9 @@ export type Database = {
           angler_id?: string | null
           avatar_url?: string | null
           bio?: string | null
+          coach_banner_dismissed?: boolean
+          coach_stage?: string
+          confirm_delete_enabled?: boolean
           created_at?: string | null
           default_keep_limit?: number | null
           default_leader_id?: number | null
@@ -4404,6 +4417,7 @@ export type Database = {
           default_size_units?: string | null
           default_tippet_strength_unit?: string | null
           display_name?: string
+          home_venue_id?: string | null
           id: string
           location?: string | null
           mobile_number?: string | null
@@ -4414,6 +4428,12 @@ export type Database = {
           notify_platform_record?: boolean
           notify_venue_card?: boolean
           profile_id?: string
+          river_default_line?: string | null
+          river_default_rod_weight?: number | null
+          river_default_species?: string | null
+          stillwater_default_line?: string | null
+          stillwater_default_rod_weight?: number | null
+          stillwater_default_species?: string | null
           two_factor_enabled?: boolean | null
           updated_at?: string
         }
@@ -4421,6 +4441,9 @@ export type Database = {
           angler_id?: string | null
           avatar_url?: string | null
           bio?: string | null
+          coach_banner_dismissed?: boolean
+          coach_stage?: string
+          confirm_delete_enabled?: boolean
           created_at?: string | null
           default_keep_limit?: number | null
           default_leader_id?: number | null
@@ -4432,6 +4455,7 @@ export type Database = {
           default_size_units?: string | null
           default_tippet_strength_unit?: string | null
           display_name?: string
+          home_venue_id?: string | null
           id?: string
           location?: string | null
           mobile_number?: string | null
@@ -4442,6 +4466,12 @@ export type Database = {
           notify_platform_record?: boolean
           notify_venue_card?: boolean
           profile_id?: string
+          river_default_line?: string | null
+          river_default_rod_weight?: number | null
+          river_default_species?: string | null
+          stillwater_default_line?: string | null
+          stillwater_default_rod_weight?: number | null
+          stillwater_default_species?: string | null
           two_factor_enabled?: boolean | null
           updated_at?: string
         }
@@ -4452,6 +4482,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "angler_profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_home_venue_id_fkey"
+            columns: ["home_venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
           },
         ]
       }

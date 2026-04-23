@@ -30,6 +30,7 @@ import ChangeWhatPicker, { type ChangeField } from "@/components/diary/ChangeWha
 import LineCascadePrompt from "@/components/diary/LineCascadePrompt";
 import RodPickerSheet, { type SessionRod } from "@/components/diary/RodPickerSheet";
 import ReadyView from "@/components/diary/ReadyView";
+import CoachBanner from "@/components/diary/CoachBanner";
 import EndSessionView from "@/components/diary/EndSessionView";
 import {
   getSession,
@@ -399,6 +400,7 @@ export default function DiaryEntry() {
         />
       ) : isActive ? (
         <div className="max-w-[440px] mx-auto">
+          <CoachBanner />
           <ReadyView
             session={session}
             events={events}

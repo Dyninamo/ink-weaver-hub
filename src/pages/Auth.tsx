@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { FishSymbol } from "lucide-react";
+import PasswordField, { PasswordStrengthMeter, scorePassword } from "@/components/auth/PasswordField";
 
 type AuthMode = "sign_in" | "sign_up" | "forgot";
 
@@ -55,6 +56,11 @@ export default function Auth() {
     }
 
     if (mode === "sign_up") {
+      if (scorePassword(password) < 2) {
+        setBusy(false);
+        toast.error("Please choose a stronger password.");
+        return;
+      }
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -153,16 +159,14 @@ export default function Auth() {
             {mode !== "forgot" && (
               <div className="space-y-1">
                 <Label htmlFor="password">Password</Label>
-                <Input
+                <PasswordField
                   id="password"
-                  type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
+                  onChange={setPassword}
+                  placeholder={mode === "sign_up" ? "Min 8 characters" : "Your password"}
                   autoComplete={mode === "sign_up" ? "new-password" : "current-password"}
-                  placeholder="Min 8 characters"
                 />
+                {mode === "sign_up" && <PasswordStrengthMeter password={password} />}
               </div>
             )}
 
