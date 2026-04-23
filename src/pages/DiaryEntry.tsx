@@ -859,7 +859,7 @@ export default function DiaryEntry() {
         onSaved={handleBlankSaved}
         onChangeFirst={() => {
           setBlankOpen(false);
-          setChangeOpen(true);
+          setWhatPickerOpen(true);
         }}
         latestWeather={latestWeather}
       />
