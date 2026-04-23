@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import {
   Plus, Fish, Clock, Star, ArrowRight, Play,
-  Calendar, ChevronLeft, ChevronRight, Settings2,
+  Calendar, ChevronLeft, ChevronRight, Settings2, Mail, CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -44,6 +44,7 @@ export default function Diary() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [venueFilter, setVenueFilter] = useState<string>("all");
+  const [returnFilter, setReturnFilter] = useState<'all' | 'pending' | 'sent'>('all');
   const [venues, setVenues] = useState<string[]>([]);
   const [activeSession, setActiveSession] = useState<FishingSession | null>(null);
 
@@ -80,6 +81,7 @@ export default function Diary() {
     try {
       const { sessions: data, count } = await listSessions(user.id, {
         venue: venueFilter === "all" ? undefined : venueFilter,
+        returnStatus: returnFilter,
         limit: PAGE_SIZE,
         offset: page * PAGE_SIZE,
       });
@@ -112,7 +114,7 @@ export default function Diary() {
     } finally {
       setLoading(false);
     }
-  }, [user, venueFilter, page]);
+  }, [user, venueFilter, returnFilter, page]);
 
   useEffect(() => {
     loadSessions();
