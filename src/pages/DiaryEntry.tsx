@@ -544,6 +544,40 @@ export default function DiaryEntry() {
           </div>
         </div>
 
+        {/* Rig block — paper-100 band with current setup (completed sessions only) */}
+        {!isActive && (currentSetup.style || currentSetup.line_type || currentSetup.rig) && (
+          <div
+            className="rounded-md p-3 space-y-1.5 border-l-4"
+            style={{
+              background: "var(--paper-100, hsl(var(--muted) / 0.4))",
+              borderLeftColor: "var(--ink-300, hsl(var(--border)))",
+            }}
+          >
+            <p className="text-[10px] uppercase tracking-[0.16em] font-bold text-muted-foreground">
+              Rod 1
+            </p>
+            <p className="text-sm font-medium font-diary leading-snug">
+              {[currentSetup.style, currentSetup.rig, currentSetup.line_type]
+                .filter(Boolean)
+                .join(" · ") || "Setup not recorded"}
+            </p>
+            {currentSetup.flies_on_cast && (
+              <p className="text-xs text-muted-foreground italic leading-relaxed">
+                {Object.values(currentSetup.flies_on_cast as Record<string, string>)
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+            {(currentSetup.retrieve || currentSetup.spot || currentSetup.depth_zone) && (
+              <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground/80 font-medium">
+                {[currentSetup.retrieve, currentSetup.spot, currentSetup.depth_zone]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Satisfaction (completed only) */}
         {!isActive && session.satisfaction_score && (
           <div className="flex items-center gap-2 justify-center">
