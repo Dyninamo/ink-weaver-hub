@@ -477,7 +477,7 @@ export default function CatchModal({
             >
               {saving
                 ? "Saving..."
-                : `Save · ${species}${(parseInt(weightLb)||0) + (parseInt(weightOz)||0) > 0 ? ` ${formatWeight(parseInt(weightLb)||0, parseInt(weightOz)||0)}` : ""}`}
+                : `Save · ${species}${parseFloat(weightLb) > 0 ? ` ${weightLb} lb` : lengthInches ? ` ${lengthInches}"` : ""}`}
             </button>
           )}
         </div>
