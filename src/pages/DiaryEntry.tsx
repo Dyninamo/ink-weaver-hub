@@ -25,6 +25,7 @@ import VenueOutreachDialog from "@/components/diary/VenueOutreachDialog";
 import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
 import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
+import ReadyView from "@/components/diary/ReadyView";
 import {
   getSession,
   getSessionEvents,
