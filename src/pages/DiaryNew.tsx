@@ -60,13 +60,10 @@ export default function DiaryNew() {
   const [weatherConditions, setWeatherConditions] = useState<string>("");
 
   // --- Wizard result (set when user finishes the 9-step wizard) ---
-  const [wizardResult, setWizardResult] = useState<WizardResult | null>(null);
+  const [, setWizardResult] = useState<WizardResult | null>(null);
 
-  // --- Saved setups ---
-  const [savedSetups, setSavedSetups] = useState<RodSetup[]>([]);
-
-    // Available venues from reports_enriched
-    const [venues, setVenues] = useState<string[]>([]);
+  // Available venues from reports_enriched
+  const [venues, setVenues] = useState<string[]>([]);
 
   useEffect(() => {
     async function loadVenues() {
@@ -81,19 +78,6 @@ export default function DiaryNew() {
     }
     loadVenues();
   }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    async function loadSetups() {
-      const { data } = await supabase
-        .from("user_rod_setups")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("usage_count", { ascending: false });
-      if (data) setSavedSetups(data as RodSetup[]);
-    }
-    loadSetups();
-  }, [user]);
 
   // Update venue type when venue changes
   useEffect(() => {
