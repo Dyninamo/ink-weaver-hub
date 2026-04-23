@@ -303,6 +303,14 @@ export default function Diary() {
                           Best: {session.stats.bestFly}
                         </p>
                       )}
+
+                      {/* Return status chip */}
+                      {session.reported_at ? (
+                        <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-diary-catch/10 text-diary-catch border border-diary-catch/20">
+                          <CheckCircle2 className="h-2.5 w-2.5" />
+                          Return sent
+                        </span>
+                      ) : null}
                     </div>
 
                     <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
