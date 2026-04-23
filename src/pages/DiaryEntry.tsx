@@ -22,6 +22,7 @@ import CatchModal from "@/components/diary/CatchModal";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
 import NotableFishDialog from "@/components/social/NotableFishDialog";
 import VenueOutreachDialog from "@/components/diary/VenueOutreachDialog";
+import VenueReturnDialog from "@/components/diary/VenueReturnDialog";
 import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
 import LostModal from "@/components/diary/LostModal";
