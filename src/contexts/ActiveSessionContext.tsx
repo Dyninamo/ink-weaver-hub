@@ -1,13 +1,18 @@
-import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Returns whether the current user has an active fishing session.
- * Re-checks on auth-state changes. Pages that toggle is_active can call
- * the returned `refresh` callback to force a re-check.
- */
-export function useActiveSession(): { active: boolean; refresh: () => void } {
+interface ActiveSessionContextValue {
+  active: boolean;
+  refresh: () => void;
+}
+
+const ActiveSessionContext = createContext<ActiveSessionContextValue>({
+  active: false,
+  refresh: () => { /* noop when outside provider */ },
+});
+
+export function ActiveSessionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [active, setActive] = useState(false);
 
@@ -45,5 +50,13 @@ export function useActiveSession(): { active: boolean; refresh: () => void } {
     };
   }, [user, check]);
 
-  return { active, refresh: () => void check() };
+  return (
+    <ActiveSessionContext.Provider value={{ active, refresh: () => void check() }}>
+      {children}
+    </ActiveSessionContext.Provider>
+  );
+}
+
+export function useActiveSession() {
+  return useContext(ActiveSessionContext);
 }

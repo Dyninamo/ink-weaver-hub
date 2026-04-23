@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ const WIND_DIRECTIONS = [
 
 export default function DiaryNew() {
   const { user } = useAuth();
+  const { refresh: refreshActiveSession } = useActiveSession();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("header");
   const [saving, setSaving] = useState(false);
@@ -184,6 +186,7 @@ export default function DiaryNew() {
       }
 
       toast.success("Session started!");
+      refreshActiveSession();
       navigate(`/diary/${session.id}`);
     } catch (err: any) {
       console.error("Failed to start session:", err);

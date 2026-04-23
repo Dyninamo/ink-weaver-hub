@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useActiveSession } from "@/hooks/useActiveSession";
+import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { Icon, type IconName } from "@/components/Icon";
 
 interface AppShellProps {

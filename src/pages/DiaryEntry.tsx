@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ type ViewTab = "timeline" | "fish" | "stats";
 export default function DiaryEntry() {
   const { id } = useParams<{ id: string }>();
   const { user, profile } = useAuth();
+  const { refresh: refreshActiveSession } = useActiveSession();
   const navigate = useNavigate();
 
   const [session, setSession] = useState<FishingSession | null>(null);
@@ -274,14 +276,17 @@ export default function DiaryEntry() {
   }
 
   // Fired from EndSessionConfirm "End session" button.
-  // Kicks off the DB write (fire-and-forget) and advances to the syncing screen.
-  function handleConfirmEnd() {
+  // Awaits the DB write so the SESSION badge is accurate, then advances.
+  async function handleConfirmEnd() {
     if (!id) return;
-    void endSession(id, {}).catch((err) => {
+    setEndPhase("syncing");
+    try {
+      await endSession(id, {});
+    } catch (err: any) {
       console.error("endSession failed:", err);
       toast.error(err?.message || "Failed to end session");
-    });
-    setEndPhase("syncing");
+    }
+    refreshActiveSession();
   }
 
   // Fired from EndSessionSyncing onComplete. Reloads session, runs the
