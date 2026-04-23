@@ -395,6 +395,33 @@ export default function DiaryEntry() {
     );
   }
 
+  // 3-phase end-session flow takes over the page (shell tab bar stays visible).
+  if (endPhase === "confirm") {
+    return (
+      <EndSessionConfirm
+        session={session}
+        events={events}
+        activeRod={{
+          rodWeight: (session as any).rod_weight ?? null,
+          rodLengthFt: (session as any).rod_length_ft ?? null,
+          line: (session as any).line_profile ?? null,
+        }}
+        onCancel={() => setEndPhase(null)}
+        onConfirm={handleConfirmEnd}
+      />
+    );
+  }
+  if (endPhase === "syncing") {
+    return (
+      <EndSessionSyncing
+        isOnline={isOnline}
+        onComplete={() => {
+          void handleSyncingComplete();
+        }}
+      />
+    );
+  }
+
   const bgClass = isActive ? "bg-[#0F1A24] text-[#E8EFF5]" : "bg-background";
   const mutedClass = isActive ? "text-[#8BA3BB]" : "text-muted-foreground";
 
@@ -434,7 +461,7 @@ export default function DiaryEntry() {
             onLost={() => setLostOpen(true)}
             onBlank={() => setBlankOpen(true)}
             onChange={() => setWhatPickerOpen(true)}
-            onEndSession={() => setEndOpen(true)}
+            onEndSession={() => setEndPhase("confirm")}
           />
         </div>
       ) : (
@@ -869,7 +896,7 @@ export default function DiaryEntry() {
           <Button
             variant="outline"
             className="w-full min-h-[44px] border-red-500/30 text-red-400 hover:bg-red-500/10"
-            onClick={() => setEndOpen(true)}
+            onClick={() => setEndPhase("confirm")}
           >
             <StopCircle className="h-4 w-4 mr-2" /> End Session
           </Button>
@@ -1067,86 +1094,8 @@ export default function DiaryEntry() {
         </DialogContent>
       </Dialog>
 
-      {/* End Session Dialog */}
-      <Dialog open={endOpen} onOpenChange={setEndOpen}>
-        <DialogContent className="max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="font-diary">End Session</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Satisfaction */}
-            <div>
-              <Label>How was it?</Label>
-              <div className="flex gap-2 mt-2 justify-center">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSatisfaction(satisfaction === s ? null : s)}
-                    className="p-1"
-                  >
-                    <Star
-                      className={cn(
-                        "h-8 w-8 transition-colors",
-                        satisfaction && s <= satisfaction
-                          ? "text-yellow-500 fill-yellow-500"
-                          : "text-muted"
-                      )}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Would return */}
-            <div>
-              <Label>Would you fish here again soon?</Label>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  variant={wouldReturn === true ? "default" : "outline"}
-                  className="flex-1 min-h-[44px]"
-                  onClick={() => setWouldReturn(wouldReturn === true ? null : true)}
-                >
-                  Yes
-                </Button>
-                <Button
-                  variant={wouldReturn === false ? "default" : "outline"}
-                  className="flex-1 min-h-[44px]"
-                  onClick={() => setWouldReturn(wouldReturn === false ? null : false)}
-                >
-                  No
-                </Button>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <Label>Session Notes</Label>
-              <Textarea
-                placeholder="Reflections, conditions changes, anything noteworthy..."
-                value={sessionNotes}
-                onChange={(e) => setSessionNotes(e.target.value)}
-                rows={3}
-                className="mt-1.5"
-              />
-            </div>
-
-            {/* Summary */}
-            <div className="bg-muted/50 rounded-md p-3 text-sm space-y-1">
-              <p>🐟 {stats.totalFish} fish caught</p>
-              {stats.bestFly && <p>Best fly: {stats.bestFly}</p>}
-              {stats.bestStyle && <p>Best method: {stats.bestStyle}</p>}
-            </div>
-
-            <Button
-              className="w-full min-h-[48px]"
-              onClick={handleEndSession}
-              disabled={ending}
-            >
-              {ending ? "Saving..." : "Finish & Save"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* End Session flow now handled by 3-phase EndSessionConfirm + EndSessionSyncing
+          early returns above; the legacy inline form Dialog has been removed. */}
 
       {/* Share Session Dialog */}
       {profileId && session && (
