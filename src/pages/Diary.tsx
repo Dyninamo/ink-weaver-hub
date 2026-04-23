@@ -319,17 +319,23 @@ export default function Diary() {
                           <h3 className="font-semibold text-sm truncate">{session.venue_name}</h3>
                           {session.satisfaction_score && (
                             <div className="flex items-center gap-0.5 shrink-0">
-                              {Array.from({ length: 5 }, (_, i) => (
-                                <Star
-                                  key={i}
-                                  className={cn(
-                                    "h-3 w-3",
-                                    i < session.satisfaction_score!
-                                      ? "text-amber-500 fill-amber-500"
-                                      : "text-muted"
-                                  )}
-                                />
-                              ))}
+                              {Array.from({ length: 5 }, (_, i) => {
+                                const filled = i < session.satisfaction_score!;
+                                return (
+                                  <Star
+                                    key={i}
+                                    className="h-3 w-3"
+                                    style={{
+                                      color: filled
+                                        ? "var(--gild-500, hsl(var(--accent)))"
+                                        : "hsl(var(--muted))",
+                                      fill: filled
+                                        ? "var(--gild-500, hsl(var(--accent)))"
+                                        : "transparent",
+                                    }}
+                                  />
+                                );
+                              })}
                             </div>
                           )}
                         </div>
