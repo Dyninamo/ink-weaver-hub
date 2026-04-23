@@ -459,14 +459,18 @@ export default function CatchModal({
               </Button>
             </>
           ) : (
-            <Button
-              className="flex-1 min-h-[52px] text-base bg-diary-catch hover:bg-diary-catch/90"
+            <button
+              type="button"
+              className="event-cta flex-1"
+              data-tone="catch"
+              data-active={!saving}
               onClick={handleSave}
               disabled={saving}
             >
-              <Check className="h-5 w-5 mr-2" />
-              {saving ? "Saving..." : "Save Catch ✓"}
-            </Button>
+              {saving
+                ? "Saving..."
+                : `Save · ${species}${(parseInt(weightLb)||0) + (parseInt(weightOz)||0) > 0 ? ` ${formatWeight(parseInt(weightLb)||0, parseInt(weightOz)||0)}` : ""}`}
+            </button>
           )}
         </div>
       </DialogContent>

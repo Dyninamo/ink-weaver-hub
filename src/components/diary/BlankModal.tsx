@@ -196,13 +196,20 @@ export default function BlankModal({
               </div>
             </div>
 
-            <Button
-              className="w-full min-h-[48px]"
+            <button
+              type="button"
+              className="event-cta w-full"
+              data-tone="blank"
+              data-active={!!confidence && !saving}
               onClick={handleSave}
               disabled={!confidence || saving}
             >
-              {saving ? "Saving..." : "Save Blank"}
-            </Button>
+              {saving
+                ? "Saving..."
+                : confidence
+                ? `Log blank · ${confidence}${reason ? ` · ${reason.toLowerCase()}` : ""}`
+                : "Pick confidence"}
+            </button>
           </div>
         )}
       </DialogContent>
