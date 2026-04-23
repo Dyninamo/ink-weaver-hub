@@ -43,6 +43,27 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate, redirect]);
 
+  // Resend cooldown ticker (30s)
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const resendConfirmation = async () => {
+    if (!signedUpEmail || resendCooldown > 0) return;
+    setBusy(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: signedUpEmail,
+      options: { emailRedirectTo: window.location.origin + "/auth?redirect=" + redirect },
+    });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Confirmation email re-sent.");
+    setResendCooldown(30);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
