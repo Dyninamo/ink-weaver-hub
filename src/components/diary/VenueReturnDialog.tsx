@@ -291,7 +291,7 @@ export default function VenueReturnDialog({
             <Button
               className={cn(
                 "flex-1 min-h-[44px]",
-                "bg-amber-500 hover:bg-amber-600 text-white"
+                "bg-diary-got-away hover:bg-diary-got-away/90 text-white"
               )}
               onClick={handleSend}
               disabled={sending}
