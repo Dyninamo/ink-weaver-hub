@@ -792,6 +792,10 @@ export type Database = {
           longitude: number | null
           notes: string | null
           plan: string | null
+          reported_at: string | null
+          reported_body_snapshot: string | null
+          reported_include_gps: boolean
+          reported_to_email: string | null
           rod_length_ft: number | null
           rod_weight: number | null
           rods: number | null
@@ -838,6 +842,10 @@ export type Database = {
           longitude?: number | null
           notes?: string | null
           plan?: string | null
+          reported_at?: string | null
+          reported_body_snapshot?: string | null
+          reported_include_gps?: boolean
+          reported_to_email?: string | null
           rod_length_ft?: number | null
           rod_weight?: number | null
           rods?: number | null
@@ -884,6 +892,10 @@ export type Database = {
           longitude?: number | null
           notes?: string | null
           plan?: string | null
+          reported_at?: string | null
+          reported_body_snapshot?: string | null
+          reported_include_gps?: boolean
+          reported_to_email?: string | null
           rod_length_ft?: number | null
           rod_weight?: number | null
           rods?: number | null

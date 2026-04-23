@@ -22,6 +22,7 @@ import CatchModal from "@/components/diary/CatchModal";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
 import NotableFishDialog from "@/components/social/NotableFishDialog";
 import VenueOutreachDialog from "@/components/diary/VenueOutreachDialog";
+import VenueReturnDialog from "@/components/diary/VenueReturnDialog";
 import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
 import LostModal from "@/components/diary/LostModal";
@@ -99,6 +100,7 @@ export default function DiaryEntry() {
   const [venueId, setVenueId] = useState<string | null>(null);
   const [outreachOpen, setOutreachOpen] = useState(false);
   const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const outreachChecked = useRef(false);
 
   // After ending an active session, show the editorial "wrap" screen.
@@ -541,6 +543,43 @@ export default function DiaryEntry() {
                 )}
               />
             ))}
+          </div>
+        )}
+
+        {/* Return-pending block (completed sessions, venue takes returns, not yet sent) */}
+        {!isActive && !justEnded && venueReturnEmail && !(session as any).reported_at && (
+          <div className="rounded-md border-l-4 border-l-diary-got-away bg-diary-got-away/10 p-3 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold font-diary text-diary-got-away">
+                  Return pending
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {session.venue_name} accepts session returns at{" "}
+                  <span className="font-mono">{venueReturnEmail}</span>
+                </p>
+              </div>
+              <Button
+                size="sm"
+                className="bg-diary-got-away hover:bg-diary-got-away/90 text-white shrink-0 min-h-[36px]"
+                onClick={() => setReturnDialogOpen(true)}
+              >
+                Send return
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Return-sent confirmation chip */}
+        {!isActive && (session as any).reported_at && (
+          <div className="rounded-md bg-diary-catch/10 border border-diary-catch/30 px-3 py-2 text-xs text-diary-catch flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-diary-catch" />
+            Return sent {new Date((session as any).reported_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+            {(session as any).reported_to_email && (
+              <span className="text-muted-foreground truncate">
+                · to {(session as any).reported_to_email}
+              </span>
+            )}
           </div>
         )}
 
@@ -1121,6 +1160,21 @@ export default function DiaryEntry() {
           venueId={venueId}
           sessionId={id!}
           contactEmail={outreachEmail}
+        />
+      )}
+
+      {/* Venue Return Dialog (post-session reporting) */}
+      {session && venueReturnEmail && (
+        <VenueReturnDialog
+          open={returnDialogOpen}
+          onClose={() => setReturnDialogOpen(false)}
+          sessionId={id!}
+          venueId={venueId}
+          venueName={session.venue_name}
+          returnEmail={venueReturnEmail}
+          events={events}
+          defaultAnglerName={(session as any).angler_name ?? null}
+          onSent={() => loadData()}
         />
       )}
     </div>

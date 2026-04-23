@@ -27,6 +27,9 @@ export interface FishingSession {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  reported_at?: string | null;
+  reported_to_email?: string | null;
+  reported_include_gps?: boolean | null;
 }
 
 export interface SessionEvent {
@@ -256,6 +259,7 @@ export async function listSessions(userId: string, options?: {
   venue?: string;
   limit?: number;
   offset?: number;
+  returnStatus?: 'all' | 'pending' | 'sent';
 }) {
   let query = supabase
     .from('fishing_sessions')
@@ -265,6 +269,8 @@ export async function listSessions(userId: string, options?: {
     .order('session_date', { ascending: false });
 
   if (options?.venue) query = query.eq('venue_name', options.venue);
+  if (options?.returnStatus === 'pending') query = query.is('reported_at', null);
+  if (options?.returnStatus === 'sent') query = query.not('reported_at', 'is', null);
   if (options?.limit) query = query.limit(options.limit);
   if (options?.offset) query = query.range(options.offset, options.offset + (options.limit || 20) - 1);
 

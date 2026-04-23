@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import {
   Plus, Fish, Clock, Star, ArrowRight, Play,
-  Calendar, ChevronLeft, ChevronRight, Settings2,
+  Calendar, ChevronLeft, ChevronRight, Settings2, Mail, CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -44,6 +44,7 @@ export default function Diary() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [venueFilter, setVenueFilter] = useState<string>("all");
+  const [returnFilter, setReturnFilter] = useState<'all' | 'pending' | 'sent'>('all');
   const [venues, setVenues] = useState<string[]>([]);
   const [activeSession, setActiveSession] = useState<FishingSession | null>(null);
 
@@ -80,6 +81,7 @@ export default function Diary() {
     try {
       const { sessions: data, count } = await listSessions(user.id, {
         venue: venueFilter === "all" ? undefined : venueFilter,
+        returnStatus: returnFilter,
         limit: PAGE_SIZE,
         offset: page * PAGE_SIZE,
       });
@@ -112,7 +114,7 @@ export default function Diary() {
     } finally {
       setLoading(false);
     }
-  }, [user, venueFilter, page]);
+  }, [user, venueFilter, returnFilter, page]);
 
   useEffect(() => {
     loadSessions();
@@ -204,6 +206,24 @@ export default function Diary() {
           )}
         </div>
 
+        {/* Return status filter chips */}
+        <div className="flex gap-2 text-xs">
+          {(['all', 'pending', 'sent'] as const).map((status) => (
+            <button
+              key={status}
+              onClick={() => { setReturnFilter(status); setPage(0); }}
+              className={cn(
+                "px-3 py-1.5 rounded-full border transition-colors",
+                returnFilter === status
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background border-border text-muted-foreground hover:bg-muted/50"
+              )}
+            >
+              {status === 'all' ? 'All returns' : status === 'pending' ? 'Return pending' : 'Return sent'}
+            </button>
+          ))}
+        </div>
+
         {/* Session list */}
         {loading ? (
           <div className="space-y-3">
@@ -283,6 +303,14 @@ export default function Diary() {
                           Best: {session.stats.bestFly}
                         </p>
                       )}
+
+                      {/* Return status chip */}
+                      {session.reported_at ? (
+                        <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-diary-catch/10 text-diary-catch border border-diary-catch/20">
+                          <CheckCircle2 className="h-2.5 w-2.5" />
+                          Return sent
+                        </span>
+                      ) : null}
                     </div>
 
                     <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
