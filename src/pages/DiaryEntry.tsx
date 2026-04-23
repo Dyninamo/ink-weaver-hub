@@ -100,6 +100,7 @@ export default function DiaryEntry() {
   const [venueId, setVenueId] = useState<string | null>(null);
   const [outreachOpen, setOutreachOpen] = useState(false);
   const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const outreachChecked = useRef(false);
 
   // After ending an active session, show the editorial "wrap" screen.
