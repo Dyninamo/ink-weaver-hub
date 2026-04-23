@@ -272,69 +272,70 @@ export default function DiaryEntry() {
     loadData();
   }
 
-  async function handleEndSession() {
+  // Fired from EndSessionConfirm "End session" button.
+  // Kicks off the DB write (fire-and-forget) and advances to the syncing screen.
+  function handleConfirmEnd() {
     if (!id) return;
-    setEnding(true);
-    try {
-      await endSession(id, {
-        satisfaction_score: satisfaction || undefined,
-        would_return: wouldReturn ?? undefined,
-        notes: sessionNotes || undefined,
-      });
-      setEndOpen(false);
+    void endSession(id, {}).catch((err) => {
+      console.error("endSession failed:", err);
+      toast.error(err?.message || "Failed to end session");
+    });
+    setEndPhase("syncing");
+  }
 
-      // Check outreach eligibility before showing "Session complete"
-      if (venueId && !outreachChecked.current) {
-        outreachChecked.current = true;
-        try {
-          // Check opted out
-          const { data: optedOut } = await supabase
+  // Fired from EndSessionSyncing onComplete. Reloads session, runs the
+  // venue-outreach eligibility check, then either opens the outreach
+  // dialog or advances to the EndSessionView.
+  async function handleSyncingComplete() {
+    if (!id) {
+      setEndPhase("ended");
+      return;
+    }
+
+    // Refresh the session row so EndSessionView sees end_time / duration_minutes.
+    await loadData();
+
+    if (venueId && !outreachChecked.current) {
+      outreachChecked.current = true;
+      try {
+        const { data: optedOut } = await supabase
+          .from("venue_outreach")
+          .select("outreach_id")
+          .eq("venue_id", venueId)
+          .eq("status", "opted_out")
+          .limit(1)
+          .maybeSingle();
+
+        if (!optedOut) {
+          const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
+          const { data: recentSend } = await supabase
             .from("venue_outreach")
             .select("outreach_id")
             .eq("venue_id", venueId)
-            .eq("status", "opted_out")
+            .eq("status", "sent")
+            .gte("sent_at", ninetyDaysAgo)
             .limit(1)
             .maybeSingle();
 
-          if (!optedOut) {
-            // Check cooldown
-            const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
-            const { data: recentSend } = await supabase
-              .from("venue_outreach")
-              .select("outreach_id")
+          if (!recentSend) {
+            const { data: venueData } = await supabase
+              .from("venues_new")
+              .select("contact_email")
               .eq("venue_id", venueId)
-              .eq("status", "sent")
-              .gte("sent_at", ninetyDaysAgo)
-              .limit(1)
-              .maybeSingle();
+              .single();
 
-            if (!recentSend) {
-              // Eligible — check for email
-              const { data: venueData } = await supabase
-                .from("venues_new")
-                .select("contact_email")
-                .eq("venue_id", venueId)
-                .single();
-
-              setOutreachEmail(venueData?.contact_email || null);
-              setOutreachOpen(true);
-              loadData();
-              return; // Don't show toast yet — outreach dialog is up
-            }
+            setOutreachEmail(venueData?.contact_email || null);
+            setOutreachOpen(true);
+            // Outreach dialog will toast on close — fall through to ended view behind it.
           }
-        } catch (err) {
-          console.warn("Outreach check failed (non-critical):", err);
         }
+      } catch (err) {
+        console.warn("Outreach check failed (non-critical):", err);
       }
-
-      toast.success("Session complete!");
-      setJustEnded(true);
-      loadData();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to end session");
-    } finally {
-      setEnding(false);
     }
+
+    setJustEnded(true);
+    setEndPhase("ended");
   }
 
   function handleDeleteSession() {
