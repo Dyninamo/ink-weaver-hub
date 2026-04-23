@@ -481,46 +481,6 @@ All colors MUST be HSL.
   font-size: 15px;
   margin-top: 28px;
 }
-.end-return-cta {
-  width: 100%;
-  max-width: 340px;
-  margin: 20px auto 0;
-  padding: 16px;
-  background: rgba(184, 134, 74, 0.08);
-  border: 1px solid rgba(184, 134, 74, 0.35);
-  border-left-width: 4px;
-  border-radius: 4px;
-  text-align: left;
-  display: grid;
-  grid-template-columns: 32px 1fr auto;
-  gap: 12px;
-  align-items: center;
-}
-.end-return-icon {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: var(--gild-500);
-  color: var(--paper-50);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-}
-.end-return-title { font-size: 13px; font-weight: 600; color: var(--gild-700); }
-.end-return-sub { font-size: 11px; color: var(--ink-500); margin-top: 2px; }
-.end-return-btn {
-  background: var(--gild-500);
-  border: 1px solid var(--gild-700);
-  color: var(--paper-50);
-  padding: 8px 14px;
-  min-height: 36px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-weight: 600;
-}
 .end-new-session {
   margin-top: 40px;
   min-width: 240px;
@@ -536,8 +496,22 @@ All colors MUST be HSL.
 }
 .end-new-session:hover { background: var(--ink-900); }
 
-/* Design system: focus rings + reduced motion */
-*:focus-visible {
+/* Design system: tap targets, focus rings, reduced motion */
+
+/* Minimum tap target — applies to all buttons unless explicitly opted out */
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  min-height: var(--tap-min);
+}
+button.link-btn,
+button[data-inline="true"] {
+  min-height: 0;
+}
+
+html *:focus-visible {
   outline: 2px solid var(--gild-500);
   outline-offset: 2px;
   border-radius: var(--radius-md);
@@ -549,8 +523,24 @@ All colors MUST be HSL.
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+  .session-live-dot,
+  .ec-spinner,
+  .ec-check-icon-pulse,
+  .mic-ring { animation: none !important; }
 }
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+html[data-motion="reduced"] .session-live-dot,
+html[data-motion="reduced"] .ec-spinner,
+html[data-motion="reduced"] .ec-check-icon-pulse,
+html[data-motion="reduced"] .mic-ring { animation: none !important; }
 
 /* ============================================================
    Setup Wizard (Prompt 82 / Flow 02)

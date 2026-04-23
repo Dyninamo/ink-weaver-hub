@@ -62,7 +62,6 @@ function ErrorFallback({ error }: { error?: Error }) {
         <Button
           size="lg"
           onClick={() => navigate("/dashboard")}
-          className="bg-gradient-water text-white hover:opacity-90"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard

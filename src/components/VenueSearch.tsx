@@ -758,7 +758,7 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
             className={cn(
               "w-full text-lg py-6 transition-all duration-200",
               selectedDate && !isLoading
-                ? "bg-gradient-water text-white hover:opacity-90"
+                ? ""
                 : "bg-muted text-muted-foreground"
             )}
           >
