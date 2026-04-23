@@ -23,6 +23,8 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [signedUpEmail, setSignedUpEmail] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // If already authenticated, redirect immediately
   useEffect(() => {
@@ -68,6 +70,8 @@ export default function Auth() {
       });
       setBusy(false);
       if (error) { toast.error(error.message); return; }
+      setSignedUpEmail(email);
+      setResendCooldown(30);
       toast.success("Check your email to confirm your account.");
       return;
     }
