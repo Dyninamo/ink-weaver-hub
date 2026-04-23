@@ -1236,6 +1236,61 @@ export default function DiaryEntry() {
           onSent={() => loadData()}
         />
       )}
+      {/* Delete-session confirm dialog (rust-accented) */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={(o) => !deleting && setDeleteConfirmOpen(o)}>
+        <DialogContent className="max-w-[380px]">
+          <DialogHeader>
+            <DialogTitle
+              className="font-diary"
+              style={{ color: "var(--rust-700, hsl(var(--destructive)))" }}
+            >
+              Delete this session?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              <span className="font-medium text-foreground">
+                {session?.venue_name} · {formatDate(session?.session_date ?? "")}
+              </span>
+              <br />
+              {stats.totalFish > 0 ? `${stats.totalFish} fish` : "No fish"}
+              {stats.totalBlanks > 0 ? ` · ${stats.totalBlanks} blank${stats.totalBlanks !== 1 ? "s" : ""}` : ""}
+              {events.length > 0 ? ` · ${events.length} event${events.length !== 1 ? "s" : ""}` : ""}
+            </p>
+            <p className="text-xs uppercase tracking-[0.14em] font-semibold text-muted-foreground">
+              Cannot be undone.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 min-h-[44px]"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 min-h-[44px]"
+                onClick={doDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+            <button
+              type="button"
+              className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground transition-colors block mx-auto pt-1"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                navigate("/settings");
+              }}
+            >
+              Turn off in Settings ›
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
