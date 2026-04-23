@@ -32,7 +32,6 @@ const WIND_DIRECTIONS = [
   "N", "NE", "E", "SE", "S", "SW", "W", "NW", "Variable", "Calm",
 ] as const;
 
-const EMPTY_WIZARD: WizardResult | null = null;
 
 
 export default function DiaryNew() {
