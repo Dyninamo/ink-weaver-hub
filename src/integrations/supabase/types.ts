@@ -778,22 +778,34 @@ export type Database = {
           area: string | null
           beat: string | null
           created_at: string | null
+          dropper_count: number | null
           duration_minutes: number | null
           end_time: string | null
           fishing_type: string | null
           fishing_type_raw: string | null
           id: string
           is_active: boolean | null
+          keep_limit: number | null
           latitude: number | null
+          leader_id: number | null
+          line_profile: string | null
           longitude: number | null
           notes: string | null
           plan: string | null
+          rod_length_ft: number | null
+          rod_weight: number | null
           rods: number | null
           satisfaction_score: number | null
           session_date: string
+          size_mode: string | null
+          size_units: string | null
           source: string | null
           source_id: string | null
+          spot_name: string | null
           start_time: string | null
+          tippet_length_ft: number | null
+          tippet_strength: number | null
+          tippet_unit: string | null
           updated_at: string | null
           user_id: string | null
           venue_name: string
@@ -812,22 +824,34 @@ export type Database = {
           area?: string | null
           beat?: string | null
           created_at?: string | null
+          dropper_count?: number | null
           duration_minutes?: number | null
           end_time?: string | null
           fishing_type?: string | null
           fishing_type_raw?: string | null
           id?: string
           is_active?: boolean | null
+          keep_limit?: number | null
           latitude?: number | null
+          leader_id?: number | null
+          line_profile?: string | null
           longitude?: number | null
           notes?: string | null
           plan?: string | null
+          rod_length_ft?: number | null
+          rod_weight?: number | null
           rods?: number | null
           satisfaction_score?: number | null
           session_date: string
+          size_mode?: string | null
+          size_units?: string | null
           source?: string | null
           source_id?: string | null
+          spot_name?: string | null
           start_time?: string | null
+          tippet_length_ft?: number | null
+          tippet_strength?: number | null
+          tippet_unit?: string | null
           updated_at?: string | null
           user_id?: string | null
           venue_name: string
@@ -846,22 +870,34 @@ export type Database = {
           area?: string | null
           beat?: string | null
           created_at?: string | null
+          dropper_count?: number | null
           duration_minutes?: number | null
           end_time?: string | null
           fishing_type?: string | null
           fishing_type_raw?: string | null
           id?: string
           is_active?: boolean | null
+          keep_limit?: number | null
           latitude?: number | null
+          leader_id?: number | null
+          line_profile?: string | null
           longitude?: number | null
           notes?: string | null
           plan?: string | null
+          rod_length_ft?: number | null
+          rod_weight?: number | null
           rods?: number | null
           satisfaction_score?: number | null
           session_date?: string
+          size_mode?: string | null
+          size_units?: string | null
           source?: string | null
           source_id?: string | null
+          spot_name?: string | null
           start_time?: string | null
+          tippet_length_ft?: number | null
+          tippet_strength?: number | null
+          tippet_unit?: string | null
           updated_at?: string | null
           user_id?: string | null
           venue_name?: string
@@ -874,7 +910,15 @@ export type Database = {
           weather_wind_speed?: number | null
           would_return?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fishing_sessions_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "leaders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       flies: {
         Row: {
@@ -946,6 +990,48 @@ export type Database = {
             referencedColumns: ["fly_type_id"]
           },
         ]
+      }
+      fly_lines: {
+        Row: {
+          active: boolean
+          created_at: string
+          density: string | null
+          description: string | null
+          id: number
+          max_rod_weight: number
+          min_rod_weight: number
+          name: string
+          order_hint: number
+          sink_rate_ips: number | null
+          water_types: string[]
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          density?: string | null
+          description?: string | null
+          id?: never
+          max_rod_weight?: number
+          min_rod_weight?: number
+          name: string
+          order_hint?: number
+          sink_rate_ips?: number | null
+          water_types?: string[]
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          density?: string | null
+          description?: string | null
+          id?: never
+          max_rod_weight?: number
+          min_rod_weight?: number
+          name?: string
+          order_hint?: number
+          sink_rate_ips?: number | null
+          water_types?: string[]
+        }
+        Relationships: []
       }
       fly_monthly_availability: {
         Row: {
@@ -1329,6 +1415,7 @@ export type Database = {
       }
       leaders: {
         Row: {
+          active: boolean
           brand: string | null
           breaking_strain_lb: number | null
           butt_diameter_mm: number | null
@@ -1336,11 +1423,16 @@ export type Database = {
           id: number
           length_ft: number | null
           material: string | null
+          max_rod_weight: number
+          min_rod_weight: number
+          order_hint: number
           tippet_diameter_mm: number | null
           type: string | null
           typical_use: string | null
+          water_types: string[]
         }
         Insert: {
+          active?: boolean
           brand?: string | null
           breaking_strain_lb?: number | null
           butt_diameter_mm?: number | null
@@ -1348,11 +1440,16 @@ export type Database = {
           id?: never
           length_ft?: number | null
           material?: string | null
+          max_rod_weight?: number
+          min_rod_weight?: number
+          order_hint?: number
           tippet_diameter_mm?: number | null
           type?: string | null
           typical_use?: string | null
+          water_types?: string[]
         }
         Update: {
+          active?: boolean
           brand?: string | null
           breaking_strain_lb?: number | null
           butt_diameter_mm?: number | null
@@ -1360,9 +1457,13 @@ export type Database = {
           id?: never
           length_ft?: number | null
           material?: string | null
+          max_rod_weight?: number
+          min_rod_weight?: number
+          order_hint?: number
           tippet_diameter_mm?: number | null
           type?: string | null
           typical_use?: string | null
+          water_types?: string[]
         }
         Relationships: []
       }
@@ -4046,36 +4147,54 @@ export type Database = {
       }
       tippets: {
         Row: {
+          active: boolean
           brand: string | null
           breaking_strain_lb: number | null
           created_at: string | null
           diameter_mm: number | null
           id: number
           material: string | null
+          max_rod_weight: number
+          min_rod_weight: number
+          order_hint: number
           spool_length_m: number | null
+          strength: number | null
           typical_use: string | null
+          unit: string | null
           x_rating: string | null
         }
         Insert: {
+          active?: boolean
           brand?: string | null
           breaking_strain_lb?: number | null
           created_at?: string | null
           diameter_mm?: number | null
           id?: never
           material?: string | null
+          max_rod_weight?: number
+          min_rod_weight?: number
+          order_hint?: number
           spool_length_m?: number | null
+          strength?: number | null
           typical_use?: string | null
+          unit?: string | null
           x_rating?: string | null
         }
         Update: {
+          active?: boolean
           brand?: string | null
           breaking_strain_lb?: number | null
           created_at?: string | null
           diameter_mm?: number | null
           id?: never
           material?: string | null
+          max_rod_weight?: number
+          min_rod_weight?: number
+          order_hint?: number
           spool_length_m?: number | null
+          strength?: number | null
           typical_use?: string | null
+          unit?: string | null
           x_rating?: string | null
         }
         Relationships: []
@@ -4164,6 +4283,15 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          default_keep_limit: number | null
+          default_leader_id: number | null
+          default_line: string | null
+          default_line_profile: string | null
+          default_rod_length_ft: number | null
+          default_rod_weight: number | null
+          default_size_mode: string | null
+          default_size_units: string | null
+          default_tippet_strength_unit: string | null
           display_name: string
           id: string
           location: string | null
@@ -4183,6 +4311,15 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          default_keep_limit?: number | null
+          default_leader_id?: number | null
+          default_line?: string | null
+          default_line_profile?: string | null
+          default_rod_length_ft?: number | null
+          default_rod_weight?: number | null
+          default_size_mode?: string | null
+          default_size_units?: string | null
+          default_tippet_strength_unit?: string | null
           display_name?: string
           id: string
           location?: string | null
@@ -4202,6 +4339,15 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          default_keep_limit?: number | null
+          default_leader_id?: number | null
+          default_line?: string | null
+          default_line_profile?: string | null
+          default_rod_length_ft?: number | null
+          default_rod_weight?: number | null
+          default_size_mode?: string | null
+          default_size_units?: string | null
+          default_tippet_strength_unit?: string | null
           display_name?: string
           id?: string
           location?: string | null
@@ -4706,6 +4852,36 @@ export type Database = {
           },
         ]
       }
+      venue_preferences: {
+        Row: {
+          created_at: string
+          pref_id: string
+          prefs: Json
+          updated_at: string
+          user_id: string
+          venue_id: string | null
+          venue_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          pref_id?: string
+          prefs?: Json
+          updated_at?: string
+          user_id: string
+          venue_id?: string | null
+          venue_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          pref_id?: string
+          prefs?: Json
+          updated_at?: string
+          user_id?: string
+          venue_id?: string | null
+          venue_name?: string | null
+        }
+        Relationships: []
+      }
       venue_profiles: {
         Row: {
           character_notes: string | null
@@ -4977,6 +5153,7 @@ export type Database = {
           platform_type: string | null
           postcode: string | null
           region_id: number
+          return_email: string | null
           river_name: string | null
           root_url: string | null
           search_text: string
@@ -5030,6 +5207,7 @@ export type Database = {
           platform_type?: string | null
           postcode?: string | null
           region_id: number
+          return_email?: string | null
           river_name?: string | null
           root_url?: string | null
           search_text?: string
@@ -5083,6 +5261,7 @@ export type Database = {
           platform_type?: string | null
           postcode?: string | null
           region_id?: number
+          return_email?: string | null
           river_name?: string | null
           root_url?: string | null
           search_text?: string
