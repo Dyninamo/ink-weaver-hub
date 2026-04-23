@@ -93,6 +93,11 @@ export default function DiaryEntry() {
   const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
   const outreachChecked = useRef(false);
 
+  // After ending an active session, show the editorial "wrap" screen.
+  // Distinct from `isActive=false` for older completed sessions loaded directly.
+  const [justEnded, setJustEnded] = useState(false);
+  const [venueReturnEmail, setVenueReturnEmail] = useState<string | null>(null);
+
   // Load session + events
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -105,15 +110,18 @@ export default function DiaryEntry() {
       setSession(s);
       setEvents(e);
 
-      // Resolve venue_id from venues_new
+      // Resolve venue_id + return_email from venues_new
       if (s.venue_name) {
         const { data: venue } = await supabase
           .from('venues_new')
-          .select('venue_id')
+          .select('venue_id, return_email')
           .ilike('name', s.venue_name)
           .limit(1)
           .maybeSingle();
-        if (venue) setVenueId(venue.venue_id);
+        if (venue) {
+          setVenueId(venue.venue_id);
+          setVenueReturnEmail((venue as any).return_email ?? null);
+        }
       }
 
       // Derive current setup from most recent change/catch event
@@ -293,6 +301,7 @@ export default function DiaryEntry() {
       }
 
       toast.success("Session complete!");
+      setJustEnded(true);
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to end session");
@@ -367,7 +376,15 @@ export default function DiaryEntry() {
 
   return (
     <div className={cn("min-h-screen pb-32", isActive ? "almanack-surface" : bgClass)}>
-      {isActive ? (
+      {justEnded && session && !isActive ? (
+        <EndSessionView
+          session={session}
+          events={events}
+          anglerName={(session as any).angler_name ?? null}
+          venueReturnEmail={venueReturnEmail}
+          onReviewReturn={() => setOutreachOpen(true)}
+        />
+      ) : isActive ? (
         <div className="max-w-[440px] mx-auto">
           <ReadyView
             session={session}
@@ -836,6 +853,19 @@ export default function DiaryEntry() {
         onChangeFirst={() => {
           setBlankOpen(false);
           setChangeOpen(true);
+        }}
+        latestWeather={latestWeather}
+      />
+
+      <LostModal
+        open={lostOpen}
+        onClose={() => setLostOpen(false)}
+        sessionId={id!}
+        currentSetup={currentSetup}
+        eventCount={events.length}
+        onSaved={() => {
+          loadData();
+          if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
         }}
         latestWeather={latestWeather}
       />

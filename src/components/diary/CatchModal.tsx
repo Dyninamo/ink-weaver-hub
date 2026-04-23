@@ -122,7 +122,10 @@ export default function CatchModal({
   function canAdvance(): boolean {
     switch (step) {
       case 1:
-        if (measureMode === "weight") return (parseInt(weightLb) > 0) || (parseInt(weightOz) > 0);
+        if (measureMode === "weight") {
+          const f = parseFloat(weightLb);
+          return !isNaN(f) && f > 0;
+        }
         return lengthInches !== "";
       case 2: return flyPattern !== null;
       case 3: return flySize !== null;
@@ -134,11 +137,17 @@ export default function CatchModal({
     setSaving(true);
     try {
       // Calculate weight/length
-      let finalLb = parseInt(weightLb) || 0;
-      let finalOz = parseInt(weightOz) || 0;
+      let finalLb = 0;
+      let finalOz = 0;
       let finalLength: number | null = null;
 
-      if (measureMode === "length" && lengthInches) {
+      if (measureMode === "weight") {
+        const f = parseFloat(weightLb);
+        if (!isNaN(f)) {
+          finalLb = Math.floor(f);
+          finalOz = Math.round((f - finalLb) * 16);
+        }
+      } else if (measureMode === "length" && lengthInches) {
         finalLength = parseFloat(lengthInches);
         const converted = convertLengthToWeight(finalLength, species);
         finalLb = converted.lb;
@@ -262,35 +271,34 @@ export default function CatchModal({
               </div>
 
               {measureMode === "weight" ? (
-                <div className="flex gap-3 items-end justify-center">
-                  <div className="w-24">
-                    <Label className="text-center block">Pounds</Label>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min="0"
-                      max="20"
-                      placeholder="lb"
+                <div className="px-2">
+                  <div className="flex items-baseline gap-3">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="—"
                       value={weightLb}
-                      onChange={(e) => setWeightLb(e.target.value)}
-                      className="text-center text-2xl font-mono h-14"
+                      onChange={(e) => {
+                        // Accept "2.5" → store lb as integer + oz from fraction
+                        const v = e.target.value.replace(/[^0-9.]/g, "");
+                        setWeightLb(v);
+                        const f = parseFloat(v);
+                        if (!isNaN(f)) {
+                          const lb = Math.floor(f);
+                          const oz = Math.round((f - lb) * 16);
+                          setWeightOz(String(oz));
+                        } else {
+                          setWeightOz("");
+                        }
+                      }}
+                      className="tabular-weight-input"
                       autoFocus
                     />
+                    <div className="tabular-weight-unit">lb</div>
                   </div>
-                  <span className="text-2xl text-muted-foreground pb-2">:</span>
-                  <div className="w-24">
-                    <Label className="text-center block">Ounces</Label>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min="0"
-                      max="15"
-                      placeholder="oz"
-                      value={weightOz}
-                      onChange={(e) => setWeightOz(e.target.value)}
-                      className="text-center text-2xl font-mono h-14"
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Enter as decimal — e.g. 2.5 = 2 lb 8 oz
+                  </p>
                 </div>
               ) : (
                 <div className="flex justify-center">
@@ -469,7 +477,7 @@ export default function CatchModal({
             >
               {saving
                 ? "Saving..."
-                : `Save · ${species}${(parseInt(weightLb)||0) + (parseInt(weightOz)||0) > 0 ? ` ${formatWeight(parseInt(weightLb)||0, parseInt(weightOz)||0)}` : ""}`}
+                : `Save · ${species}${parseFloat(weightLb) > 0 ? ` ${weightLb} lb` : lengthInches ? ` ${lengthInches}"` : ""}`}
             </button>
           )}
         </div>
