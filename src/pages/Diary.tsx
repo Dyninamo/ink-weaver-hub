@@ -206,6 +206,24 @@ export default function Diary() {
           )}
         </div>
 
+        {/* Return status filter chips */}
+        <div className="flex gap-2 text-xs">
+          {(['all', 'pending', 'sent'] as const).map((status) => (
+            <button
+              key={status}
+              onClick={() => { setReturnFilter(status); setPage(0); }}
+              className={cn(
+                "px-3 py-1.5 rounded-full border transition-colors",
+                returnFilter === status
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background border-border text-muted-foreground hover:bg-muted/50"
+              )}
+            >
+              {status === 'all' ? 'All returns' : status === 'pending' ? 'Return pending' : 'Return sent'}
+            </button>
+          ))}
+        </div>
+
         {/* Session list */}
         {loading ? (
           <div className="space-y-3">
