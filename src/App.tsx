@@ -30,6 +30,18 @@ import Leaderboard from "./pages/Leaderboard";
 import SessionShareView from "./pages/SessionShareView";
 import GroupJoinView from "./pages/GroupJoinView";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AppShell from "./layouts/AppShell";
+
+const Shelled = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <AppShell>{children}</AppShell>
+  </ProtectedRoute>
+);
+const ShelledNamed = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute requireDisplayName>
+    <AppShell>{children}</AppShell>
+  </ProtectedRoute>
+);
 
 const queryClient = new QueryClient();
 
