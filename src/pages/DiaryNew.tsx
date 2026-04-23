@@ -152,26 +152,28 @@ export default function DiaryNew() {
         } as any);
       }
 
-      // Trigger venue affiliation (non-blocking)
-      try {
-        await supabase.functions.invoke("on-session-logged", {
-          body: {
-            user_id: user.id,
-            venue_id: null,
-            session_date: sessionDate,
-          },
-        });
-      } catch (affiliationErr) {
-        console.warn("Affiliation call failed (non-critical):", affiliationErr);
-      }
-
-      // Fire-and-forget: background venue email search
+      // Resolve venue_id from venues_new (needed for affiliation + email lookup)
       const { data: matchedVenue } = await supabase
         .from("venues_new")
         .select("venue_id, contact_email")
         .ilike("name", venue)
         .limit(1)
         .maybeSingle();
+
+      // Trigger venue affiliation (non-blocking, skip if venue not in directory)
+      if (matchedVenue?.venue_id) {
+        try {
+          await supabase.functions.invoke("on-session-logged", {
+            body: {
+              user_id: user.id,
+              venue_id: matchedVenue.venue_id,
+              session_date: sessionDate,
+            },
+          });
+        } catch (affiliationErr) {
+          console.warn("Affiliation call failed (non-critical):", affiliationErr);
+        }
+      }
 
       if (matchedVenue && !matchedVenue.contact_email) {
         supabase.functions
