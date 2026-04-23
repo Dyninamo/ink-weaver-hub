@@ -1228,6 +1228,42 @@ export type Database = {
           },
         ]
       }
+      fly_thumbnails: {
+        Row: {
+          created_at: string | null
+          id: number
+          image_url: string | null
+          is_primary: number
+          local_path: string | null
+          match_score: number | null
+          pattern_name: string
+          source: string
+          title_matched: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          image_url?: string | null
+          is_primary?: number
+          local_path?: string | null
+          match_score?: number | null
+          pattern_name: string
+          source: string
+          title_matched?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          image_url?: string | null
+          is_primary?: number
+          local_path?: string | null
+          match_score?: number | null
+          pattern_name?: string
+          source?: string
+          title_matched?: string | null
+        }
+        Relationships: []
+      }
       fly_types: {
         Row: {
           description: string | null
@@ -1243,6 +1279,36 @@ export type Database = {
           description?: string | null
           fly_type?: string
           fly_type_id?: number
+        }
+        Relationships: []
+      }
+      fly_water_type_monthly: {
+        Row: {
+          evidence_count: number | null
+          id: number
+          month: number
+          pattern_name: string
+          source: string | null
+          suitability: string
+          water_type_id: number
+        }
+        Insert: {
+          evidence_count?: number | null
+          id?: number
+          month: number
+          pattern_name: string
+          source?: string | null
+          suitability: string
+          water_type_id: number
+        }
+        Update: {
+          evidence_count?: number | null
+          id?: number
+          month?: number
+          pattern_name?: string
+          source?: string | null
+          suitability?: string
+          water_type_id?: number
         }
         Relationships: []
       }
