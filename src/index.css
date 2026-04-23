@@ -1106,3 +1106,72 @@ All colors MUST be HSL.
 .history-peek .row .meta { font-size: 11px; color: var(--ink-500); margin-top: 2px; text-transform: uppercase; letter-spacing: var(--tracking-wider); font-weight: 600; }
 .history-peek .row .num { font-size: 13px; color: var(--ink-700); font-variant-numeric: tabular-nums; font-weight: 700; }
 
+
+/* ════════════════════════════════════════════════════════════════
+   Coach banner (B5 first-session prompt)
+   ════════════════════════════════════════════════════════════════ */
+.coach-banner {
+  margin: 16px 12px 8px;
+  padding: 16px;
+  background: var(--ink-900);
+  color: var(--paper-50);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.35);
+}
+.coach-banner-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gild-500);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
+}
+.coach-banner-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  list-style: decimal;
+}
+.coach-banner-list strong { color: var(--gild-500); font-weight: 600; }
+.coach-banner-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(252, 252, 249, 0.15);
+}
+.coach-banner-link {
+  font-size: 11px;
+  color: var(--gild-500);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-decoration: underline;
+  text-decoration-color: rgba(184, 134, 74, 0.35);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.coach-banner-cta {
+  background: transparent;
+  border: 1px solid rgba(252, 252, 249, 0.25);
+  color: var(--paper-50);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+.coach-banner-cta:disabled { opacity: 0.6; cursor: default; }
+
+/* Rose accent link (e.g. "Create account" on auth screens) */
+.link-rose {
+  color: var(--rose-500, hsl(346, 50%, 56%));
+  font-weight: 600;
+}
+.link-rose:hover { text-decoration: underline; }
