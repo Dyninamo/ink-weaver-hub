@@ -5,20 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Play, Bookmark, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import SetupCascade from "@/components/diary/SetupCascade";
-import FlyPicker from "@/components/diary/FlyPicker";
-import SpotPicker from "@/components/diary/SpotPicker";
+import SetupWizard, { type WizardResult } from "@/components/diary/SetupWizard";
 import {
   createSession,
   addEvent,
-  type CurrentSetup,
-  type RodSetup,
-  DEFAULT_SPECIES,
-  SPECIES_LIST,
-  formatWeight,
 } from "@/services/diaryService";
 
 type Phase = "header" | "setup";
@@ -40,15 +32,7 @@ const WIND_DIRECTIONS = [
   "N", "NE", "E", "SE", "S", "SW", "W", "NW", "Variable", "Calm",
 ] as const;
 
-const EMPTY_SETUP: CurrentSetup = {
-  style: null,
-  rig: null,
-  line_type: null,
-  retrieve: null,
-  flies_on_cast: null,
-  spot: null,
-  depth_zone: null,
-};
+
 
 export default function DiaryNew() {
   const { user } = useAuth();
@@ -74,15 +58,11 @@ export default function DiaryNew() {
   const [weatherPressure, setWeatherPressure] = useState<string>("");
   const [weatherConditions, setWeatherConditions] = useState<string>("");
 
-  // --- Setup fields ---
-  const [setup, setSetup] = useState<CurrentSetup>(EMPTY_SETUP);
+  // --- Wizard result (set when user finishes the 9-step wizard) ---
+  const [, setWizardResult] = useState<WizardResult | null>(null);
 
-  // --- Saved setups ---
-  const [savedSetups, setSavedSetups] = useState<RodSetup[]>([]);
-  const [showSavedSetups, setShowSavedSetups] = useState(false);
-
-    // Available venues from reports_enriched
-    const [venues, setVenues] = useState<string[]>([]);
+  // Available venues from reports_enriched
+  const [venues, setVenues] = useState<string[]>([]);
 
   useEffect(() => {
     async function loadVenues() {
@@ -98,19 +78,6 @@ export default function DiaryNew() {
     loadVenues();
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    async function loadSetups() {
-      const { data } = await supabase
-        .from("user_rod_setups")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("usage_count", { ascending: false });
-      if (data) setSavedSetups(data as RodSetup[]);
-    }
-    loadSetups();
-  }, [user]);
-
   // Update venue type when venue changes
   useEffect(() => {
     if (venue && VENUE_TYPES[venue]) {
@@ -118,33 +85,13 @@ export default function DiaryNew() {
     }
   }, [venue]);
 
-  function handleApplySavedSetup(s: RodSetup) {
-    setSetup({
-      style: s.style || null,
-      rig: s.rig || null,
-      line_type: s.line_type || null,
-      retrieve: s.retrieve || null,
-      flies_on_cast: s.default_flies || null,
-      spot: null, // spot is venue-specific, not preset
-      depth_zone: s.depth_zone || null,
-    });
-    setShowSavedSetups(false);
-    toast.success(`Loaded: ${s.name}`);
-
-    // Increment usage count in background
-    supabase
-      .from("user_rod_setups")
-      .update({ usage_count: (s.usage_count || 0) + 1, last_used_at: new Date().toISOString() })
-      .eq("id", s.id)
-      .then();
-  }
-
   function canProceedToSetup(): boolean {
     return venue.trim().length > 0;
   }
 
-  async function handleStartSession() {
+  async function handleStartSession(w: WizardResult) {
     if (!user || !venue.trim()) return;
+    setWizardResult(w);
     setSaving(true);
 
     try {
@@ -169,27 +116,40 @@ export default function DiaryNew() {
         weather_pressure: weatherPressure ? parseFloat(weatherPressure) : null,
         weather_conditions: weatherConditions || null,
         is_active: true,
-      });
+        // Wizard-derived fields
+        rod_weight: w.rod_weight,
+        rod_length_ft: w.rod_length_ft,
+        leader_id: w.leader_id,
+        line_profile: w.line_profile,
+        tippet_length_ft: w.tippet_length_ft,
+        tippet_strength: w.tippet_strength,
+        tippet_unit: w.tippet_unit,
+        dropper_count: w.dropper_count,
+        spot_name: w.spot_name,
+        keep_limit: w.keep_limit,
+        size_mode: w.size_mode,
+        size_units: w.size_units,
+      } as any);
 
-      // If setup has any fields filled, create an initial "change" event to record starting state
-      const hasSetup = setup.style || setup.rig || setup.line_type || setup.retrieve || setup.spot;
+      // Create initial "change" event capturing the starting setup
+      const hasSetup = w.style || w.line_name || w.flies_on_cast;
       if (hasSetup) {
         await addEvent({
           session_id: session.id,
           event_type: "change",
           event_time: startTime || new Date().toISOString(),
           sort_order: 0,
-          style: setup.style,
-          rig: setup.rig,
-          line_type: setup.line_type,
-          retrieve: setup.retrieve,
-          flies_on_cast: setup.flies_on_cast,
-          spot: setup.spot,
-          depth_zone: setup.depth_zone,
+          style: w.style,
+          rig: null,
+          line_type: w.line_name,
+          retrieve: null,
+          flies_on_cast: w.flies_on_cast,
+          spot: w.spot_name,
+          depth_zone: null,
           change_from: null,
-          change_to: { ...setup },
+          change_to: { ...w },
           change_reason: "Session start",
-        });
+        } as any);
       }
 
       // Trigger venue affiliation (non-blocking)
@@ -197,7 +157,7 @@ export default function DiaryNew() {
         await supabase.functions.invoke("on-session-logged", {
           body: {
             user_id: user.id,
-            venue_id: null, // venue_id lookup handled server-side in future
+            venue_id: null,
             session_date: sessionDate,
           },
         });
@@ -412,100 +372,14 @@ export default function DiaryNew() {
   }
 
   // ============================================================
-  // RENDER: Phase 2 — Initial Fishing Setup
+  // RENDER: Phase 2 — Setup Wizard (9 steps)
   // ============================================================
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-[420px] mx-auto p-4 space-y-5">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setPhase("header")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-semibold font-diary">Starting Setup</h1>
-            <p className="text-sm text-muted-foreground">{venue} · {sessionDate}</p>
-          </div>
-        </div>
-
-        {/* Saved Setups option */}
-        {savedSetups.length > 0 && (
-          <div>
-            <Button
-              variant="outline"
-              className="w-full justify-between min-h-[48px]"
-              onClick={() => setShowSavedSetups(!showSavedSetups)}
-            >
-              <span className="flex items-center gap-2">
-                <Bookmark className="h-4 w-4" />
-                Use saved setup
-              </span>
-              <ChevronRight className={`h-4 w-4 transition-transform ${showSavedSetups ? "rotate-90" : ""}`} />
-            </Button>
-
-            {showSavedSetups && (
-              <div className="mt-2 space-y-2">
-                {savedSetups.map((s) => (
-                  <Card
-                    key={s.id}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => handleApplySavedSetup(s)}
-                  >
-                    <CardContent className="p-3">
-                      <p className="font-medium text-sm">{s.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {[s.style, s.rig, s.line_type].filter(Boolean).join(" · ")}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {!showSavedSetups && (
-              <div className="flex items-center gap-2 my-3">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground">or build from scratch</span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Setup Cascade: Style → Rig → Line → Retrieve → Depth */}
-        <SetupCascade
-          venueType={venueType}
-          value={setup}
-          onChange={setSetup}
-        />
-
-        {/* Spot picker */}
-        <SpotPicker
-          value={setup.spot}
-          onChange={(v) => setSetup({ ...setup, spot: v })}
-          venueName={venue}
-        />
-
-        {/* Quick Start note */}
-        <p className="text-xs text-muted-foreground text-center">
-          You can skip optional fields and fill them when logging your first catch.
-        </p>
-
-        {/* Start Session button */}
-        <Button
-          onClick={handleStartSession}
-          disabled={saving || !setup.style}
-          className="w-full min-h-[52px] text-base bg-diary-catch hover:bg-diary-catch/90"
-        >
-          {saving ? (
-            "Starting..."
-          ) : (
-            <>
-              <Play className="h-5 w-5 mr-2" /> Start Fishing
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
+    <SetupWizard
+      venueName={venue}
+      venueType={venueType}
+      onBack={() => setPhase("header")}
+      onComplete={handleStartSession}
+    />
   );
 }
