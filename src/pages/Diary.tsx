@@ -139,13 +139,31 @@ export default function Diary() {
     });
   }
 
+  // Aggregate stats for header subtitle
+  const totalFishAcrossLoaded = sessions.reduce(
+    (acc, s) => acc + (s.stats?.totalFish ?? 0),
+    0
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold font-diary">Fishing Diary</h1>
-          <div className="flex gap-1">
+        {/* Header — title + small-caps stats + profile icon */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-semibold tracking-tight font-diary leading-tight">
+              Timeline
+            </h1>
+            {totalCount > 0 && (
+              <p
+                className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mt-1 font-medium"
+              >
+                {totalCount} session{totalCount !== 1 ? "s" : ""}
+                {totalFishAcrossLoaded > 0 ? ` · ${totalFishAcrossLoaded} fish` : ""}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -170,14 +188,16 @@ export default function Diary() {
             >
               <Settings2 className="h-5 w-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+            {/* Profile icon (top-right) → Settings */}
+            <button
+              type="button"
               onClick={() => navigate("/settings")}
+              aria-label="Settings"
               title="Settings"
+              className="ml-1 inline-flex items-center justify-center h-9 w-9 rounded-full bg-foreground text-background text-xs font-bold tracking-wide hover:opacity-90 transition-opacity"
             >
-              <User className="h-5 w-5" />
-            </Button>
+              {(profile?.display_name || user?.email || "A").slice(0, 1).toUpperCase()}
+            </button>
           </div>
         </div>
 
