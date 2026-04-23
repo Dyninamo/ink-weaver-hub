@@ -1,0 +1,249 @@
+import { Fish, Circle, RefreshCw, Clock, ChevronRight } from "lucide-react";
+import type { CurrentSetup, FishingSession, SessionEvent } from "@/services/diaryService";
+
+interface ReadyViewProps {
+  session: FishingSession;
+  events: SessionEvent[];
+  currentSetup: CurrentSetup;
+  onCatch: () => void;
+  onLost: () => void;
+  onBlank: () => void;
+  onChange: () => void;
+  onEndSession: () => void;
+}
+
+function elapsed(startIso: string | null | undefined): string {
+  if (!startIso) return "--:--";
+  const start = new Date(startIso).getTime();
+  const diffMs = Math.max(0, Date.now() - start);
+  const totalMin = Math.floor(diffMs / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatFlies(flies: any): string | null {
+  if (!flies) return null;
+  if (typeof flies === "string") return flies;
+  if (Array.isArray(flies)) {
+    return flies
+      .map((f) => (typeof f === "string" ? f : f?.pattern || f?.name))
+      .filter(Boolean)
+      .join(" · ");
+  }
+  if (typeof flies === "object") {
+    return Object.values(flies)
+      .map((v: any) => (typeof v === "string" ? v : v?.pattern))
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return null;
+}
+
+function RecentBody({ event }: { event: SessionEvent }) {
+  if (event.event_type === "catch") {
+    return (
+      <>
+        <strong>{event.species || "Fish"}</strong>
+        {event.weight_display ? ` · ${event.weight_display}` : ""}
+        {event.fly_pattern && (
+          <span className="re-meta">
+            {event.fly_pattern}
+            {event.fly_size ? ` #${event.fly_size}` : ""}
+          </span>
+        )}
+      </>
+    );
+  }
+  if (event.event_type === "blank") {
+    return (
+      <>
+        Blank
+        {event.blank_confidence ? <span className="re-meta">{event.blank_confidence}</span> : null}
+      </>
+    );
+  }
+  if (event.event_type === "change") {
+    const to = event.change_to as Record<string, any> | null;
+    const summary = to
+      ? Object.values(to).filter(Boolean).join(" · ")
+      : "Setup change";
+    return (
+      <>
+        Change <span className="re-meta">{summary}</span>
+      </>
+    );
+  }
+  if (event.event_type === "got_away") {
+    return (
+      <>
+        Lost{event.species ? ` · ${event.species}` : ""}
+        {event.fly_pattern ? <span className="re-meta">{event.fly_pattern}</span> : null}
+      </>
+    );
+  }
+  return <>{event.event_type}</>;
+}
+
+export default function ReadyView({
+  session,
+  events,
+  currentSetup,
+  onCatch,
+  onLost,
+  onBlank,
+  onChange,
+  onEndSession,
+}: ReadyViewProps) {
+  const catchCount = events.filter((e) => e.event_type === "catch").length;
+  const lostCount = events.filter((e) => e.event_type === "got_away").length;
+  const blankCount = events.filter((e) => e.event_type === "blank").length;
+  const keepLimit = 0; // sessions.keep_limit not yet on schema; chip hidden when 0
+  const keptCount = 0;
+
+  const elapsedStr = elapsed(session.start_time || session.created_at);
+
+  const rodLineParts = [currentSetup.style, currentSetup.rig, currentSetup.line_type, currentSetup.retrieve].filter(Boolean);
+  const rodLine = rodLineParts.length > 0 ? rodLineParts.join(" · ") : null;
+  const flyNames = formatFlies(currentSetup.flies_on_cast);
+
+  const rows: Array<{
+    label: string;
+    hint: string;
+    color: string;
+    onClick: () => void;
+    icon: JSX.Element;
+    dotClass: string;
+  }> = [
+    {
+      label: "Log a catch",
+      hint: "Fish landed · species, weight, fly",
+      color: "var(--event-catch)",
+      onClick: onCatch,
+      icon: <Fish className="h-5 w-5" />,
+      dotClass: "catch",
+    },
+    {
+      label: "Lost a fish",
+      hint: "Stage · fly (if known)",
+      color: "var(--event-lost)",
+      onClick: onLost,
+      icon: <Fish className="h-5 w-5" style={{ opacity: 0.5 }} />,
+      dotClass: "lost",
+    },
+    {
+      label: "Mark a blank",
+      hint: "Confidence · reason",
+      color: "var(--event-blank)",
+      onClick: onBlank,
+      icon: <Clock className="h-5 w-5" />,
+      dotClass: "blank",
+    },
+    {
+      label: "Change a fly",
+      hint: "Position · pattern",
+      color: "var(--gild-500)",
+      onClick: onChange,
+      icon: <RefreshCw className="h-5 w-5" />,
+      dotClass: "change",
+    },
+  ];
+
+  const recent = events.slice().reverse().slice(0, 5);
+
+  return (
+    <div className="almanack-surface" style={{ paddingBottom: 96 }}>
+      {session.venue_name && <div className="venue-greeting">at {session.venue_name}</div>}
+
+      {/* Hero */}
+      <div className="ready-hero">
+        <div className="hero-count">{String(catchCount).padStart(2, "0")}</div>
+        <div className="hero-label smallcaps-lg">Fish today</div>
+        <div className="hero-meta">
+          <span>
+            <b>{lostCount}</b> lost
+          </span>
+          <span>
+            <b>{blankCount}</b> blanks
+          </span>
+          {keepLimit > 0 && (
+            <span className="keep-chip">
+              <b>Keep {keptCount}</b>/{keepLimit}
+            </span>
+          )}
+          <span>
+            <b>{elapsedStr}</b>
+          </span>
+        </div>
+      </div>
+
+      <hr className="rule" />
+
+      {/* Rod summary */}
+      {rodLine && (
+        <>
+          <div className="rod-summary">
+            <div className="smallcaps rod-summary-label">Rod</div>
+            <div>
+              <div className="rod-summary-line">{rodLine}</div>
+              {flyNames && <div className="rod-summary-flies">{flyNames}</div>}
+            </div>
+          </div>
+          <hr className="rule" />
+        </>
+      )}
+
+      {/* Event-coloured ledger rows */}
+      <div className="ledger">
+        {rows.map((r) => (
+          <button key={r.label} className="led-row" onClick={r.onClick} type="button">
+            <div className="led-stripe" style={{ background: r.color }} />
+            <div className="led-icon" style={{ color: r.color }}>
+              {r.icon}
+            </div>
+            <div className="led-body">
+              <div className="led-label">{r.label}</div>
+              <div className="led-hint smallcaps">{r.hint}</div>
+            </div>
+            <ChevronRight className="led-chev h-5 w-5" />
+          </button>
+        ))}
+      </div>
+
+      {/* Recent entries */}
+      {recent.length > 0 && (
+        <div className="recent">
+          <div className="smallcaps recent-label">Recent</div>
+          {recent.map((evt) => (
+            <div className="recent-entry" key={evt.id}>
+              <div className="re-time">{formatTime(evt.event_time)}</div>
+              <div
+                className={`re-dot ${
+                  evt.event_type === "catch"
+                    ? "catch"
+                    : evt.event_type === "blank"
+                    ? "blank"
+                    : evt.event_type === "got_away"
+                    ? "lost"
+                    : "change"
+                }`}
+              />
+              <div className="re-body">
+                <RecentBody event={evt} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Floating End-session pill */}
+      <button className="end-session-pill" onClick={onEndSession} type="button">
+        End session{events.length > 0 && ` · ${events.length} logged`}
+      </button>
+    </div>
+  );
+}
