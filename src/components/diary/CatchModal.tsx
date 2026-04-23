@@ -44,7 +44,6 @@ interface CatchModalProps {
   } | null;
 }
 
-const HOOK_SIZES = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
 const RIG_POSITIONS = ["Point", "Top dropper", "Middle dropper", "Bob fly"];
 
 type MeasurementMode = "weight" | "length";
@@ -128,7 +127,6 @@ export default function CatchModal({
         }
         return lengthInches !== "";
       case 2: return flyPattern !== null;
-      case 3: return flySize !== null;
       default: return true;
     }
   }
@@ -204,8 +202,8 @@ export default function CatchModal({
     }
   }
 
-  const totalSteps = 6;
-  const stepLabels = ["Weight", "Fly", "Size", "Position", "Retrieve", "Line"];
+  const totalSteps = 5;
+  const stepLabels = ["Weight", "Fly", "Position", "Retrieve", "Line"];
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -329,9 +327,8 @@ export default function CatchModal({
               onChange={({ pattern, size }) => {
                 setFlyPattern(pattern);
                 if (size != null) setFlySize(size);
-                // Auto-advance — Step 2 of CatchModal had a separate Size step;
-                // FlyPicker now collects size, so jump to Position (step 4).
-                setStep(4);
+                // Auto-advance — FlyPicker now collects size, so jump to Position (step 3).
+                setStep(3);
               }}
               currentStyle={currentSetup.style}
               currentLine={currentSetup.line_type}
@@ -341,27 +338,8 @@ export default function CatchModal({
             />
           )}
 
-          {/* STEP 3: Fly Size */}
+          {/* STEP 3: Rig Position (CARRY FORWARD) */}
           {step === 3 && (
-            <div className="space-y-3">
-              <Label>Hook Size</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {HOOK_SIZES.map((size) => (
-                  <Button
-                    key={size}
-                    variant={flySize === size ? "default" : "outline"}
-                    className="min-h-[44px] font-mono"
-                    onClick={() => setFlySize(size)}
-                  >
-                    {size}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 4: Rig Position (CARRY FORWARD) */}
-          {step === 4 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label>Rig Position</Label>
@@ -384,8 +362,8 @@ export default function CatchModal({
             </div>
           )}
 
-          {/* STEP 5: Retrieve (CARRY FORWARD) */}
-          {step === 5 && (
+          {/* STEP 4: Retrieve (CARRY FORWARD) */}
+          {step === 4 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label>Retrieve</Label>
@@ -411,8 +389,8 @@ export default function CatchModal({
             </div>
           )}
 
-          {/* STEP 6: Line (CARRY FORWARD — triggers implicit change) */}
-          {step === 6 && (
+          {/* STEP 5: Line (CARRY FORWARD — triggers implicit change) */}
+          {step === 5 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label>Line</Label>
@@ -457,7 +435,7 @@ export default function CatchModal({
 
           {step < totalSteps ? (
             <>
-              {step >= 4 && (
+              {step >= 3 && (
                 <Button
                   variant="ghost"
                   className="flex-1 min-h-[44px]"
@@ -471,7 +449,7 @@ export default function CatchModal({
                 onClick={() => setStep(step + 1)}
                 disabled={!canAdvance()}
               >
-                {step < 4 ? "Next" : "Change & Next"} <ArrowRight className="h-4 w-4 ml-1" />
+                {step < 3 ? "Next" : "Change & Next"} <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </>
           ) : (
