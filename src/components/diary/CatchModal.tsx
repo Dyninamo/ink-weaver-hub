@@ -328,6 +328,8 @@ export default function CatchModal({
               value={flyPattern}
               onChange={setFlyPattern}
               currentStyle={currentSetup.style}
+              currentLine={currentSetup.line_type}
+              venueName={venueName}
               venueType={venueType}
               required
             />
