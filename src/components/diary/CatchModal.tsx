@@ -262,35 +262,34 @@ export default function CatchModal({
               </div>
 
               {measureMode === "weight" ? (
-                <div className="flex gap-3 items-end justify-center">
-                  <div className="w-24">
-                    <Label className="text-center block">Pounds</Label>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min="0"
-                      max="20"
-                      placeholder="lb"
+                <div className="px-2">
+                  <div className="flex items-baseline gap-3">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="—"
                       value={weightLb}
-                      onChange={(e) => setWeightLb(e.target.value)}
-                      className="text-center text-2xl font-mono h-14"
+                      onChange={(e) => {
+                        // Accept "2.5" → store lb as integer + oz from fraction
+                        const v = e.target.value.replace(/[^0-9.]/g, "");
+                        setWeightLb(v);
+                        const f = parseFloat(v);
+                        if (!isNaN(f)) {
+                          const lb = Math.floor(f);
+                          const oz = Math.round((f - lb) * 16);
+                          setWeightOz(String(oz));
+                        } else {
+                          setWeightOz("");
+                        }
+                      }}
+                      className="tabular-weight-input"
                       autoFocus
                     />
+                    <div className="tabular-weight-unit">lb</div>
                   </div>
-                  <span className="text-2xl text-muted-foreground pb-2">:</span>
-                  <div className="w-24">
-                    <Label className="text-center block">Ounces</Label>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min="0"
-                      max="15"
-                      placeholder="oz"
-                      value={weightOz}
-                      onChange={(e) => setWeightOz(e.target.value)}
-                      className="text-center text-2xl font-mono h-14"
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Enter as decimal — e.g. 2.5 = 2 lb 8 oz
+                  </p>
                 </div>
               ) : (
                 <div className="flex justify-center">
