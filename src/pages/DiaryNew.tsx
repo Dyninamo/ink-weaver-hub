@@ -8,17 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, Play, Bookmark, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import SetupCascade from "@/components/diary/SetupCascade";
-import FlyPicker from "@/components/diary/FlyPicker";
-import SpotPicker from "@/components/diary/SpotPicker";
+import SetupWizard, { type WizardResult } from "@/components/diary/SetupWizard";
 import {
   createSession,
   addEvent,
-  type CurrentSetup,
   type RodSetup,
-  DEFAULT_SPECIES,
-  SPECIES_LIST,
-  formatWeight,
 } from "@/services/diaryService";
 
 type Phase = "header" | "setup";
