@@ -224,9 +224,15 @@ export default function DiaryEntry() {
   }
 
   function handleChangeSaved(_event: any, newSetup: CurrentSetup) {
+    const lineChanged = currentSetup.line_type !== newSetup.line_type && !!newSetup.line_type;
     setCurrentSetup(newSetup);
     loadData();
     if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
+    // After a line change, prompt the leader/flies cascade
+    if (lineChanged) {
+      // Defer so the change modal closes first
+      setTimeout(() => setLineCascadeOpen(true), 200);
+    }
   }
 
   async function handleImplicitChangeAccept() {
