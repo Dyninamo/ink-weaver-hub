@@ -2351,6 +2351,8 @@ export type Database = {
           condition_value: string
           fly_name: string
           mention_count: number | null
+          mention_pct: number | null
+          n_reports: number | null
           rank: number | null
           venue_name: string
         }
@@ -2359,6 +2361,8 @@ export type Database = {
           condition_value: string
           fly_name: string
           mention_count?: number | null
+          mention_pct?: number | null
+          n_reports?: number | null
           rank?: number | null
           venue_name: string
         }
@@ -2367,6 +2371,8 @@ export type Database = {
           condition_value?: string
           fly_name?: string
           mention_count?: number | null
+          mention_pct?: number | null
+          n_reports?: number | null
           rank?: number | null
           venue_name?: string
         }
@@ -2400,21 +2406,30 @@ export type Database = {
         Row: {
           fly_name: string
           mention_count: number | null
+          mention_pct: number | null
           month: number
+          month_name: string | null
+          n_reports: number | null
           rank: number | null
           venue_name: string
         }
         Insert: {
           fly_name: string
           mention_count?: number | null
+          mention_pct?: number | null
           month: number
+          month_name?: string | null
+          n_reports?: number | null
           rank?: number | null
           venue_name: string
         }
         Update: {
           fly_name?: string
           mention_count?: number | null
+          mention_pct?: number | null
           month?: number
+          month_name?: string | null
+          n_reports?: number | null
           rank?: number | null
           venue_name?: string
         }
