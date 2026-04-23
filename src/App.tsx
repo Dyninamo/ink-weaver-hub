@@ -45,6 +45,16 @@ const ShelledNamed = ({ children }: { children: React.ReactNode }) => (
 
 const queryClient = new QueryClient();
 
+// Apply persisted motion + theme prefs before first paint
+if (typeof document !== "undefined") {
+  try {
+    const reduceMotion = localStorage.getItem("ic.reduceMotion") === "true";
+    document.documentElement.setAttribute("data-motion", reduceMotion ? "reduced" : "");
+    const theme = localStorage.getItem("ic.theme");
+    if (theme) document.documentElement.setAttribute("data-theme", theme);
+  } catch { /* ignore */ }
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>

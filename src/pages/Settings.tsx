@@ -184,6 +184,7 @@ export default function Settings() {
     if (typeof next.reduceMotion === "boolean") {
       setReduceMotion(next.reduceMotion);
       localStorage.setItem("ic.reduceMotion", String(next.reduceMotion));
+      document.documentElement.setAttribute("data-motion", next.reduceMotion ? "reduced" : "");
     }
   }
 
