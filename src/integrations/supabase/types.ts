@@ -3140,6 +3140,7 @@ export type Database = {
           flies_on_cast: Json | null
           fly_known: boolean | null
           fly_pattern: string | null
+          fly_position_unknown: boolean
           fly_size: number | null
           got_away_stage: string | null
           id: string
@@ -3154,6 +3155,7 @@ export type Database = {
           retrieve: string | null
           rig: string | null
           rig_position: string | null
+          rod_index: number
           session_id: string
           size_estimate: string | null
           sort_order: number
@@ -3181,6 +3183,7 @@ export type Database = {
           flies_on_cast?: Json | null
           fly_known?: boolean | null
           fly_pattern?: string | null
+          fly_position_unknown?: boolean
           fly_size?: number | null
           got_away_stage?: string | null
           id?: string
@@ -3195,6 +3198,7 @@ export type Database = {
           retrieve?: string | null
           rig?: string | null
           rig_position?: string | null
+          rod_index?: number
           session_id: string
           size_estimate?: string | null
           sort_order: number
@@ -3222,6 +3226,7 @@ export type Database = {
           flies_on_cast?: Json | null
           fly_known?: boolean | null
           fly_pattern?: string | null
+          fly_position_unknown?: boolean
           fly_size?: number | null
           got_away_stage?: string | null
           id?: string
@@ -3236,6 +3241,7 @@ export type Database = {
           retrieve?: string | null
           rig?: string | null
           rig_position?: string | null
+          rod_index?: number
           session_id?: string
           size_estimate?: string | null
           sort_order?: number
@@ -3249,6 +3255,83 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "session_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_rods: {
+        Row: {
+          created_at: string
+          dropper_count: number | null
+          ended_at: string | null
+          flies_on_cast: Json | null
+          id: string
+          is_active: boolean
+          leader_id: number | null
+          line_id: number | null
+          line_name: string | null
+          line_profile: string | null
+          name: string | null
+          rod_index: number
+          rod_length_ft: number | null
+          rod_weight: number | null
+          session_id: string
+          started_at: string
+          style: string | null
+          tippet_length_ft: number | null
+          tippet_strength: number | null
+          tippet_unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          dropper_count?: number | null
+          ended_at?: string | null
+          flies_on_cast?: Json | null
+          id?: string
+          is_active?: boolean
+          leader_id?: number | null
+          line_id?: number | null
+          line_name?: string | null
+          line_profile?: string | null
+          name?: string | null
+          rod_index: number
+          rod_length_ft?: number | null
+          rod_weight?: number | null
+          session_id: string
+          started_at?: string
+          style?: string | null
+          tippet_length_ft?: number | null
+          tippet_strength?: number | null
+          tippet_unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          dropper_count?: number | null
+          ended_at?: string | null
+          flies_on_cast?: Json | null
+          id?: string
+          is_active?: boolean
+          leader_id?: number | null
+          line_id?: number | null
+          line_name?: string | null
+          line_profile?: string | null
+          name?: string | null
+          rod_index?: number
+          rod_length_ft?: number | null
+          rod_weight?: number | null
+          session_id?: string
+          started_at?: string
+          style?: string | null
+          tippet_length_ft?: number | null
+          tippet_strength?: number | null
+          tippet_unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_rods_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "fishing_sessions"

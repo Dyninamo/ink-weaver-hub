@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { addEvent, type CurrentSetup } from "@/services/diaryService";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface LostModalProps {
   open: boolean;
@@ -43,24 +44,47 @@ export default function LostModal({
   latestWeather,
 }: LostModalProps) {
   const [stage, setStage] = useState<string | null>(null);
+  const [flyPos, setFlyPos] = useState<string | null>(null); // "unsure" | position name
   const [saving, setSaving] = useState(false);
 
+  // Build fly positions from currentSetup.flies_on_cast
+  const positions = useMemo(() => {
+    const f = currentSetup.flies_on_cast;
+    if (!f || typeof f !== "object") return [];
+    return Object.keys(f).filter((k) => f[k]);
+  }, [currentSetup.flies_on_cast]);
+
+  const isMultiFly = positions.length > 1;
+
   useEffect(() => {
-    if (open) setStage(null);
-  }, [open]);
+    if (open) {
+      setStage(null);
+      // Default to "Unsure" on multi-fly rigs
+      setFlyPos(isMultiFly ? "unsure" : positions[0] ?? null);
+    }
+  }, [open, isMultiFly, positions]);
 
   const canSave = stage !== null;
+  const flyUnknown = flyPos === "unsure" || flyPos === null;
 
   async function handleSave() {
     if (!canSave) return;
     setSaving(true);
     try {
+      const fliesObj = currentSetup.flies_on_cast as Record<string, string> | null;
+      const flyPattern =
+        flyUnknown || !flyPos || !fliesObj ? null : fliesObj[flyPos] ?? null;
+
       const event = await addEvent({
         session_id: sessionId,
         event_type: "got_away",
         event_time: new Date().toISOString(),
         sort_order: eventCount + 1,
         got_away_stage: stage!,
+        rig_position: flyUnknown ? null : flyPos,
+        fly_pattern: flyPattern,
+        // @ts-ignore — column added in migration, types regenerate after
+        fly_position_unknown: flyUnknown,
         style: currentSetup.style,
         rig: currentSetup.rig,
         line_type: currentSetup.line_type,
@@ -73,7 +97,7 @@ export default function LostModal({
         event_wind_dir: latestWeather?.wind_dir ?? null,
         event_pressure: latestWeather?.pressure ?? null,
         event_conditions: latestWeather?.conditions ?? null,
-      });
+      } as any);
       toast.success("Lost fish logged");
       onSaved(event);
       onClose();
@@ -83,6 +107,8 @@ export default function LostModal({
       setSaving(false);
     }
   }
+
+  const ctaSubline = flyUnknown ? "Fly unknown" : flyPos;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -107,6 +133,35 @@ export default function LostModal({
             ))}
           </div>
 
+          {positions.length > 0 && (
+            <>
+              <p className="smallcaps">On which fly?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {positions.map((pos) => (
+                  <button
+                    key={pos}
+                    type="button"
+                    onClick={() => setFlyPos(pos)}
+                    className="event-chip"
+                    data-active={flyPos === pos}
+                    data-tone="lost"
+                  >
+                    {pos}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setFlyPos("unsure")}
+                  className={cn("event-chip col-span-2")}
+                  data-active={flyPos === "unsure"}
+                  data-tone="lost"
+                >
+                  Unsure
+                </button>
+              </div>
+            </>
+          )}
+
           <button
             type="button"
             disabled={!canSave || saving}
@@ -115,9 +170,18 @@ export default function LostModal({
             data-tone="lost"
             data-active={canSave}
           >
-            {canSave
-              ? `Log lost · ${stage!.replace(/_/g, " ")}`
-              : "Pick stage"}
+            {canSave ? (
+              <span className="flex flex-col items-center leading-tight">
+                <span>Log lost · {stage!.replace(/_/g, " ")}</span>
+                {positions.length > 0 && (
+                  <span className="text-[11px] opacity-80 mt-0.5">
+                    {ctaSubline}
+                  </span>
+                )}
+              </span>
+            ) : (
+              "Pick stage"
+            )}
           </button>
         </div>
       </DialogContent>

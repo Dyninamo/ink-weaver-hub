@@ -26,6 +26,9 @@ import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
 import LostModal from "@/components/diary/LostModal";
 import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
+import ChangeWhatPicker, { type ChangeField } from "@/components/diary/ChangeWhatPicker";
+import LineCascadePrompt from "@/components/diary/LineCascadePrompt";
+import RodPickerSheet, { type SessionRod } from "@/components/diary/RodPickerSheet";
 import ReadyView from "@/components/diary/ReadyView";
 import EndSessionView from "@/components/diary/EndSessionView";
 import {
@@ -70,6 +73,10 @@ export default function DiaryEntry() {
   const [blankOpen, setBlankOpen] = useState(false);
   const [lostOpen, setLostOpen] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
+  const [whatPickerOpen, setWhatPickerOpen] = useState(false);
+  const [lineCascadeOpen, setLineCascadeOpen] = useState(false);
+  const [rodPickerOpen, setRodPickerOpen] = useState(false);
+  const [activeRodIndex, setActiveRodIndex] = useState<number>(1);
   const [endOpen, setEndOpen] = useState(false);
   const [implicitChangePrompt, setImplicitChangePrompt] = useState<{
     newSetup: CurrentSetup;
@@ -217,9 +224,15 @@ export default function DiaryEntry() {
   }
 
   function handleChangeSaved(_event: any, newSetup: CurrentSetup) {
+    const lineChanged = currentSetup.line_type !== newSetup.line_type && !!newSetup.line_type;
     setCurrentSetup(newSetup);
     loadData();
     if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
+    // After a line change, prompt the leader/flies cascade
+    if (lineChanged) {
+      // Defer so the change modal closes first
+      setTimeout(() => setLineCascadeOpen(true), 200);
+    }
   }
 
   async function handleImplicitChangeAccept() {
@@ -393,7 +406,7 @@ export default function DiaryEntry() {
             onCatch={() => setCatchOpen(true)}
             onLost={() => setLostOpen(true)}
             onBlank={() => setBlankOpen(true)}
-            onChange={() => setChangeOpen(true)}
+            onChange={() => setWhatPickerOpen(true)}
             onEndSession={() => setEndOpen(true)}
           />
         </div>
@@ -815,7 +828,7 @@ export default function DiaryEntry() {
             size="lg"
             variant="outline"
             className="rounded-full h-14 px-5 bg-[#162230] border-diary-change/30 text-diary-change hover:bg-[#1E3044] shadow-lg"
-            onClick={() => setChangeOpen(true)}
+            onClick={() => setWhatPickerOpen(true)}
           >
             <RefreshCw className="h-5 w-5" />
           </Button>
@@ -852,7 +865,7 @@ export default function DiaryEntry() {
         onSaved={handleBlankSaved}
         onChangeFirst={() => {
           setBlankOpen(false);
-          setChangeOpen(true);
+          setWhatPickerOpen(true);
         }}
         latestWeather={latestWeather}
       />
@@ -880,6 +893,75 @@ export default function DiaryEntry() {
         eventCount={events.length}
         onSaved={handleChangeSaved}
         latestWeather={latestWeather}
+      />
+
+      {/* Change · what picker */}
+      <ChangeWhatPicker
+        open={whatPickerOpen}
+        onClose={() => setWhatPickerOpen(false)}
+        onPick={(field: ChangeField) => {
+          setWhatPickerOpen(false);
+          if (field === "rod") {
+            setRodPickerOpen(true);
+          } else if (field === "line") {
+            // Line change → open Change modal, then cascade after save
+            setChangeOpen(true);
+          } else {
+            setChangeOpen(true);
+          }
+        }}
+      />
+
+      {/* Change · line cascade prompt (shown after a line change is saved) */}
+      <LineCascadePrompt
+        open={lineCascadeOpen}
+        onClose={() => setLineCascadeOpen(false)}
+        newLineName={currentSetup.line_type || "new line"}
+        currentLeader={currentSetup.rig}
+        currentFlies={
+          currentSetup.flies_on_cast
+            ? Object.values(currentSetup.flies_on_cast as Record<string, string>)
+                .filter(Boolean)
+                .join(" · ")
+            : null
+        }
+        onContinue={({ updateLeader, updateFlies }) => {
+          setLineCascadeOpen(false);
+          if (updateLeader || updateFlies) {
+            // Re-open change modal so user can update the cascading bits
+            setChangeOpen(true);
+          }
+        }}
+      />
+
+      {/* Rod picker bottom sheet */}
+      <RodPickerSheet
+        open={rodPickerOpen}
+        onClose={() => setRodPickerOpen(false)}
+        sessionId={id!}
+        events={events}
+        activeRodIndex={activeRodIndex}
+        onSwitchRod={async (rod: SessionRod) => {
+          setActiveRodIndex(rod.rod_index);
+          setRodPickerOpen(false);
+          // Restore that rod's setup into currentSetup
+          setCurrentSetup({
+            style: rod.style,
+            rig: null,
+            line_type: rod.line_name,
+            retrieve: null,
+            flies_on_cast: null,
+            spot: currentSetup.spot,
+            depth_zone: null,
+          } as CurrentSetup);
+          toast.success(`Switched to ${rod.name || `Rod ${rod.rod_index}`}`);
+        }}
+        onSetupNewRod={() => {
+          setRodPickerOpen(false);
+          // Re-uses Change modal to capture the new rod's full rig
+          setChangeOpen(true);
+          toast.info("Set up your new rod — it'll be added to the rod list");
+        }}
       />
 
       {/* Implicit Change Prompt */}
