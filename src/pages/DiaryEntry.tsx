@@ -301,6 +301,7 @@ export default function DiaryEntry() {
       }
 
       toast.success("Session complete!");
+      setJustEnded(true);
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to end session");
