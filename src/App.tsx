@@ -15,6 +15,7 @@ import Diary from "./pages/Diary";
 import DiaryNew from "./pages/DiaryNew";
 import DiaryEntry from "./pages/DiaryEntry";
 import DiarySetups from "./pages/DiarySetups";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AdminUpload from "./pages/AdminUpload";
 import AdminDbStatus from "./pages/AdminDbStatus";
@@ -86,6 +87,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <DiarySetups />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               } 
             />
