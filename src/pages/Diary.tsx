@@ -48,6 +48,14 @@ export default function Diary() {
   const [venueFilter, setVenueFilter] = useState<string>("all");
   const [venues, setVenues] = useState<string[]>([]);
   const [activeSession, setActiveSession] = useState<FishingSession | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+
+  // Debounce search input (150ms)
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim().toLowerCase()), 150);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   // Load venues for filter
   useEffect(() => {
