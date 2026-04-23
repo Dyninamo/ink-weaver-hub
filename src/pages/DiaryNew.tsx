@@ -61,12 +61,11 @@ export default function DiaryNew() {
   const [weatherPressure, setWeatherPressure] = useState<string>("");
   const [weatherConditions, setWeatherConditions] = useState<string>("");
 
-  // --- Setup fields ---
-  const [setup, setSetup] = useState<CurrentSetup>(EMPTY_SETUP);
+  // --- Wizard result (set when user finishes the 9-step wizard) ---
+  const [wizardResult, setWizardResult] = useState<WizardResult | null>(null);
 
   // --- Saved setups ---
   const [savedSetups, setSavedSetups] = useState<RodSetup[]>([]);
-  const [showSavedSetups, setShowSavedSetups] = useState(false);
 
     // Available venues from reports_enriched
     const [venues, setVenues] = useState<string[]>([]);
