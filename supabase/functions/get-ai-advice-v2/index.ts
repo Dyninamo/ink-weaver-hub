@@ -766,6 +766,7 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
 
     // ── Step 5: Call AI ────────────────────────────────────────
     let adviceText = "";
+    let aiSuccess = false;
 
     if (skip_ai) {
       // Skip AI for testing — return structured fallback only
@@ -774,7 +775,6 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
       adviceText += `Top flies: ${rankedFlies.slice(0, 3).map((f) => f.name).join(", ") || "none recorded"}.\n\n`;
       adviceText += `[AI generation skipped — test mode]`;
     } else {
-      let aiSuccess = false;
       try {
         const lovableKey = Deno.env.get("LOVABLE_API_KEY");
         if (lovableKey) {
