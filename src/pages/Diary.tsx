@@ -36,7 +36,7 @@ interface SessionCard extends FishingSession {
 }
 
 export default function Diary() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
   const [sessions, setSessions] = useState<SessionCard[]>([]);
