@@ -189,8 +189,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                   Stillwater
                 </div>
-                <SelectChips label="Species" value={stillSpecies} options={SPECIES_OPTIONS} onSelect={setStillSpecies} />
-                <SelectChips label="Rod weight" value={String(stillRod)} options={ROD_WEIGHTS.map(String)} onSelect={(v) => setStillRod(Number(v))} suffix="#" />
+                <SelectChips label="Species" value={stillSpecies} options={STILLWATER_SPECIES} onSelect={setStillSpecies} />
+                <SelectChips label="Rod weight" value={String(stillRod)} options={STILLWATER_RODS.map(String)} onSelect={(v) => setStillRod(Number(v))} suffix="#" />
                 <SelectChips label="Usual line" value={stillLine} options={LINE_OPTIONS} onSelect={setStillLine} />
               </div>
 
@@ -199,8 +199,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                   River
                 </div>
-                <SelectChips label="Species" value={riverSpecies} options={SPECIES_OPTIONS} onSelect={setRiverSpecies} />
-                <SelectChips label="Rod weight" value={String(riverRod)} options={ROD_WEIGHTS.map(String)} onSelect={(v) => setRiverRod(Number(v))} suffix="#" />
+                <SelectChips label="Species" value={riverSpecies} options={RIVER_SPECIES} onSelect={setRiverSpecies} />
+                <SelectChips label="Rod weight" value={String(riverRod)} options={RIVER_RODS.map(String)} onSelect={(v) => setRiverRod(Number(v))} suffix="#" />
                 <SelectChips label="Usual line" value={riverLine} options={LINE_OPTIONS} onSelect={setRiverLine} />
               </div>
 
