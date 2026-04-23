@@ -699,3 +699,410 @@ All colors MUST be HSL.
 }
 .dropper-chip .num { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
 
+/* ============================================================
+   Flow 06 — Map (controls, pins, sheets, advice slice)
+   ============================================================ */
+
+/* MapLibre overrides — paper aesthetic */
+.maplibregl-ctrl-attrib { font-family: var(--font-family); font-size: 10px; background: rgba(252, 252, 249, 0.8) !important; }
+.maplibregl-popup-content { font-family: var(--font-family); padding: 0; background: var(--paper-50); border: 1px solid var(--paper-200); border-radius: var(--radius-md); box-shadow: var(--shadow-float); }
+.maplibregl-popup-tip { display: none; }
+.maplibregl-popup-close-button { color: var(--ink-500); font-size: 18px; padding: 4px 8px; }
+
+/* Control buttons (top-right) */
+.map-control-btn {
+  background: var(--paper-50);
+  border: 1px solid var(--paper-200);
+  border-radius: var(--radius-md);
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-700);
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.25);
+  font-family: var(--font-family);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+.map-control-btn:hover { background: var(--paper-100); }
+.map-control-btn.wide {
+  width: auto; padding: 0 var(--space-3);
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--tracking-wider);
+  height: 40px;
+}
+.map-control-btn.active {
+  background: var(--ink-700); color: var(--paper-50);
+  border-color: var(--ink-700);
+}
+.map-control-btn .filter-badge {
+  margin-left: 6px; padding: 1px 6px;
+  background: var(--gild-500); color: var(--paper-50);
+  border-radius: var(--radius-full);
+  font-size: 10px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stats chip (top-left) */
+.map-stats {
+  position: absolute; top: var(--space-3); left: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--paper-50);
+  border: 1px solid var(--paper-200);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.25);
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  font-family: var(--font-family);
+  z-index: 10;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.map-stats b { color: var(--event-catch-dark); font-weight: 700; }
+
+/* Venue pins (divIcon-style for MapLibre HTML markers) */
+.venue-pin { cursor: pointer; }
+.venue-pin .vp-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--gild-500);
+  box-shadow: 0 0 0 2px var(--paper-50), 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform var(--motion-fast);
+}
+.venue-pin:hover .vp-dot { transform: scale(1.2); }
+.venue-pin.river .vp-dot { background: var(--ink-700); }
+.venue-pin.small .vp-dot { width: 8px; height: 8px; }
+.venue-pin.large .vp-dot { width: 16px; height: 16px; }
+.venue-pin.selected .vp-dot {
+  background: var(--rose-500);
+  box-shadow: 0 0 0 3px var(--paper-50), 0 0 0 5px rgba(210, 100, 120, 0.3);
+}
+
+/* Live trail event pins */
+.event-pin {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--paper-50);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.event-pin.catch  { background: var(--event-catch); }
+.event-pin.lost   { background: var(--event-lost); }
+.event-pin.blank  { background: var(--event-blank); }
+.event-pin.change { background: var(--gild-500); }
+.event-pin-start { width: 12px; height: 12px; border-radius: 50%; background: var(--ink-700); border: 2px solid var(--paper-50); }
+.event-pin-current {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--rose-500);
+  box-shadow: 0 0 0 8px rgba(210, 100, 120, 0.18);
+  animation: pulse-here 2s var(--ease-in-out) infinite;
+}
+@keyframes pulse-here {
+  0%, 100% { box-shadow: 0 0 0 8px rgba(210, 100, 120, 0.18); }
+  50%      { box-shadow: 0 0 0 14px rgba(210, 100, 120, 0.06); }
+}
+
+/* Filter sheet chips */
+.facet-chip {
+  padding: 6px 12px; min-height: 32px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--paper-300);
+  background: var(--paper-50);
+  color: var(--ink-700);
+  font-family: var(--font-family);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  transition: all var(--motion-fast);
+}
+.facet-chip:hover { border-color: var(--ink-500); }
+.facet-chip[data-active="true"] {
+  background: var(--ink-700); color: var(--paper-50);
+  border-color: var(--ink-700);
+}
+.facet-label {
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  margin-bottom: var(--space-2);
+}
+
+/* Venue detail page */
+.venue-detail-surface {
+  background: var(--paper-50);
+  color: var(--ink-900);
+  font-family: var(--font-family);
+  min-height: 100vh;
+}
+.venue-hero {
+  padding: var(--space-6) var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--paper-200);
+}
+.venue-hero .archetype {
+  font-size: 11px; font-weight: 600;
+  color: var(--gild-700);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+}
+.venue-hero h1 {
+  margin-top: var(--space-2);
+  font-size: 30px; font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+}
+.venue-hero .meta {
+  margin-top: var(--space-2);
+  font-size: 13px;
+  color: var(--ink-500);
+}
+.venue-hero .tags {
+  margin-top: var(--space-3);
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.venue-tag {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--paper-300);
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-700);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+.venue-tag.gild { border-color: var(--gild-500); color: var(--gild-700); background: rgba(184, 134, 74, 0.08); }
+.venue-tag.moss { border-color: var(--event-catch); color: var(--event-catch-dark); background: rgba(122, 152, 105, 0.10); }
+
+.venue-section { padding: var(--space-5) var(--space-5); border-bottom: 1px solid var(--paper-200); }
+.venue-section h2 {
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  margin-bottom: var(--space-3);
+}
+
+/* My history stats row */
+.my-history-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+.my-history-stat .num {
+  font-size: 28px; font-weight: 700;
+  color: var(--ink-900);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-snug);
+  line-height: 1;
+}
+.my-history-stat .lbl {
+  margin-top: var(--space-1);
+  font-size: 10px; font-weight: 600;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+/* Advice teaser & narrative */
+.advice-narrative {
+  font-size: 15px;
+  line-height: var(--leading-relaxed);
+  color: var(--ink-900);
+}
+.advice-evidence {
+  margin-top: var(--space-3);
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+.advice-evidence b { color: var(--ink-700); }
+
+/* Tips specific to venue (gild block) */
+.venue-tips {
+  background: rgba(184, 134, 74, 0.08);
+  border: 1px solid rgba(184, 134, 74, 0.30);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+}
+.venue-tips .tip-row {
+  display: grid; grid-template-columns: 16px 1fr;
+  gap: var(--space-2);
+  font-size: 14px;
+  color: var(--ink-900);
+  line-height: var(--leading-normal);
+  padding: 6px 0;
+}
+.venue-tips .tip-row::before { content: "•"; color: var(--gild-700); font-weight: 700; }
+
+/* Confidence-tier fly chips */
+.tier-fly {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--paper-300);
+  background: var(--paper-50);
+  font-family: var(--font-family);
+  font-size: 13px; font-weight: 600;
+  color: var(--ink-900);
+}
+.tier-fly .tier-dot { width: 8px; height: 8px; border-radius: 50%; }
+.tier-fly.strong { border-color: var(--event-catch); }
+.tier-fly.strong .tier-dot { background: var(--event-catch); }
+.tier-fly.medium { border-color: var(--gild-500); }
+.tier-fly.medium .tier-dot { background: var(--gild-500); }
+.tier-fly.wtonly { border-color: var(--paper-300); color: var(--ink-500); }
+.tier-fly.wtonly .tier-dot { background: var(--ink-300); }
+
+.tier-legend {
+  margin-top: var(--space-3);
+  display: flex; flex-wrap: wrap; gap: var(--space-3);
+  font-size: 11px; color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  font-weight: 600;
+}
+.tier-legend .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+/* Methods bars */
+.method-bar { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); align-items: center; padding: 8px 0; }
+.method-bar .name { font-size: 14px; color: var(--ink-900); font-weight: 500; }
+.method-bar .num { font-size: 13px; color: var(--ink-500); font-variant-numeric: tabular-nums; font-weight: 600; }
+.method-bar .track {
+  grid-column: 1 / -1;
+  height: 6px; background: var(--paper-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: 4px;
+}
+.method-bar .fill {
+  height: 100%; background: var(--ink-700);
+  border-radius: var(--radius-full);
+}
+
+/* 3-up tabular weather */
+.weather-3up {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+}
+.weather-3up .stat .num {
+  font-size: 22px; font-weight: 700;
+  color: var(--ink-900);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-snug);
+}
+.weather-3up .stat .lbl {
+  font-size: 10px; font-weight: 600;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  margin-top: 2px;
+}
+
+/* Species mix split bar */
+.species-split { height: 12px; border-radius: var(--radius-full); overflow: hidden; display: flex; background: var(--paper-200); }
+.species-split .seg.rainbow { background: var(--rose-500); }
+.species-split .seg.brown   { background: var(--gild-700); }
+.species-counts {
+  margin-top: var(--space-2);
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--ink-500);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* Seasonal outlook tabs */
+.season-tabs { display: flex; gap: 4px; margin-bottom: var(--space-3); border-bottom: 1px solid var(--paper-200); }
+.season-tab {
+  padding: 8px 12px;
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  background: transparent; border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer; font-family: var(--font-family);
+}
+.season-tab[data-active="true"] {
+  color: var(--ink-900);
+  border-bottom-color: var(--ink-700);
+}
+
+/* Recent reports excerpts */
+.report-excerpt {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--paper-200);
+}
+.report-excerpt:first-child { border-top: none; }
+.report-excerpt .head {
+  display: flex; justify-content: space-between;
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-500);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  margin-bottom: 4px;
+}
+.report-excerpt .body {
+  font-size: 14px; color: var(--ink-900);
+  line-height: var(--leading-normal);
+}
+
+/* Contact strip */
+.contact-row {
+  display: grid; grid-template-columns: 24px 1fr 18px;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--paper-200);
+  align-items: center;
+  text-decoration: none;
+  color: var(--ink-900);
+  font-size: 14px;
+}
+.contact-row:first-child { border-top: none; }
+.contact-row .icon { color: var(--ink-500); display: flex; }
+.contact-row .chev { color: var(--paper-300); justify-self: end; }
+.contact-row .muted { color: var(--ink-300); font-style: italic; font-size: 13px; }
+
+/* Ghillie ask pill */
+.ghillie-pill {
+  width: 100%;
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper-100);
+  border: 1px solid var(--paper-200);
+  border-radius: var(--radius-full);
+  color: var(--ink-500);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--font-family);
+  text-align: left;
+}
+.ghillie-pill:hover { background: var(--paper-200); }
+
+/* Bottom peek for sessions on map (history layer) */
+.history-peek {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--paper-50);
+  border-top: 1px solid var(--paper-200);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  max-height: 40vh;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 -4px 16px -8px rgba(0, 0, 0, 0.25);
+}
+.history-peek .row {
+  display: grid; grid-template-columns: 4px 1fr auto;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--paper-200);
+  align-items: center;
+  cursor: pointer;
+  width: 100%; background: transparent; border-left: none; border-right: none; border-bottom: none;
+  font-family: var(--font-family); text-align: left;
+}
+.history-peek .row:hover { background: var(--paper-100); }
+.history-peek .row .stripe { align-self: stretch; border-radius: var(--radius-sm); }
+.history-peek .row .body { font-size: 14px; color: var(--ink-900); }
+.history-peek .row .meta { font-size: 11px; color: var(--ink-500); margin-top: 2px; text-transform: uppercase; letter-spacing: var(--tracking-wider); font-weight: 600; }
+.history-peek .row .num { font-size: 13px; color: var(--ink-700); font-variant-numeric: tabular-nums; font-weight: 700; }
+

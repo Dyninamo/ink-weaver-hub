@@ -18,6 +18,7 @@ import DiarySetups from "./pages/DiarySetups";
 import Settings from "./pages/Settings";
 import Queries from "./pages/Queries";
 import MapPage from "./pages/MapPage";
+import VenueDetail from "./pages/VenueDetail";
 import NotFound from "./pages/NotFound";
 import AdminUpload from "./pages/AdminUpload";
 import AdminDbStatus from "./pages/AdminDbStatus";
@@ -113,6 +114,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MapPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/venue/:venueId" 
+              element={
+                <ProtectedRoute>
+                  <VenueDetail />
                 </ProtectedRoute>
               } 
             />
