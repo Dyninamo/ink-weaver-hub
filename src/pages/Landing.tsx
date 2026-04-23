@@ -111,8 +111,8 @@ const Landing = () => {
               (venue) => (
                 <Card key={venue} className="p-4 hover:shadow-soft transition-shadow">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-water rounded-full flex items-center justify-center">
-                      <Fish className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                      <Fish className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <span className="font-medium text-card-foreground">{venue}</span>
                   </div>
@@ -135,7 +135,7 @@ const Landing = () => {
           <Button
             size="lg"
             onClick={() => navigate("/auth")}
-            className="bg-gradient-water text-white hover:opacity-90 shadow-medium text-lg px-8"
+            className="shadow-medium text-lg px-8"
           >
             Create Free Account
           </Button>

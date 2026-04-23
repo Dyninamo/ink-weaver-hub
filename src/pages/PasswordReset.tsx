@@ -69,8 +69,8 @@ const PasswordReset = () => {
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-water rounded-full mb-4">
-            <Fish className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
+            <Fish className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Reset Password</h1>
           <p className="text-muted-foreground">
@@ -103,7 +103,7 @@ const PasswordReset = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-water"
+                  className="w-full"
                   disabled={isLoading}
                 >
                   {isLoading ? "Sending..." : "Send Reset Link"}
