@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import DisplayNameGate from "@/components/DisplayNameGate";
+import OnboardingGate from "@/components/onboarding/OnboardingGate";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -41,12 +42,12 @@ const ProtectedRoute = ({ children, requireDisplayName = false }: ProtectedRoute
     return null;
   }
 
-  if (requireDisplayName) {
-    return <DisplayNameGate>{children}</DisplayNameGate>;
-  }
-
-  return <>{children}</>;
+  // Onboarding gate runs first — collects display name + defaults + home water.
+  // requireDisplayName remains as a stricter fallback for legacy paths.
+  const inner = requireDisplayName ? <DisplayNameGate>{children}</DisplayNameGate> : <>{children}</>;
+  return <OnboardingGate>{inner}</OnboardingGate>;
 };
 
 export default ProtectedRoute;
+
 
