@@ -322,11 +322,17 @@ export default function CatchModal({
             </div>
           )}
 
-          {/* STEP 2: Fly Pattern */}
+          {/* STEP 2: Fly Pattern (FlyPicker now also collects size + qualifiers) */}
           {step === 2 && (
             <FlyPicker
               value={flyPattern}
-              onChange={setFlyPattern}
+              onChange={({ pattern, size }) => {
+                setFlyPattern(pattern);
+                if (size != null) setFlySize(size);
+                // Auto-advance — Step 2 of CatchModal had a separate Size step;
+                // FlyPicker now collects size, so jump to Position (step 4).
+                setStep(4);
+              }}
               currentStyle={currentSetup.style}
               currentLine={currentSetup.line_type}
               venueName={venueName}
