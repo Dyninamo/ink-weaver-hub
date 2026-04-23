@@ -15,8 +15,11 @@ interface OnboardingWizardProps {
 
 type Step = 1 | 2 | 3 | 4;
 
-const SPECIES_OPTIONS = ["Rainbow trout", "Brown trout", "Grayling", "Sea trout", "Salmon"];
-const ROD_WEIGHTS = [3, 4, 5, 6, 7, 8];
+// Per-water-type species (per spec B2)
+const STILLWATER_SPECIES = ["Rainbow trout", "Brown trout", "Brook trout"];
+const RIVER_SPECIES = ["Brown trout", "Grayling", "Sea trout", "Rainbow trout"];
+const STILLWATER_RODS = [6, 7, 8, 9, 10];
+const RIVER_RODS = [3, 4, 5, 6, 7];
 const LINE_OPTIONS = ["Floating", "Midge tip", "Slow intermediate", "Fast intermediate", "Sinking"];
 
 interface VenueResult {

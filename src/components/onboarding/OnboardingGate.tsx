@@ -18,8 +18,12 @@ const OnboardingGate = ({ children }: OnboardingGateProps) => {
   if (!user) return <>{children}</>;
   if (isProfileLoading || !profile) return null;
 
+  // Only show wizard for brand-new users; 'started' and 'done' skip it.
+  // (After the wizard, profile transitions to 'started' and the in-diary
+  // CoachBanner takes over for the first-session prompt.)
+  const stage = profile.coach_stage ?? "new";
   const needsOnboarding =
-    !completedThisSession && profile.coach_stage !== "done";
+    !completedThisSession && (stage === "new" || stage === "onboarding");
 
   if (needsOnboarding) {
     return <OnboardingWizard onComplete={() => setCompletedThisSession(true)} />;
