@@ -32,6 +32,8 @@ import RodPickerSheet, { type SessionRod } from "@/components/diary/RodPickerShe
 import ReadyView from "@/components/diary/ReadyView";
 import CoachBanner from "@/components/diary/CoachBanner";
 import EndSessionView from "@/components/diary/EndSessionView";
+import EndSessionConfirm from "@/components/diary/EndSessionConfirm";
+import EndSessionSyncing from "@/components/diary/EndSessionSyncing";
 import {
   getSession,
   getSessionEvents,
@@ -78,16 +80,27 @@ export default function DiaryEntry() {
   const [lineCascadeOpen, setLineCascadeOpen] = useState(false);
   const [rodPickerOpen, setRodPickerOpen] = useState(false);
   const [activeRodIndex, setActiveRodIndex] = useState<number>(1);
-  const [endOpen, setEndOpen] = useState(false);
+  // 3-phase end-session flow: confirm → syncing → ended (null = not in flow)
+  type EndPhase = "confirm" | "syncing" | "ended";
+  const [endPhase, setEndPhase] = useState<EndPhase | null>(null);
   const [implicitChangePrompt, setImplicitChangePrompt] = useState<{
     newSetup: CurrentSetup;
   } | null>(null);
 
-  // End session form
-  const [satisfaction, setSatisfaction] = useState<number | null>(null);
-  const [wouldReturn, setWouldReturn] = useState<boolean | null>(null);
-  const [sessionNotes, setSessionNotes] = useState("");
-  const [ending, setEnding] = useState(false);
+  // Online/offline awareness for the syncing screen
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  );
+  useEffect(() => {
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
 
   // Expanded events
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
@@ -259,69 +272,70 @@ export default function DiaryEntry() {
     loadData();
   }
 
-  async function handleEndSession() {
+  // Fired from EndSessionConfirm "End session" button.
+  // Kicks off the DB write (fire-and-forget) and advances to the syncing screen.
+  function handleConfirmEnd() {
     if (!id) return;
-    setEnding(true);
-    try {
-      await endSession(id, {
-        satisfaction_score: satisfaction || undefined,
-        would_return: wouldReturn ?? undefined,
-        notes: sessionNotes || undefined,
-      });
-      setEndOpen(false);
+    void endSession(id, {}).catch((err) => {
+      console.error("endSession failed:", err);
+      toast.error(err?.message || "Failed to end session");
+    });
+    setEndPhase("syncing");
+  }
 
-      // Check outreach eligibility before showing "Session complete"
-      if (venueId && !outreachChecked.current) {
-        outreachChecked.current = true;
-        try {
-          // Check opted out
-          const { data: optedOut } = await supabase
+  // Fired from EndSessionSyncing onComplete. Reloads session, runs the
+  // venue-outreach eligibility check, then either opens the outreach
+  // dialog or advances to the EndSessionView.
+  async function handleSyncingComplete() {
+    if (!id) {
+      setEndPhase("ended");
+      return;
+    }
+
+    // Refresh the session row so EndSessionView sees end_time / duration_minutes.
+    await loadData();
+
+    if (venueId && !outreachChecked.current) {
+      outreachChecked.current = true;
+      try {
+        const { data: optedOut } = await supabase
+          .from("venue_outreach")
+          .select("outreach_id")
+          .eq("venue_id", venueId)
+          .eq("status", "opted_out")
+          .limit(1)
+          .maybeSingle();
+
+        if (!optedOut) {
+          const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
+          const { data: recentSend } = await supabase
             .from("venue_outreach")
             .select("outreach_id")
             .eq("venue_id", venueId)
-            .eq("status", "opted_out")
+            .eq("status", "sent")
+            .gte("sent_at", ninetyDaysAgo)
             .limit(1)
             .maybeSingle();
 
-          if (!optedOut) {
-            // Check cooldown
-            const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
-            const { data: recentSend } = await supabase
-              .from("venue_outreach")
-              .select("outreach_id")
+          if (!recentSend) {
+            const { data: venueData } = await supabase
+              .from("venues_new")
+              .select("contact_email")
               .eq("venue_id", venueId)
-              .eq("status", "sent")
-              .gte("sent_at", ninetyDaysAgo)
-              .limit(1)
-              .maybeSingle();
+              .single();
 
-            if (!recentSend) {
-              // Eligible — check for email
-              const { data: venueData } = await supabase
-                .from("venues_new")
-                .select("contact_email")
-                .eq("venue_id", venueId)
-                .single();
-
-              setOutreachEmail(venueData?.contact_email || null);
-              setOutreachOpen(true);
-              loadData();
-              return; // Don't show toast yet — outreach dialog is up
-            }
+            setOutreachEmail(venueData?.contact_email || null);
+            setOutreachOpen(true);
+            // Outreach dialog will toast on close — fall through to ended view behind it.
           }
-        } catch (err) {
-          console.warn("Outreach check failed (non-critical):", err);
         }
+      } catch (err) {
+        console.warn("Outreach check failed (non-critical):", err);
       }
-
-      toast.success("Session complete!");
-      setJustEnded(true);
-      loadData();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to end session");
-    } finally {
-      setEnding(false);
     }
+
+    setJustEnded(true);
+    setEndPhase("ended");
   }
 
   function handleDeleteSession() {
@@ -381,6 +395,33 @@ export default function DiaryEntry() {
     );
   }
 
+  // 3-phase end-session flow takes over the page (shell tab bar stays visible).
+  if (endPhase === "confirm") {
+    return (
+      <EndSessionConfirm
+        session={session}
+        events={events}
+        activeRod={{
+          rodWeight: (session as any).rod_weight ?? null,
+          rodLengthFt: (session as any).rod_length_ft ?? null,
+          line: (session as any).line_profile ?? null,
+        }}
+        onCancel={() => setEndPhase(null)}
+        onConfirm={handleConfirmEnd}
+      />
+    );
+  }
+  if (endPhase === "syncing") {
+    return (
+      <EndSessionSyncing
+        isOnline={isOnline}
+        onComplete={() => {
+          void handleSyncingComplete();
+        }}
+      />
+    );
+  }
+
   const bgClass = isActive ? "bg-[#0F1A24] text-[#E8EFF5]" : "bg-background";
   const mutedClass = isActive ? "text-[#8BA3BB]" : "text-muted-foreground";
 
@@ -420,7 +461,7 @@ export default function DiaryEntry() {
             onLost={() => setLostOpen(true)}
             onBlank={() => setBlankOpen(true)}
             onChange={() => setWhatPickerOpen(true)}
-            onEndSession={() => setEndOpen(true)}
+            onEndSession={() => setEndPhase("confirm")}
           />
         </div>
       ) : (
@@ -855,7 +896,7 @@ export default function DiaryEntry() {
           <Button
             variant="outline"
             className="w-full min-h-[44px] border-red-500/30 text-red-400 hover:bg-red-500/10"
-            onClick={() => setEndOpen(true)}
+            onClick={() => setEndPhase("confirm")}
           >
             <StopCircle className="h-4 w-4 mr-2" /> End Session
           </Button>
@@ -1053,86 +1094,8 @@ export default function DiaryEntry() {
         </DialogContent>
       </Dialog>
 
-      {/* End Session Dialog */}
-      <Dialog open={endOpen} onOpenChange={setEndOpen}>
-        <DialogContent className="max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle className="font-diary">End Session</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Satisfaction */}
-            <div>
-              <Label>How was it?</Label>
-              <div className="flex gap-2 mt-2 justify-center">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSatisfaction(satisfaction === s ? null : s)}
-                    className="p-1"
-                  >
-                    <Star
-                      className={cn(
-                        "h-8 w-8 transition-colors",
-                        satisfaction && s <= satisfaction
-                          ? "text-yellow-500 fill-yellow-500"
-                          : "text-muted"
-                      )}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Would return */}
-            <div>
-              <Label>Would you fish here again soon?</Label>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  variant={wouldReturn === true ? "default" : "outline"}
-                  className="flex-1 min-h-[44px]"
-                  onClick={() => setWouldReturn(wouldReturn === true ? null : true)}
-                >
-                  Yes
-                </Button>
-                <Button
-                  variant={wouldReturn === false ? "default" : "outline"}
-                  className="flex-1 min-h-[44px]"
-                  onClick={() => setWouldReturn(wouldReturn === false ? null : false)}
-                >
-                  No
-                </Button>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <Label>Session Notes</Label>
-              <Textarea
-                placeholder="Reflections, conditions changes, anything noteworthy..."
-                value={sessionNotes}
-                onChange={(e) => setSessionNotes(e.target.value)}
-                rows={3}
-                className="mt-1.5"
-              />
-            </div>
-
-            {/* Summary */}
-            <div className="bg-muted/50 rounded-md p-3 text-sm space-y-1">
-              <p>🐟 {stats.totalFish} fish caught</p>
-              {stats.bestFly && <p>Best fly: {stats.bestFly}</p>}
-              {stats.bestStyle && <p>Best method: {stats.bestStyle}</p>}
-            </div>
-
-            <Button
-              className="w-full min-h-[48px]"
-              onClick={handleEndSession}
-              disabled={ending}
-            >
-              {ending ? "Saving..." : "Finish & Save"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* End Session flow now handled by 3-phase EndSessionConfirm + EndSessionSyncing
+          early returns above; the legacy inline form Dialog has been removed. */}
 
       {/* Share Session Dialog */}
       {profileId && session && (
