@@ -104,33 +104,13 @@ export default function DiaryNew() {
     }
   }, [venue]);
 
-  function handleApplySavedSetup(s: RodSetup) {
-    setSetup({
-      style: s.style || null,
-      rig: s.rig || null,
-      line_type: s.line_type || null,
-      retrieve: s.retrieve || null,
-      flies_on_cast: s.default_flies || null,
-      spot: null, // spot is venue-specific, not preset
-      depth_zone: s.depth_zone || null,
-    });
-    setShowSavedSetups(false);
-    toast.success(`Loaded: ${s.name}`);
-
-    // Increment usage count in background
-    supabase
-      .from("user_rod_setups")
-      .update({ usage_count: (s.usage_count || 0) + 1, last_used_at: new Date().toISOString() })
-      .eq("id", s.id)
-      .then();
-  }
-
   function canProceedToSetup(): boolean {
     return venue.trim().length > 0;
   }
 
-  async function handleStartSession() {
+  async function handleStartSession(w: WizardResult) {
     if (!user || !venue.trim()) return;
+    setWizardResult(w);
     setSaving(true);
 
     try {
@@ -155,27 +135,40 @@ export default function DiaryNew() {
         weather_pressure: weatherPressure ? parseFloat(weatherPressure) : null,
         weather_conditions: weatherConditions || null,
         is_active: true,
-      });
+        // Wizard-derived fields
+        rod_weight: w.rod_weight,
+        rod_length_ft: w.rod_length_ft,
+        leader_id: w.leader_id,
+        line_profile: w.line_profile,
+        tippet_length_ft: w.tippet_length_ft,
+        tippet_strength: w.tippet_strength,
+        tippet_unit: w.tippet_unit,
+        dropper_count: w.dropper_count,
+        spot_name: w.spot_name,
+        keep_limit: w.keep_limit,
+        size_mode: w.size_mode,
+        size_units: w.size_units,
+      } as any);
 
-      // If setup has any fields filled, create an initial "change" event to record starting state
-      const hasSetup = setup.style || setup.rig || setup.line_type || setup.retrieve || setup.spot;
+      // Create initial "change" event capturing the starting setup
+      const hasSetup = w.style || w.line_name || w.flies_on_cast;
       if (hasSetup) {
         await addEvent({
           session_id: session.id,
           event_type: "change",
           event_time: startTime || new Date().toISOString(),
           sort_order: 0,
-          style: setup.style,
-          rig: setup.rig,
-          line_type: setup.line_type,
-          retrieve: setup.retrieve,
-          flies_on_cast: setup.flies_on_cast,
-          spot: setup.spot,
-          depth_zone: setup.depth_zone,
+          style: w.style,
+          rig: null,
+          line_type: w.line_name,
+          retrieve: null,
+          flies_on_cast: w.flies_on_cast,
+          spot: w.spot_name,
+          depth_zone: null,
           change_from: null,
-          change_to: { ...setup },
+          change_to: { ...w },
           change_reason: "Session start",
-        });
+        } as any);
       }
 
       // Trigger venue affiliation (non-blocking)
@@ -183,7 +176,7 @@ export default function DiaryNew() {
         await supabase.functions.invoke("on-session-logged", {
           body: {
             user_id: user.id,
-            venue_id: null, // venue_id lookup handled server-side in future
+            venue_id: null,
             session_date: sessionDate,
           },
         });
