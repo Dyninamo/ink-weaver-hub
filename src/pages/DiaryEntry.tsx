@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import BlankModal from "@/components/diary/BlankModal";
 import LostModal from "@/components/diary/LostModal";
 import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
+import ChangeFlyFlow from "@/components/diary/ChangeFlyFlow";
 import ChangeWhatPicker, { type ChangeField } from "@/components/diary/ChangeWhatPicker";
 import LineCascadePrompt from "@/components/diary/LineCascadePrompt";
 import RodPickerSheet, { type SessionRod } from "@/components/diary/RodPickerSheet";
@@ -83,6 +84,7 @@ export default function DiaryEntry() {
   const [blankOpen, setBlankOpen] = useState(false);
   const [lostOpen, setLostOpen] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
+  const [changeFlyOpen, setChangeFlyOpen] = useState(false);
   const [whatPickerOpen, setWhatPickerOpen] = useState(false);
   const [lineCascadeOpen, setLineCascadeOpen] = useState(false);
   const [rodPickerOpen, setRodPickerOpen] = useState(false);
@@ -1028,13 +1030,27 @@ export default function DiaryEntry() {
           setWhatPickerOpen(false);
           if (field === "rod") {
             setRodPickerOpen(true);
-          } else if (field === "line") {
-            // Line change → open Change modal, then cascade after save
-            setChangeOpen(true);
+          } else if (field === "fly") {
+            // Dedicated 3-step per-position fly swap
+            setChangeFlyOpen(true);
           } else {
+            // Line / leader / style / droppers / retrieve all use ChangeSetupModal
             setChangeOpen(true);
           }
         }}
+      />
+
+      {/* Change · fly (per-position swap) */}
+      <ChangeFlyFlow
+        open={changeFlyOpen}
+        onClose={() => setChangeFlyOpen(false)}
+        sessionId={id!}
+        venueType={session.venue_type as "stillwater" | "river"}
+        venueName={session.venue_name}
+        currentSetup={currentSetup}
+        eventCount={events.length}
+        onSaved={handleChangeSaved}
+        latestWeather={latestWeather}
       />
 
       {/* Change · line cascade prompt (shown after a line change is saved) */}
