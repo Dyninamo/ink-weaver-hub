@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import FlyPicker from "./FlyPicker";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { FliesOnCast } from "@/services/diaryService";
 
 export interface WizardResult {
   rod_weight: number | null;
@@ -75,7 +78,8 @@ export default function SetupWizard({ venueName, venueType, onComplete, onBack }
   const [tippetUnit, setTippetUnit] = useState<"lb" | "x">("lb");
   const [style, setStyle] = useState<string | null>(null);
   const [droppers, setDroppers] = useState<number>(2);
-  const [fliesOnCast, setFliesOnCast] = useState<Record<string, string>>({});
+  const [fliesOnCast, setFliesOnCast] = useState<FliesOnCast>({});
+  const [pickerForPosition, setPickerForPosition] = useState<string | null>(null);
   const [spot, setSpot] = useState("");
   const [keepLimit, setKeepLimit] = useState<number>(0);
   const [sizeMode, setSizeMode] = useState<"weight" | "length">("weight");
@@ -137,7 +141,7 @@ export default function SetupWizard({ venueName, venueType, onComplete, onBack }
       case 5: return true; // skippable
       case 6: return true; // skippable
       case 7: return droppers >= 1;
-      case 8: return true;
+      case 8: return !!fliesOnCast.Point; // Point fly required
       case 9: return true;
       default: return false;
     }
@@ -392,24 +396,86 @@ export default function SetupWizard({ venueName, venueType, onComplete, onBack }
           </>
         )}
 
-        {/* STEP 8 — Flies */}
+        {/* STEP 8 — Flies (per-position FlyPicker) */}
         {step === 8 && (
           <>
             <div className="step-title">Flies on the cast</div>
-            <div className="step-sub">Optional — name each position. You can also fill these in when logging catches.</div>
-            <div className="step-field space-y-3">
-              {positions.map((pos) => (
-                <div key={pos}>
-                  <div className="smallcaps">{pos}</div>
-                  <Input
-                    value={fliesOnCast[pos] || ""}
-                    onChange={(e) => setFliesOnCast({ ...fliesOnCast, [pos]: e.target.value })}
-                    placeholder="e.g. Diawl Bach #14"
-                    className="mt-1.5"
-                  />
-                </div>
-              ))}
+            <div className="step-sub">
+              Pick a pattern for each position. Point is required; droppers optional.
             </div>
+            <div className="step-field">
+              {positions.map((pos) => {
+                const current = fliesOnCast[pos];
+                const isPoint = pos === "Point";
+                return (
+                  <div
+                    key={pos}
+                    className="flex items-center gap-3 py-2 border-b border-border/50 last:border-b-0"
+                  >
+                    <div className="w-20 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {pos}
+                      {isPoint && <span className="text-destructive ml-0.5">*</span>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {current ? (
+                        <div>
+                          <div className="text-sm font-medium truncate">{current.pattern}</div>
+                          {current.size != null && (
+                            <div className="text-xs text-muted-foreground">#{current.size}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground/60 italic">Not set</div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="text-xs font-semibold uppercase tracking-wider text-primary hover:underline"
+                      onClick={() => setPickerForPosition(pos)}
+                    >
+                      {current ? "Change" : "Pick"}
+                    </button>
+                  </div>
+                );
+              })}
+              {!fliesOnCast.Point && (
+                <p className="text-xs text-muted-foreground mt-3">
+                  Pick at least the Point fly to continue.
+                </p>
+              )}
+            </div>
+
+            {/* FlyPicker overlay */}
+            <Dialog
+              open={pickerForPosition !== null}
+              onOpenChange={(o) => !o && setPickerForPosition(null)}
+            >
+              <DialogContent className="max-w-[420px] p-0 gap-0">
+                <DialogHeader className="p-4 pb-2">
+                  <DialogTitle className="text-base font-diary">
+                    {pickerForPosition} fly
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="p-4 pt-0">
+                  {pickerForPosition && (
+                    <FlyPicker
+                      value={fliesOnCast[pickerForPosition]?.pattern ?? null}
+                      onChange={({ pattern, size }) => {
+                        setFliesOnCast({
+                          ...fliesOnCast,
+                          [pickerForPosition]: { pattern, size },
+                        });
+                        setPickerForPosition(null);
+                      }}
+                      currentStyle={style}
+                      currentLine={selectedLine?.name ?? null}
+                      venueName={venueName}
+                      venueType={venueType}
+                    />
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
           </>
         )}
 
