@@ -1,12 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { RecommendedFly, FlyVariation } from "@/types/flySelector";
 
+// Internal shape adapted to v2 flies schema. We map remote rows
+// (`name`, `category`, jsonb `colours`) to this legacy-flavoured shape
+// so the rest of the file's logic doesn't need to change.
 interface RefFly {
   pattern_name: string | null;
   top_category: string | null;
   hook_size_min: string | null;
   hook_size_max: string | null;
-  primary_colours: string | null;
+  primary_colours: string | null; // semicolon-joined for compatibility with parseColours
 }
 
 function parseColours(colourStr: string | null): string[] {
@@ -66,13 +69,25 @@ export async function enrichFliesForSelector(
   tacticalFlies: { fly: string; weighted_catches: number; score: number }[],
   predictionFlies: { fly: string; frequency?: number; score?: number }[]
 ): Promise<RecommendedFly[]> {
-  const { data: refFlies } = await supabase
+  const { data: rawRefFlies } = await supabase
     .from("flies")
-    .select(
-      "pattern_name, top_category, hook_size_min, hook_size_max, primary_colours"
-    );
+    .select("name, category, hook_size_min, hook_size_max, colours");
 
-  if (!refFlies || refFlies.length === 0) return [];
+  if (!rawRefFlies || rawRefFlies.length === 0) return [];
+
+  // Adapt v2 rows to the legacy-shaped RefFly used by the helpers above.
+  const refFlies: RefFly[] = rawRefFlies.map((r) => {
+    const coloursArr = Array.isArray(r.colours) ? (r.colours as unknown[]) : [];
+    return {
+      pattern_name: r.name,
+      top_category: r.category,
+      hook_size_min: r.hook_size_min != null ? String(r.hook_size_min) : null,
+      hook_size_max: r.hook_size_max != null ? String(r.hook_size_max) : null,
+      primary_colours: coloursArr.length
+        ? coloursArr.map((c) => String(c)).join(";")
+        : null,
+    };
+  });
 
   const result: RecommendedFly[] = [];
   const usedNames = new Set<string>();
