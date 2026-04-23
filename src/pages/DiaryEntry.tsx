@@ -376,7 +376,15 @@ export default function DiaryEntry() {
 
   return (
     <div className={cn("min-h-screen pb-32", isActive ? "almanack-surface" : bgClass)}>
-      {isActive ? (
+      {justEnded && session && !isActive ? (
+        <EndSessionView
+          session={session}
+          events={events}
+          anglerName={session.angler_name ?? null}
+          venueReturnEmail={venueReturnEmail}
+          onReviewReturn={() => setOutreachOpen(true)}
+        />
+      ) : isActive ? (
         <div className="max-w-[440px] mx-auto">
           <ReadyView
             session={session}
