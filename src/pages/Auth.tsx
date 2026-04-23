@@ -128,105 +128,154 @@ export default function Auth() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* OAuth buttons */}
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => oauthLogin("google")}
-              disabled={busy}
-            >
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 18 18">
-                <path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/>
-                <path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/>
-                <path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/>
-                <path d="M8.98 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4l2.67 2.07A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/>
-              </svg>
-              Continue with Google
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => oauthLogin("apple")}
-              disabled={busy}
-            >
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 18 18" fill="currentColor">
-                <path d="M12.76 1.2c-.7.84-1.85 1.49-2.98 1.4-.14-1.13.42-2.33 1.07-3.07C11.55-.4 12.8-.94 13.82-1c.12 1.18-.34 2.35-1.06 3.2zm1.05 1.63c-1.65-.1-3.06.94-3.85.94s-2-.89-3.3-.87c-1.7.03-3.26.99-4.13 2.51-1.77 3.05-.46 7.56 1.26 10.04.84 1.22 1.84 2.58 3.16 2.53 1.27-.05 1.74-.82 3.28-.82s1.96.82 3.3.79c1.37-.02 2.22-1.24 3.06-2.46.96-1.4 1.35-2.76 1.37-2.83-.03-.01-2.63-1.01-2.66-4.01-.02-2.51 2.05-3.71 2.15-3.78-1.18-1.74-3.01-1.93-3.64-1.98z" transform="translate(2,3) scale(0.85)"/>
-              </svg>
-              Continue with Apple
-            </Button>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">or</span>
-            </div>
-          </div>
-
-          {/* Email/password form */}
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="space-y-1">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            {mode !== "forgot" && (
-              <div className="space-y-1">
-                <Label htmlFor="password">Password</Label>
-                <PasswordField
-                  id="password"
-                  value={password}
-                  onChange={setPassword}
-                  placeholder={mode === "sign_up" ? "Min 8 characters" : "Your password"}
-                  autoComplete={mode === "sign_up" ? "new-password" : "current-password"}
-                />
-                {mode === "sign_up" && <PasswordStrengthMeter password={password} />}
+          {signedUpEmail ? (
+            /* Post-signup: check email screen */
+            <div className="space-y-4 text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
               </div>
-            )}
-
-            <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? "Please wait..." : title}
-            </Button>
-          </form>
-
-          {/* Mode switching */}
-          <div className="flex justify-center gap-4 text-sm">
-            {mode === "sign_in" && (
-              <>
-                <button
-                  className="text-primary hover:underline"
-                  onClick={() => setMode("sign_up")}
+              <div>
+                <h3 className="text-base font-semibold">Check your email</h3>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  We sent a confirmation link to{" "}
+                  <strong className="text-foreground">{signedUpEmail}</strong>. Tap it to finish creating your account.
+                </p>
+              </div>
+              <div className="flex gap-3 w-full">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={resendConfirmation}
+                  disabled={busy || resendCooldown > 0}
                 >
-                  Create account
-                </button>
-                <button
-                  className="text-muted-foreground hover:underline"
-                  onClick={() => setMode("forgot")}
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  disabled
+                  title="Coming with SMS Phone Auth"
                 >
-                  Forgot password?
-                </button>
-              </>
-            )}
-            {mode !== "sign_in" && (
+                  Use SMS ›
+                </Button>
+              </div>
               <button
-                className="text-primary hover:underline"
-                onClick={() => setMode("sign_in")}
+                type="button"
+                className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                onClick={() => {
+                  setSignedUpEmail(null);
+                  setMode("sign_in");
+                  setPassword("");
+                }}
               >
                 Back to sign in
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* OAuth buttons */}
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => oauthLogin("google")}
+                  disabled={busy}
+                >
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 18 18">
+                    <path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/>
+                    <path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/>
+                    <path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/>
+                    <path d="M8.98 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59A8 8 0 0 0 1.83 5.4l2.67 2.07A4.77 4.77 0 0 1 8.98 3.58z" fill="#EA4335"/>
+                  </svg>
+                  Continue with Google
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => oauthLogin("apple")}
+                  disabled={busy}
+                >
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 18 18" fill="currentColor">
+                    <path d="M12.76 1.2c-.7.84-1.85 1.49-2.98 1.4-.14-1.13.42-2.33 1.07-3.07C11.55-.4 12.8-.94 13.82-1c.12 1.18-.34 2.35-1.06 3.2zm1.05 1.63c-1.65-.1-3.06.94-3.85.94s-2-.89-3.3-.87c-1.7.03-3.26.99-4.13 2.51-1.77 3.05-.46 7.56 1.26 10.04.84 1.22 1.84 2.58 3.16 2.53 1.27-.05 1.74-.82 3.28-.82s1.96.82 3.3.79c1.37-.02 2.22-1.24 3.06-2.46.96-1.4 1.35-2.76 1.37-2.83-.03-.01-2.63-1.01-2.66-4.01-.02-2.51 2.05-3.71 2.15-3.78-1.18-1.74-3.01-1.93-3.64-1.98z" transform="translate(2,3) scale(0.85)"/>
+                  </svg>
+                  Continue with Apple
+                </Button>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">or</span>
+                </div>
+              </div>
+
+              {/* Email/password form */}
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                  />
+                </div>
+
+                {mode !== "forgot" && (
+                  <div className="space-y-1">
+                    <Label htmlFor="password">Password</Label>
+                    <PasswordField
+                      id="password"
+                      value={password}
+                      onChange={setPassword}
+                      placeholder={mode === "sign_up" ? "Min 8 characters" : "Your password"}
+                      autoComplete={mode === "sign_up" ? "new-password" : "current-password"}
+                    />
+                    {mode === "sign_up" && <PasswordStrengthMeter password={password} />}
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full" disabled={busy}>
+                  {busy ? "Please wait..." : title}
+                </Button>
+              </form>
+
+              {/* Mode switching */}
+              <div className="flex justify-center gap-4 text-sm">
+                {mode === "sign_in" && (
+                  <>
+                    <button
+                      className="link-rose"
+                      onClick={() => setMode("sign_up")}
+                    >
+                      Create account
+                    </button>
+                    <button
+                      className="text-muted-foreground hover:underline"
+                      onClick={() => setMode("forgot")}
+                    >
+                      Forgot password?
+                    </button>
+                  </>
+                )}
+                {mode !== "sign_in" && (
+                  <button
+                    className="text-primary hover:underline"
+                    onClick={() => setMode("sign_in")}
+                  >
+                    Back to sign in
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
