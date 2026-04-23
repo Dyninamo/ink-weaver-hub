@@ -310,7 +310,8 @@ All colors MUST be HSL.
 .end-session-pill {
   position: fixed;
   left: 20px; right: 20px;
-  bottom: 24px;
+  /* Clear the AppShell tab bar (~66px) + safe-area + breathing room */
+  bottom: calc(82px + env(safe-area-inset-bottom, 0px));
   max-width: 440px;
   margin: 0 auto;
   background: rgba(177, 90, 46, 0.92);
@@ -1175,3 +1176,185 @@ All colors MUST be HSL.
   font-weight: 600;
 }
 .link-rose:hover { text-decoration: underline; }
+
+/* ============================================================
+   Global App Shell — sticky wordmark header + 4-tab bottom bar
+   ============================================================ */
+.app-shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--paper-50);
+}
+.app-shell-main {
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* Header */
+.app-shell-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky, 10);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
+  background: var(--paper-50);
+  border-bottom: 1px solid var(--paper-200);
+}
+.app-shell-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.app-shell-wordmark {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  font-size: 18px;
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--ink-700);
+  letter-spacing: var(--tracking-snug, -0.02em);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.app-shell-wordmark:focus-visible {
+  outline: 2px solid var(--gild-500);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm, 4px);
+}
+.app-shell-session-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.app-shell-session-label {
+  font-size: 10px;
+  font-weight: var(--font-weight-bold, 700);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps, 0.16em);
+  color: var(--rose-700);
+}
+.session-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rose-500);
+  box-shadow: 0 0 0 2px rgba(210, 100, 120, 0.25);
+  animation: app-shell-pulse var(--motion-pulse, 2000ms) ease-in-out infinite;
+}
+@keyframes app-shell-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.55; transform: scale(0.85); }
+}
+
+/* Profile dot (top-right) */
+.app-shell-profile-dot {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--ink-700);
+  color: var(--paper-50);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: var(--font-weight-bold, 700);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  cursor: pointer;
+  transition: transform var(--motion-fast, 140ms) var(--ease-standard, ease),
+              box-shadow var(--motion-fast, 140ms) var(--ease-standard, ease);
+}
+.app-shell-profile-dot:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px -4px rgba(46, 59, 37, 0.35);
+}
+.app-shell-profile-dot:focus-visible {
+  outline: 2px solid var(--gild-500);
+  outline-offset: 2px;
+}
+
+/* Tab bar (bottom) */
+.app-shell-tabbar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky, 10);
+  display: flex;
+  align-items: stretch;
+  background: var(--paper-50);
+  border-top: 1px solid var(--paper-200);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 4px);
+}
+.app-shell-tab {
+  flex: 1 1 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 66px;
+  padding: 18px 8px;
+  border: 0;
+  background: transparent;
+  text-decoration: none;
+  color: var(--ink-300);
+  cursor: pointer;
+  transition: color var(--motion-fast, 140ms) var(--ease-standard, ease);
+}
+.app-shell-tab-icon {
+  opacity: 0.65;
+  transition: opacity var(--motion-fast, 140ms) var(--ease-standard, ease),
+              transform var(--motion-fast, 140ms) var(--ease-standard, ease);
+}
+.app-shell-tab-label {
+  font-family: var(--font-family);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps, 0.16em);
+  line-height: 1;
+}
+.app-shell-tab.is-active {
+  color: var(--ink-500);
+}
+.app-shell-tab.is-active .app-shell-tab-icon {
+  opacity: 1;
+  transform: scale(1.08);
+}
+.app-shell-tab.is-active::after {
+  content: "";
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gild-500);
+}
+.app-shell-tab:focus-visible {
+  outline: 2px solid var(--gild-500);
+  outline-offset: -4px;
+  border-radius: var(--radius-sm, 4px);
+}
+
+/* Reduced-motion handling */
+@media (prefers-reduced-motion: reduce) {
+  .session-live-dot { animation: none; }
+  .app-shell-tab-icon,
+  .app-shell-profile-dot { transition: none; }
+}
+[data-motion="reduced"] .session-live-dot { animation: none; }
+[data-motion="reduced"] .app-shell-tab-icon,
+[data-motion="reduced"] .app-shell-profile-dot { transition: none; }
