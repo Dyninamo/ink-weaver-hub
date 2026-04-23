@@ -1162,6 +1162,21 @@ export default function DiaryEntry() {
           contactEmail={outreachEmail}
         />
       )}
+
+      {/* Venue Return Dialog (post-session reporting) */}
+      {session && venueReturnEmail && (
+        <VenueReturnDialog
+          open={returnDialogOpen}
+          onClose={() => setReturnDialogOpen(false)}
+          sessionId={id!}
+          venueId={venueId}
+          venueName={session.venue_name}
+          returnEmail={venueReturnEmail}
+          events={events}
+          defaultAnglerName={(session as any).angler_name ?? profile?.display_name ?? null}
+          onSent={() => loadData()}
+        />
+      )}
     </div>
   );
 }
