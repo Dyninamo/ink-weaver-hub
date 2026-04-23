@@ -38,7 +38,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
   // B2 — defaults
   const [stillSpecies, setStillSpecies] = useState("Rainbow trout");
-  const [stillRod, setStillRod] = useState(7);
+  const [stillRod, setStillRod] = useState(8);
   const [stillLine, setStillLine] = useState("Floating");
   const [riverSpecies, setRiverSpecies] = useState("Brown trout");
   const [riverRod, setRiverRod] = useState(5);
@@ -103,7 +103,9 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     } else if (step === 3) {
       updates.home_venue_id = selectedVenue?.venue_id ?? null;
     } else if (step === 4) {
-      updates.coach_stage = "done";
+      // B4 -> coach_stage = 'started'; CoachBanner on Ready view will then
+      // appear and write 'done' on dismiss.
+      updates.coach_stage = "started";
     }
 
     const { error } = await supabase
@@ -145,18 +147,20 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             <h1 className="text-lg font-semibold tracking-tight">It's Catching!</h1>
           </div>
 
-          {/* Progress dots */}
-          <div className="flex items-center justify-center gap-1.5">
-            {[1, 2, 3, 4].map((s) => (
-              <div
-                key={s}
-                className={cn(
-                  "h-1.5 rounded-full transition-all",
-                  s === step ? "w-8 bg-primary" : s < step ? "w-4 bg-primary/40" : "w-4 bg-muted"
-                )}
-              />
-            ))}
-          </div>
+          {/* Progress dots — three real steps (B1-B3); B4 is a welcome card */}
+          {step < 4 && (
+            <div className="flex items-center justify-center gap-1.5">
+              {[1, 2, 3].map((s) => (
+                <div
+                  key={s}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all",
+                    s === step ? "w-8 bg-primary" : s < step ? "w-4 bg-primary/40" : "w-4 bg-muted"
+                  )}
+                />
+              ))}
+            </div>
+          )}
 
           <h2 className="text-xl font-semibold text-center pt-1">{stepTitle}</h2>
         </CardHeader>
