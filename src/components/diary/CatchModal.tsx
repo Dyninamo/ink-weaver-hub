@@ -137,11 +137,17 @@ export default function CatchModal({
     setSaving(true);
     try {
       // Calculate weight/length
-      let finalLb = parseInt(weightLb) || 0;
-      let finalOz = parseInt(weightOz) || 0;
+      let finalLb = 0;
+      let finalOz = 0;
       let finalLength: number | null = null;
 
-      if (measureMode === "length" && lengthInches) {
+      if (measureMode === "weight") {
+        const f = parseFloat(weightLb);
+        if (!isNaN(f)) {
+          finalLb = Math.floor(f);
+          finalOz = Math.round((f - finalLb) * 16);
+        }
+      } else if (measureMode === "length" && lengthInches) {
         finalLength = parseFloat(lengthInches);
         const converted = convertLengthToWeight(finalLength, species);
         finalLb = converted.lb;
