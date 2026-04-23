@@ -80,16 +80,27 @@ export default function DiaryEntry() {
   const [lineCascadeOpen, setLineCascadeOpen] = useState(false);
   const [rodPickerOpen, setRodPickerOpen] = useState(false);
   const [activeRodIndex, setActiveRodIndex] = useState<number>(1);
-  const [endOpen, setEndOpen] = useState(false);
+  // 3-phase end-session flow: confirm → syncing → ended (null = not in flow)
+  type EndPhase = "confirm" | "syncing" | "ended";
+  const [endPhase, setEndPhase] = useState<EndPhase | null>(null);
   const [implicitChangePrompt, setImplicitChangePrompt] = useState<{
     newSetup: CurrentSetup;
   } | null>(null);
 
-  // End session form
-  const [satisfaction, setSatisfaction] = useState<number | null>(null);
-  const [wouldReturn, setWouldReturn] = useState<boolean | null>(null);
-  const [sessionNotes, setSessionNotes] = useState("");
-  const [ending, setEnding] = useState(false);
+  // Online/offline awareness for the syncing screen
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  );
+  useEffect(() => {
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
 
   // Expanded events
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
