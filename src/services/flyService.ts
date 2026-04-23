@@ -260,3 +260,31 @@ export function defaultCategoryForStyle(style: string | null | undefined): strin
 }
 
 export const SINKING_LINES = new Set(["Di-3", "Di-5", "Di-7", "Fast Sink"]);
+
+// ---------- composed display name ----------
+
+function titleCase(s: string): string {
+  return s
+    .split(/\s+/)
+    .map((w) => (w.length > 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
+/** Compose a display name from a pattern + qualifier picks.
+ *  - "none" accent and "unweighted" weight are excluded
+ *  - colour and pattern name are always included (when present)
+ *  - Order: [accent] [weight] [colour] [name]
+ */
+export function composeFlyDisplayName(args: {
+  name: string;
+  colour: string | null;
+  accent: string | null;
+  weight: string | null;
+}): string {
+  const parts: string[] = [];
+  if (args.accent && args.accent.toLowerCase() !== "none") parts.push(titleCase(args.accent));
+  if (args.weight && args.weight.toLowerCase() !== "unweighted") parts.push(titleCase(args.weight));
+  if (args.colour) parts.push(titleCase(args.colour));
+  parts.push(args.name);
+  return parts.join(" ");
+}
