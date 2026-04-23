@@ -380,7 +380,7 @@ export default function DiaryEntry() {
         <EndSessionView
           session={session}
           events={events}
-          anglerName={session.angler_name ?? null}
+          anglerName={(session as any).angler_name ?? null}
           venueReturnEmail={venueReturnEmail}
           onReviewReturn={() => setOutreachOpen(true)}
         />
