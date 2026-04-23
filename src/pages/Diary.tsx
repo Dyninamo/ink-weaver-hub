@@ -36,7 +36,7 @@ interface SessionCard extends FishingSession {
 }
 
 export default function Diary() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
   const [sessions, setSessions] = useState<SessionCard[]>([]);
@@ -139,13 +139,31 @@ export default function Diary() {
     });
   }
 
+  // Aggregate stats for header subtitle
+  const totalFishAcrossLoaded = sessions.reduce(
+    (acc, s) => acc + (s.stats?.totalFish ?? 0),
+    0
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold font-diary">Fishing Diary</h1>
-          <div className="flex gap-1">
+        {/* Header — title + small-caps stats + profile icon */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-semibold tracking-tight font-diary leading-tight">
+              Timeline
+            </h1>
+            {totalCount > 0 && (
+              <p
+                className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mt-1 font-medium"
+              >
+                {totalCount} session{totalCount !== 1 ? "s" : ""}
+                {totalFishAcrossLoaded > 0 ? ` · ${totalFishAcrossLoaded} fish` : ""}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -170,14 +188,16 @@ export default function Diary() {
             >
               <Settings2 className="h-5 w-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+            {/* Profile icon (top-right) → Settings */}
+            <button
+              type="button"
               onClick={() => navigate("/settings")}
+              aria-label="Settings"
               title="Settings"
+              className="ml-1 inline-flex items-center justify-center h-9 w-9 rounded-full bg-foreground text-background text-xs font-bold tracking-wide hover:opacity-90 transition-opacity"
             >
-              <User className="h-5 w-5" />
-            </Button>
+              {(profile?.display_name || user?.email || "A").slice(0, 1).toUpperCase()}
+            </button>
           </div>
         </div>
 
@@ -256,92 +276,146 @@ export default function Diary() {
             ))}
           </div>
         ) : sessions.length === 0 ? (
-          <div className="text-center py-16 space-y-3">
-            <Fish className="h-16 w-16 mx-auto text-muted-foreground/30" />
-            <p className="text-muted-foreground">No sessions yet</p>
-            <p className="text-sm text-muted-foreground/60">
-              Start your first session to begin tracking
-            </p>
+          <div className="text-center py-20 space-y-4">
+            <div className="mx-auto h-20 w-20 rounded-full bg-muted/50 border border-border flex items-center justify-center">
+              <Fish className="h-9 w-9 text-muted-foreground/40" />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-lg font-semibold tracking-tight font-diary">A blank page.</p>
+              <p className="text-sm text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
+                Your sessions will appear here as you log them.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
-            {sessions.map((session) => (
-              <Card
-                key={session.id}
-                className="cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => navigate(`/diary/${session.id}`)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      {/* Venue + stars */}
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-sm truncate">{session.venue_name}</h3>
-                        {session.satisfaction_score && (
-                          <div className="flex items-center gap-0.5 shrink-0">
-                            {Array.from({ length: 5 }, (_, i) => (
-                              <Star
-                                key={i}
-                                className={cn(
-                                  "h-3 w-3",
-                                  i < session.satisfaction_score!
-                                    ? "text-yellow-500 fill-yellow-500"
-                                    : "text-muted"
-                                )}
-                              />
-                            ))}
-                          </div>
-                        )}
+            {sessions.map((session) => {
+              const d = new Date(session.session_date + "T00:00:00");
+              const dd = d.getDate().toString().padStart(2, "0");
+              const mmm = d.toLocaleString("en-GB", { month: "short" }).toUpperCase();
+              const fishCount = session.stats?.totalFish ?? 0;
+              const isBlank = fishCount === 0;
+              return (
+                <Card
+                  key={session.id}
+                  className="cursor-pointer hover:bg-muted/30 transition-colors overflow-hidden"
+                  onClick={() => navigate(`/diary/${session.id}`)}
+                >
+                  <CardContent className="p-0">
+                    <div className="flex items-stretch gap-3 p-3">
+                      {/* Date block */}
+                      <div className="shrink-0 w-14 rounded-md bg-muted/50 border border-border flex flex-col items-center justify-center py-2">
+                        <span className="text-xl font-semibold tabular-nums leading-none font-diary">
+                          {dd}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground mt-1 font-semibold">
+                          {mmm}
+                        </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        <Calendar className="h-3 w-3 inline mr-1" />
-                        {formatDate(session.session_date)}
-                        {session.fishing_type && ` · ${session.fishing_type}`}
-                      </p>
 
-                      {/* Stats row */}
-                      {session.stats && (
-                        <div className="flex items-center gap-3 mt-2 text-xs">
-                          <span className="flex items-center gap-1">
-                            <Fish className="h-3.5 w-3.5 text-diary-catch" />
-                            <strong className="font-mono">{session.stats.totalFish}</strong>
-                            <span className="text-muted-foreground">fish</span>
-                          </span>
-                          {session.duration_minutes && (
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <Clock className="h-3.5 w-3.5" />
+                      {/* Body */}
+                      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <h3 className="font-semibold text-sm truncate">{session.venue_name}</h3>
+                          {session.satisfaction_score && (
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              {Array.from({ length: 5 }, (_, i) => {
+                                const filled = i < session.satisfaction_score!;
+                                return (
+                                  <Star
+                                    key={i}
+                                    className="h-3 w-3"
+                                    style={{
+                                      color: filled
+                                        ? "var(--gild-500, hsl(var(--accent)))"
+                                        : "hsl(var(--muted))",
+                                      fill: filled
+                                        ? "var(--gild-500, hsl(var(--accent)))"
+                                        : "transparent",
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.12em] text-muted-foreground font-medium">
+                          {session.duration_minutes ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
                               {formatDuration(session.duration_minutes)}
                             </span>
+                          ) : null}
+                          {session.fishing_type && (
+                            <span className="truncate">{session.fishing_type}</span>
                           )}
-                          {session.stats.bestStyle && (
-                            <span className="text-muted-foreground truncate">
-                              {session.stats.bestStyle}
+                        </div>
+
+                        {/* Tally row */}
+                        <div className="flex items-center gap-3 text-xs">
+                          {isBlank ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ background: "var(--event-blank, hsl(var(--muted-foreground)))" }}
+                              />
+                              <span className="text-muted-foreground uppercase tracking-[0.12em] text-[11px] font-medium">
+                                Blank
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ background: "var(--event-catch, hsl(var(--primary)))" }}
+                              />
+                              <strong className="font-semibold tabular-nums">{fishCount}</strong>
+                              <span className="text-muted-foreground">caught</span>
+                            </span>
+                          )}
+                          {session.stats?.bestFly && (
+                            <span className="text-muted-foreground/80 truncate">
+                              · {session.stats.bestFly}
                             </span>
                           )}
                         </div>
-                      )}
 
-                      {/* Best fly */}
-                      {session.stats?.bestFly && (
-                        <p className="text-xs text-muted-foreground/80 mt-1 truncate">
-                          Best: {session.stats.bestFly}
-                        </p>
-                      )}
+                        {/* Return status chip */}
+                        {session.reported_to_email || session.reported_at ? (
+                          session.reported_at ? (
+                            <span
+                              className="inline-flex items-center gap-1 self-start mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                              style={{
+                                background: "color-mix(in srgb, var(--event-catch, hsl(var(--primary))) 12%, transparent)",
+                                color: "var(--event-catch, hsl(var(--primary)))",
+                                borderColor: "color-mix(in srgb, var(--event-catch, hsl(var(--primary))) 30%, transparent)",
+                              }}
+                            >
+                              <CheckCircle2 className="h-2.5 w-2.5" />
+                              Return sent · {new Date(session.reported_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                            </span>
+                          ) : (
+                            <span
+                              className="inline-flex items-center gap-1 self-start mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border"
+                              style={{
+                                background: "color-mix(in srgb, var(--gild-500, hsl(var(--accent))) 12%, transparent)",
+                                color: "var(--gild-700, hsl(var(--accent-foreground)))",
+                                borderColor: "color-mix(in srgb, var(--gild-500, hsl(var(--accent))) 30%, transparent)",
+                              }}
+                            >
+                              ⤴ Return pending
+                            </span>
+                          )
+                        ) : null}
+                      </div>
 
-                      {/* Return status chip */}
-                      {session.reported_at ? (
-                        <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[10px] font-medium bg-diary-catch/10 text-diary-catch border border-diary-catch/20">
-                          <CheckCircle2 className="h-2.5 w-2.5" />
-                          Return sent
-                        </span>
-                      ) : null}
+                      <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 self-center" />
                     </div>
-
-                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 
