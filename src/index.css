@@ -1788,3 +1788,203 @@ All colors MUST be HSL.
 .fp-cta:hover { background: var(--rose-700); }
 .fp-cta:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ============================================================
+   Settings re-skin (Prompt 102)
+   ============================================================ */
+.settings-profile {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 4px 20px;
+  border-bottom: 1px solid var(--paper-200);
+  margin-bottom: 20px;
+}
+.settings-avatar {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--ink-700);
+  color: var(--paper-50);
+  font-family: var(--font-family);
+  font-size: 22px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.settings-profile-body { flex: 1; min-width: 0; }
+.settings-profile-name {
+  font-size: 17px; font-weight: 600; color: var(--ink-900);
+  letter-spacing: var(--tracking-tight);
+}
+.settings-profile-email {
+  font-size: 12px; color: var(--ink-500);
+  margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.settings-edit-btn {
+  background: transparent;
+  border: 1px solid var(--ink-700);
+  color: var(--ink-700);
+  padding: 6px 14px; border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--tracking-wider);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.settings-edit-btn:hover { background: var(--paper-100); }
+
+.settings-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  color: var(--ink-500);
+  margin: 28px 0 8px;
+}
+
+.settings-water-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.settings-water-card {
+  padding: 12px 14px;
+  background: var(--paper-100);
+  border-radius: var(--radius-md);
+  border-left: 3px solid;
+  min-width: 0;
+}
+.settings-water-still { border-left-color: var(--ink-700); }
+.settings-water-river { border-left-color: var(--gild-500); }
+.settings-water-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  margin-bottom: 6px;
+}
+.settings-water-still .settings-water-label { color: var(--ink-700); }
+.settings-water-river .settings-water-label { color: var(--gild-700); }
+.settings-water-value {
+  font-size: 13px;
+  color: var(--ink-900);
+  font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis;
+}
+
+.settings-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--paper-200);
+  min-height: 60px;
+}
+.settings-row:last-child { border-bottom: 0; }
+.settings-row-main { flex: 1; min-width: 0; }
+.settings-row-label {
+  font-size: 15px;
+  color: var(--ink-900);
+  font-weight: 500;
+}
+.settings-row-help {
+  font-size: 11px;
+  color: var(--ink-500);
+  margin-top: 2px;
+  line-height: 1.45;
+}
+.settings-row-control { flex-shrink: 0; }
+.settings-row-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 12px 4px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--paper-200);
+}
+.settings-row-link .settings-row-label { color: var(--ink-700); }
+
+.settings-row-control [data-state="checked"] {
+  background-color: var(--event-catch);
+}
+.settings-row-control [role="switch"] {
+  width: 46px;
+  height: 26px;
+}
+
+.settings-presets { display: flex; flex-direction: column; gap: 6px; }
+.settings-preset {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--paper-50);
+  border: 1px solid var(--paper-200);
+  border-radius: var(--radius-md);
+}
+.settings-preset-name {
+  font-size: 14px;
+  color: var(--ink-900);
+  font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.settings-preset-rename, .settings-preset-delete {
+  background: transparent; border: 0;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--tracking-wider);
+  cursor: pointer; padding: 4px 8px;
+}
+.settings-preset-rename { color: var(--ink-500); }
+.settings-preset-delete { color: var(--event-lost); }
+
+/* ============================================================
+   Auth + Onboarding polish (Prompt 103)
+   ============================================================ */
+.auth-root {
+  min-height: 100vh;
+  background: var(--paper-50);
+  background-image: radial-gradient(
+    ellipse at top,
+    rgba(184, 134, 74, 0.08),
+    transparent 60%
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px;
+}
+.auth-wordmark {
+  font-family: var(--font-family);
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-900);
+  display: block;
+  margin-bottom: 8px;
+  opacity: 0.92;
+  text-align: center;
+}
+.auth-tagline {
+  font-size: 13px;
+  color: var(--ink-500);
+  font-style: italic;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.ob-water-block {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: var(--paper-100);
+  border-radius: var(--radius-md);
+  border-left: 3px solid;
+}
+.ob-water-still { border-left-color: var(--ink-700); }
+.ob-water-river { border-left-color: var(--gild-500); }
+.ob-water-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  margin-bottom: 10px;
+}
+.ob-water-still .ob-water-label { color: var(--ink-700); }
+.ob-water-river .ob-water-label { color: var(--gild-700); }
+

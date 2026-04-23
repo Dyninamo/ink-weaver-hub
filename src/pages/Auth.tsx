@@ -117,14 +117,17 @@ export default function Auth() {
     : "Reset Password";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="auth-root">
+      <div className="auth-wordmark">it's catching.</div>
+      {mode === "sign_in" && !signedUpEmail && (
+        <div className="auth-tagline">Tight lines. Safely inked.</div>
+      )}
+      {mode !== "sign_in" && !signedUpEmail && (
+        <div className="auth-tagline">Your Pocket Ghillie</div>
+      )}
       <Card className="w-full max-w-sm">
-        <CardHeader className="text-center space-y-2 pb-2">
-          <div className="flex items-center justify-center gap-2">
-            <FishSymbol className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">It's Catching!</h1>
-          </div>
-          <p className="text-sm text-muted-foreground italic">Your Pocket Ghillie</p>
+        <CardHeader className="text-center space-y-1 pb-2">
+          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
         </CardHeader>
 
         <CardContent className="space-y-4">

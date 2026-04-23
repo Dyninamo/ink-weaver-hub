@@ -8,6 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -26,13 +33,12 @@ import {
   HelpCircle,
   ListChecks,
   LogOut,
-  Save,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const SPECIES_OPTIONS = ["Rainbow trout", "Brown trout", "Grayling", "Sea trout", "Salmon"];
-const ROD_WEIGHTS = ["3", "4", "5", "6", "7", "8"];
+const ROD_WEIGHTS = ["3", "4", "5", "6", "7", "8", "9", "10"];
 const LINE_OPTIONS = ["Floating", "Midge tip", "Slow intermediate", "Fast intermediate", "Sinking"];
 
 const APP_VERSION = "0.9.0";
@@ -40,6 +46,9 @@ const APP_VERSION = "0.9.0";
 export default function Settings() {
   const navigate = useNavigate();
   const { user, profile, signOut, refreshProfile } = useAuth();
+
+  const [editingName, setEditingName] = useState(false);
+  const [editingDefaults, setEditingDefaults] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
   const [savingName, setSavingName] = useState(false);
@@ -119,6 +128,7 @@ export default function Settings() {
     }
     await refreshProfile();
     toast.success("Display name updated");
+    setEditingName(false);
   }
 
   async function saveDefaults() {
@@ -142,6 +152,7 @@ export default function Settings() {
     }
     await refreshProfile();
     toast.success("Defaults saved");
+    setEditingDefaults(false);
   }
 
   async function saveBehaviour() {
@@ -162,7 +173,7 @@ export default function Settings() {
       return;
     }
     await refreshProfile();
-    toast.success("Diary behaviour saved");
+    toast.success("Saved");
   }
 
   function persistAppearance(next: { theme?: typeof theme; reduceMotion?: boolean }) {
@@ -196,138 +207,144 @@ export default function Settings() {
     toast.success(`Exported ${data?.length ?? 0} sessions`);
   }
 
+  // Auto-save behaviour toggles after first interaction
+  function handleConfirmDeleteToggle(v: boolean) {
+    setConfirmDelete(v);
+    void supabase
+      .from("user_profiles")
+      .update({ confirm_delete_enabled: v })
+      .eq("id", user!.id)
+      .then(() => refreshProfile());
+  }
+
+  const initial = (profile?.display_name || user?.email || "A").charAt(0).toUpperCase();
+
   return (
     <div className="min-h-full bg-background">
-      <div className="max-w-[420px] mx-auto p-4 space-y-4 pb-12">
-        {/* Page title (shell owns the chrome header) */}
-        <h1 className="text-xl font-semibold tracking-tight pt-1">Settings</h1>
+      <div className="max-w-[420px] mx-auto p-4 pb-12">
+        {/* Page title */}
+        <h1 className="text-xl font-semibold tracking-tight pt-1 mb-2">Settings</h1>
 
         {/* Profile card */}
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-base font-semibold text-primary">
-                {(displayName || "A").slice(0, 1).toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{displayName || "Angler"}</p>
-                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                  <Mail className="h-3 w-3" /> {user?.email ?? "—"}
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dn" className="text-xs">Display name</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="dn"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value.slice(0, 30))}
-                  placeholder="Your name"
-                />
-                <Button onClick={saveDisplayName} disabled={savingName} size="sm">
-                  <Save className="h-4 w-4 mr-1" /> Save
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <section className="settings-profile">
+          <div className="settings-avatar">{initial}</div>
+          <div className="settings-profile-body">
+            <div className="settings-profile-name">{profile?.display_name || "No name set"}</div>
+            <div className="settings-profile-email">{user?.email ?? "—"}</div>
+          </div>
+          <button
+            type="button"
+            className="settings-edit-btn"
+            onClick={() => setEditingName(true)}
+          >
+            Edit
+          </button>
+        </section>
 
         {/* Defaults by water type */}
-        <SectionHeader title="Defaults by water type" />
-        <div className="grid grid-cols-1 gap-3">
-          <DefaultsCard
-            stripe="foreground"
-            label="Stillwater"
-            species={stillSpecies}
-            setSpecies={setStillSpecies}
-            rod={stillRod}
-            setRod={setStillRod}
-            line={stillLine}
-            setLine={setStillLine}
-          />
-          <DefaultsCard
-            stripe="amber"
-            label="River"
-            species={riverSpecies}
-            setSpecies={setRiverSpecies}
-            rod={riverRod}
-            setRod={setRiverRod}
-            line={riverLine}
-            setLine={setRiverLine}
-          />
+        <div className="settings-section-label">Defaults by water type</div>
+        <div className="settings-water-grid">
+          <div className="settings-water-card settings-water-still">
+            <div className="settings-water-label">Stillwater</div>
+            <div className="settings-water-value">
+              {stillSpecies} · {stillRod}# · {stillLine}
+            </div>
+          </div>
+          <div className="settings-water-card settings-water-river">
+            <div className="settings-water-label">River</div>
+            <div className="settings-water-value">
+              {riverSpecies} · {riverRod}# · {riverLine}
+            </div>
+          </div>
         </div>
-        <Button onClick={saveDefaults} disabled={savingDefaults} variant="outline" className="w-full">
-          {savingDefaults ? "Saving…" : "Save water-type defaults"}
-        </Button>
+        <button
+          type="button"
+          className="settings-row-link"
+          onClick={() => setEditingDefaults(true)}
+        >
+          <div className="settings-row-label">Edit water defaults ›</div>
+          <div className="settings-row-help">
+            Stillwater and river are seeded from profile setup; editable here.
+          </div>
+        </button>
 
         {/* Diary behaviour */}
-        <SectionHeader title="Diary behaviour" />
-        <Card>
-          <CardContent className="p-4 space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Daily keep limit</Label>
-              <Input
-                type="number"
-                min={0}
-                value={keepLimit}
-                onChange={(e) => setKeepLimit(e.target.value)}
-              />
-              <p className="text-[11px] text-muted-foreground">0 = no limit</p>
+        <div className="settings-section-label">Diary behaviour</div>
+
+        <div className="settings-row">
+          <div className="settings-row-main">
+            <div className="settings-row-label">Daily keep limit</div>
+            <div className="settings-row-help">
+              Catches default to Kept until this many in a session. 0 = no limit.
             </div>
-
-            <ChipRow
-              label="Size mode"
-              value={sizeMode}
-              options={["weight", "length"]}
-              onSelect={(v) => setSizeMode(v as "weight" | "length")}
+          </div>
+          <div className="settings-row-control" style={{ width: 64 }}>
+            <Input
+              type="number"
+              min={0}
+              value={keepLimit}
+              onChange={(e) => setKeepLimit(e.target.value)}
+              onBlur={saveBehaviour}
+              className="h-9 text-center"
             />
-            <ChipRow
-              label="Units"
-              value={sizeUnits}
-              options={["imperial", "metric"]}
-              onSelect={(v) => setSizeUnits(v as "imperial" | "metric")}
-            />
+          </div>
+        </div>
 
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <div>
-                <p className="text-sm font-medium">Ask before deleting</p>
-                <p className="text-[11px] text-muted-foreground">Show a confirm dialog when removing entries.</p>
-              </div>
-              <Switch checked={confirmDelete} onCheckedChange={setConfirmDelete} />
-            </div>
+        <ChipSettingRow
+          label="Default size mode"
+          help="What you record each catch as."
+          value={sizeMode}
+          options={["weight", "length"]}
+          onSelect={(v) => { setSizeMode(v as "weight" | "length"); setTimeout(saveBehaviour, 0); }}
+        />
 
-            <Button onClick={saveBehaviour} disabled={savingBehaviour} variant="outline" className="w-full">
-              {savingBehaviour ? "Saving…" : "Save diary behaviour"}
-            </Button>
-          </CardContent>
-        </Card>
+        <ChipSettingRow
+          label="Default size units"
+          help="Imperial or metric."
+          value={sizeUnits}
+          options={["imperial", "metric"]}
+          onSelect={(v) => { setSizeUnits(v as "imperial" | "metric"); setTimeout(saveBehaviour, 0); }}
+        />
+
+        <div className="settings-row">
+          <div className="settings-row-main">
+            <div className="settings-row-label">Ask before deleting</div>
+            <div className="settings-row-help">Confirm dialog on event + session deletes.</div>
+          </div>
+          <div className="settings-row-control">
+            <Switch checked={confirmDelete} onCheckedChange={handleConfirmDeleteToggle} />
+          </div>
+        </div>
 
         {/* Appearance */}
-        <SectionHeader title="Appearance" />
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <ChipRow
-              label="Theme"
-              value={theme}
-              options={["day", "dusk", "system"]}
-              onSelect={(v) => persistAppearance({ theme: v as typeof theme })}
-            />
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <div>
-                <p className="text-sm font-medium">Reduce motion</p>
-                <p className="text-[11px] text-muted-foreground">Disable animations and transitions.</p>
-              </div>
-              <Switch
-                checked={reduceMotion}
-                onCheckedChange={(v) => persistAppearance({ reduceMotion: v })}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="settings-section-label">Appearance</div>
 
-        {/* Preset rigs */}
-        <SectionHeader title="Gear" />
+        <ChipSettingRow
+          label="Theme"
+          help="Day, dusk, or match your phone."
+          value={theme}
+          options={["day", "dusk", "system"]}
+          onSelect={(v) => persistAppearance({ theme: v as typeof theme })}
+        />
+
+        <div className="settings-row">
+          <div className="settings-row-main">
+            <div className="settings-row-label">Reduce motion</div>
+            <div className="settings-row-help">
+              Disables the session-active pulse and slide-in cards.
+            </div>
+          </div>
+          <div className="settings-row-control">
+            <Switch
+              checked={reduceMotion}
+              onCheckedChange={(v) => persistAppearance({ reduceMotion: v })}
+            />
+          </div>
+        </div>
+
+        {/* Gear */}
+        <div className="settings-section-label">Gear</div>
+        {/* TODO: preset rigs UI in 3-col grid (deferred — uses .settings-presets styles) */}
         <NavRow
           icon={<ListChecks className="h-4 w-4" />}
           label="Preset rigs"
@@ -336,7 +353,7 @@ export default function Settings() {
         />
 
         {/* Data */}
-        <SectionHeader title="Data" />
+        <div className="settings-section-label">Data</div>
         <NavRow
           icon={<Download className="h-4 w-4" />}
           label="Export sessions"
@@ -351,7 +368,7 @@ export default function Settings() {
         />
 
         {/* Help */}
-        <SectionHeader title="Help" />
+        <div className="settings-section-label">Help</div>
         <NavRow
           icon={<HelpCircle className="h-4 w-4" />}
           label="How this works"
@@ -366,7 +383,8 @@ export default function Settings() {
         />
 
         {/* Sign out */}
-        <div className="pt-4">
+        {/* TODO: unsynced warning on sign-out (no offline queue infra yet) */}
+        <div className="pt-6">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
@@ -378,7 +396,7 @@ export default function Settings() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Sign out?</AlertDialogTitle>
+                <AlertDialogTitle>Sign out of It's Catching?</AlertDialogTitle>
                 <AlertDialogDescription>
                   Any unsynced sessions will stay on this device. You can sign back in to continue.
                 </AlertDialogDescription>
@@ -391,19 +409,66 @@ export default function Settings() {
           </AlertDialog>
         </div>
 
-        <p className="text-center text-[11px] text-muted-foreground pt-2">
+        <p className="text-center text-[11px] text-muted-foreground pt-4">
           It's Catching · v{APP_VERSION}
         </p>
       </div>
-    </div>
-  );
-}
 
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <h2 className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold pt-2 pl-1">
-      {title}
-    </h2>
+      {/* Edit name dialog */}
+      <Dialog open={editingName} onOpenChange={setEditingName}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit display name</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="dn">Display name</Label>
+            <Input
+              id="dn"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value.slice(0, 30))}
+              placeholder="Your name"
+              autoFocus
+            />
+            <p className="text-xs text-muted-foreground">2–30 characters.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingName(false)}>Cancel</Button>
+            <Button onClick={saveDisplayName} disabled={savingName}>
+              {savingName ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit water defaults dialog */}
+      <Dialog open={editingDefaults} onOpenChange={setEditingDefaults}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Water-type defaults</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="settings-water-card settings-water-still">
+              <div className="settings-water-label">Stillwater</div>
+              <ChipRow label="Species" value={stillSpecies} options={SPECIES_OPTIONS} onSelect={setStillSpecies} />
+              <ChipRow label="Rod weight" value={stillRod} options={ROD_WEIGHTS} onSelect={setStillRod} suffix="#" />
+              <ChipRow label="Usual line" value={stillLine} options={LINE_OPTIONS} onSelect={setStillLine} />
+            </div>
+            <div className="settings-water-card settings-water-river">
+              <div className="settings-water-label">River</div>
+              <ChipRow label="Species" value={riverSpecies} options={SPECIES_OPTIONS} onSelect={setRiverSpecies} />
+              <ChipRow label="Rod weight" value={riverRod} options={ROD_WEIGHTS} onSelect={setRiverRod} suffix="#" />
+              <ChipRow label="Usual line" value={riverLine} options={LINE_OPTIONS} onSelect={setRiverLine} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingDefaults(false)}>Cancel</Button>
+            <Button onClick={saveDefaults} disabled={savingDefaults}>
+              {savingDefaults ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 
@@ -422,7 +487,7 @@ function NavRow({
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-3 rounded-lg border border-border bg-card hover:bg-muted/40 px-3 py-2.5 text-left transition-colors"
+      className="w-full flex items-center gap-3 rounded-lg border border-border bg-card hover:bg-muted/40 px-3 py-2.5 text-left transition-colors mb-2"
     >
       <span className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
         {icon}
@@ -436,38 +501,42 @@ function NavRow({
   );
 }
 
-function DefaultsCard({
-  stripe,
+function ChipSettingRow({
   label,
-  species,
-  setSpecies,
-  rod,
-  setRod,
-  line,
-  setLine,
+  help,
+  value,
+  options,
+  onSelect,
 }: {
-  stripe: "foreground" | "amber";
   label: string;
-  species: string;
-  setSpecies: (v: string) => void;
-  rod: string;
-  setRod: (v: string) => void;
-  line: string;
-  setLine: (v: string) => void;
+  help: string;
+  value: string;
+  options: string[];
+  onSelect: (v: string) => void;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-lg border border-border bg-card p-3 space-y-2.5 border-l-4",
-        stripe === "foreground" ? "border-l-foreground/70" : "border-l-amber-500/70"
-      )}
-    >
-      <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-        {label}
+    <div className="settings-row">
+      <div className="settings-row-main">
+        <div className="settings-row-label">{label}</div>
+        <div className="settings-row-help">{help}</div>
       </div>
-      <ChipRow label="Species" value={species} options={SPECIES_OPTIONS} onSelect={setSpecies} />
-      <ChipRow label="Rod weight" value={rod} options={ROD_WEIGHTS} onSelect={setRod} suffix="#" />
-      <ChipRow label="Usual line" value={line} options={LINE_OPTIONS} onSelect={setLine} />
+      <div className="settings-row-control flex flex-wrap gap-1.5 justify-end max-w-[55%]">
+        {options.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onSelect(opt)}
+            className={cn(
+              "px-2.5 py-1 rounded-full text-xs border transition-colors capitalize",
+              value === opt
+                ? "bg-foreground text-background border-foreground"
+                : "border-border text-muted-foreground hover:border-foreground/40"
+            )}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -486,7 +555,7 @@ function ChipRow({
   suffix?: string;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 mt-2">
       <Label className="text-xs">{label}</Label>
       <div className="flex flex-wrap gap-1.5">
         {options.map((opt) => (
