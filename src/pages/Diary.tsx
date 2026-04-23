@@ -237,18 +237,25 @@ export default function Diary() {
           </Card>
         )}
 
-        {/* New Session + Filter bar */}
+        {/* New Session + Search + Filter bar */}
         <div className="flex gap-2">
           <Button
-            className="flex-1 min-h-[44px]"
+            className="min-h-[44px]"
             onClick={() => navigate("/diary/new")}
           >
-            <Plus className="h-4 w-4 mr-2" /> New Session
+            <Plus className="h-4 w-4 mr-2" /> New
           </Button>
+          <input
+            type="search"
+            placeholder="Search notes, spots…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="flex-1 h-11 px-4 rounded-full bg-[var(--paper-100,hsl(var(--muted)/0.4))] border border-[var(--ink-700,hsl(var(--border)))] text-sm outline-none focus:ring-1 focus:ring-foreground/40"
+          />
           {venues.length > 1 && (
             <Select value={venueFilter} onValueChange={(v) => { setVenueFilter(v); setPage(0); }}>
-              <SelectTrigger className="w-[160px] min-h-[44px]">
-                <SelectValue placeholder="All venues" />
+              <SelectTrigger className="w-[120px] min-h-[44px]">
+                <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All venues</SelectItem>
