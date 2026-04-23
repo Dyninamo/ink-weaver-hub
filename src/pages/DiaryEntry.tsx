@@ -378,6 +378,7 @@ export default function DiaryEntry() {
           />
         </div>
       ) : (
+      <>
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
