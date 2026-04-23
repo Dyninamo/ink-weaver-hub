@@ -11,7 +11,7 @@ interface OnboardingGateProps {
  * coach_stage !== 'done'. Profile is loaded by AuthContext.
  */
 const OnboardingGate = ({ children }: OnboardingGateProps) => {
-  const { user, profile, isProfileLoading } = useAuth();
+  const { user, profile } = useAuth();
   const [completedThisSession, setCompletedThisSession] = useState(false);
 
   // Wait for the FIRST profile load before deciding. Subsequent refreshes
