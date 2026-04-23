@@ -1180,20 +1180,7 @@ export default function DiaryEntry() {
         />
       )}
 
-      {/* Venue Return Dialog (post-session reporting) */}
-      {session && venueReturnEmail && (
-        <VenueReturnDialog
-          open={returnDialogOpen}
-          onClose={() => setReturnDialogOpen(false)}
-          sessionId={id!}
-          venueId={venueId}
-          venueName={session.venue_name}
-          returnEmail={venueReturnEmail}
-          events={events}
-          defaultAnglerName={(session as any).angler_name ?? null}
-          onSent={() => loadData()}
-        />
-      )}
+
       {/* Delete-session confirm dialog (rust-accented) */}
       <Dialog open={deleteConfirmOpen} onOpenChange={(o) => !deleting && setDeleteConfirmOpen(o)}>
         <DialogContent className="max-w-[380px]">
