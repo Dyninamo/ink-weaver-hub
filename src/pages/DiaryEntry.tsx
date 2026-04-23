@@ -1,3 +1,4 @@
+// TODO: inline event editing (tap event → field picker in-row). Deferred — Round 4 polish.
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
