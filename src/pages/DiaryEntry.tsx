@@ -1173,7 +1173,7 @@ export default function DiaryEntry() {
           venueName={session.venue_name}
           returnEmail={venueReturnEmail}
           events={events}
-          defaultAnglerName={(session as any).angler_name ?? profile?.display_name ?? null}
+          defaultAnglerName={(session as any).angler_name ?? null}
           onSent={() => loadData()}
         />
       )}
