@@ -71,9 +71,10 @@ export default function LostModal({
     if (!canSave) return;
     setSaving(true);
     try {
-      const fliesObj = currentSetup.flies_on_cast as Record<string, string> | null;
-      const flyPattern =
+      const fliesObj = currentSetup.flies_on_cast;
+      const flyEntry =
         flyUnknown || !flyPos || !fliesObj ? null : fliesObj[flyPos] ?? null;
+      const flyPattern = flyEntry?.pattern ?? null;
 
       const event = await addEvent({
         session_id: sessionId,

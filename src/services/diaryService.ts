@@ -86,15 +86,60 @@ export interface RodSetup {
   last_used_at: string | null;
 }
 
+// Per-position fly entry on the cast.
+// New shape (since FlyPicker integration): { pattern, size }.
+// Legacy shape (older sessions): plain string. Normalised at read-time.
+export interface FlyOnCast {
+  pattern: string;
+  size: number | null;
+}
+
+export type FliesOnCast = Record<string, FlyOnCast>;
+
 // Current setup state tracked during a session
 export interface CurrentSetup {
   style: string | null;
   rig: string | null;
   line_type: string | null;
   retrieve: string | null;
-  flies_on_cast: any | null;
+  flies_on_cast: FliesOnCast | null;
   spot: string | null;
   depth_zone: string | null;
+}
+
+/**
+ * Normalise the polymorphic flies_on_cast JSON loaded from Supabase into
+ * the strict {pattern, size} shape. Older sessions stored bare strings;
+ * newer sessions store objects. Returns null when nothing is present.
+ */
+export function normaliseFliesOnCast(raw: unknown): FliesOnCast | null {
+  if (!raw || typeof raw !== "object") return null;
+  const out: FliesOnCast = {};
+  for (const [pos, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!v) continue;
+    if (typeof v === "string") {
+      const trimmed = v.trim();
+      if (trimmed) out[pos] = { pattern: trimmed, size: null };
+    } else if (typeof v === "object" && "pattern" in v) {
+      const obj = v as { pattern?: unknown; size?: unknown };
+      if (typeof obj.pattern === "string" && obj.pattern.trim()) {
+        out[pos] = {
+          pattern: obj.pattern.trim(),
+          size: typeof obj.size === "number" ? obj.size : null,
+        };
+      }
+    }
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
+/** Render a FliesOnCast map (or legacy string-shape) as a single line. */
+export function formatFliesOnCast(raw: unknown): string | null {
+  const norm = normaliseFliesOnCast(raw);
+  if (!norm) return null;
+  return Object.values(norm)
+    .map((f) => (f.size != null ? `${f.pattern} #${f.size}` : f.pattern))
+    .join(" · ");
 }
 
 // ============================================================
