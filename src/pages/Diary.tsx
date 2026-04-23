@@ -293,11 +293,11 @@ export default function Diary() {
                 if (!search) return true;
                 const hay = [
                   s.venue_name,
-                  s.spot_name,
+                  (s as any).spot_name,
                   s.notes,
                   s.plan,
-                  s.area,
-                  s.beat,
+                  (s as any).area,
+                  (s as any).beat,
                 ]
                   .filter(Boolean)
                   .join(" ")
