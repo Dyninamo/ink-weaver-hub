@@ -43,10 +43,14 @@ import {
   deleteSession,
   calculateSessionStats,
   formatWeight,
+  formatFliesOnCast,
+  normaliseFliesOnCast,
   pollSessionWeather,
+  addEvent,
   type FishingSession,
   type SessionEvent,
   type CurrentSetup,
+  type FliesOnCast,
   type WeatherSnapshot,
 } from "@/services/diaryService";
 
@@ -159,7 +163,7 @@ export default function DiaryEntry() {
           rig: lastSetupEvent.rig,
           line_type: lastSetupEvent.line_type,
           retrieve: lastSetupEvent.retrieve,
-          flies_on_cast: lastSetupEvent.flies_on_cast,
+          flies_on_cast: normaliseFliesOnCast(lastSetupEvent.flies_on_cast),
           spot: lastSetupEvent.spot,
           depth_zone: lastSetupEvent.depth_zone,
         });
@@ -622,9 +626,7 @@ export default function DiaryEntry() {
             </p>
             {currentSetup.flies_on_cast && (
               <p className="text-xs text-muted-foreground italic leading-relaxed">
-                {Object.values(currentSetup.flies_on_cast as Record<string, string>)
-                  .filter(Boolean)
-                  .join(" · ")}
+                {formatFliesOnCast(currentSetup.flies_on_cast)}
               </p>
             )}
             {(currentSetup.retrieve || currentSetup.spot || currentSetup.depth_zone) && (
@@ -1041,13 +1043,7 @@ export default function DiaryEntry() {
         onClose={() => setLineCascadeOpen(false)}
         newLineName={currentSetup.line_type || "new line"}
         currentLeader={currentSetup.rig}
-        currentFlies={
-          currentSetup.flies_on_cast
-            ? Object.values(currentSetup.flies_on_cast as Record<string, string>)
-                .filter(Boolean)
-                .join(" · ")
-            : null
-        }
+        currentFlies={formatFliesOnCast(currentSetup.flies_on_cast)}
         onContinue={({ updateLeader, updateFlies }) => {
           setLineCascadeOpen(false);
           if (updateLeader || updateFlies) {
