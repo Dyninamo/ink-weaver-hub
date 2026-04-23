@@ -391,100 +391,14 @@ export default function DiaryNew() {
   }
 
   // ============================================================
-  // RENDER: Phase 2 — Initial Fishing Setup
+  // RENDER: Phase 2 — Setup Wizard (9 steps)
   // ============================================================
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-[420px] mx-auto p-4 space-y-5">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setPhase("header")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-semibold font-diary">Starting Setup</h1>
-            <p className="text-sm text-muted-foreground">{venue} · {sessionDate}</p>
-          </div>
-        </div>
-
-        {/* Saved Setups option */}
-        {savedSetups.length > 0 && (
-          <div>
-            <Button
-              variant="outline"
-              className="w-full justify-between min-h-[48px]"
-              onClick={() => setShowSavedSetups(!showSavedSetups)}
-            >
-              <span className="flex items-center gap-2">
-                <Bookmark className="h-4 w-4" />
-                Use saved setup
-              </span>
-              <ChevronRight className={`h-4 w-4 transition-transform ${showSavedSetups ? "rotate-90" : ""}`} />
-            </Button>
-
-            {showSavedSetups && (
-              <div className="mt-2 space-y-2">
-                {savedSetups.map((s) => (
-                  <Card
-                    key={s.id}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => handleApplySavedSetup(s)}
-                  >
-                    <CardContent className="p-3">
-                      <p className="font-medium text-sm">{s.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {[s.style, s.rig, s.line_type].filter(Boolean).join(" · ")}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {!showSavedSetups && (
-              <div className="flex items-center gap-2 my-3">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground">or build from scratch</span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Setup Cascade: Style → Rig → Line → Retrieve → Depth */}
-        <SetupCascade
-          venueType={venueType}
-          value={setup}
-          onChange={setSetup}
-        />
-
-        {/* Spot picker */}
-        <SpotPicker
-          value={setup.spot}
-          onChange={(v) => setSetup({ ...setup, spot: v })}
-          venueName={venue}
-        />
-
-        {/* Quick Start note */}
-        <p className="text-xs text-muted-foreground text-center">
-          You can skip optional fields and fill them when logging your first catch.
-        </p>
-
-        {/* Start Session button */}
-        <Button
-          onClick={handleStartSession}
-          disabled={saving || !setup.style}
-          className="w-full min-h-[52px] text-base bg-diary-catch hover:bg-diary-catch/90"
-        >
-          {saving ? (
-            "Starting..."
-          ) : (
-            <>
-              <Play className="h-5 w-5 mr-2" /> Start Fishing
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
+    <SetupWizard
+      venueName={venue}
+      venueType={venueType}
+      onBack={() => setPhase("header")}
+      onComplete={handleStartSession}
+    />
   );
 }
