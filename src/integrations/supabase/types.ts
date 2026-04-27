@@ -780,9 +780,12 @@ export type Database = {
           created_at: string | null
           dropper_count: number | null
           duration_minutes: number | null
+          end_latitude: number | null
+          end_longitude: number | null
           end_time: string | null
           fishing_type: string | null
           fishing_type_raw: string | null
+          gps_altitude: number | null
           id: string
           is_active: boolean | null
           keep_limit: number | null
@@ -812,6 +815,7 @@ export type Database = {
           tippet_unit: string | null
           updated_at: string | null
           user_id: string | null
+          venue_id: string | null
           venue_name: string
           venue_type: string | null
           weather_conditions: string | null
@@ -830,9 +834,12 @@ export type Database = {
           created_at?: string | null
           dropper_count?: number | null
           duration_minutes?: number | null
+          end_latitude?: number | null
+          end_longitude?: number | null
           end_time?: string | null
           fishing_type?: string | null
           fishing_type_raw?: string | null
+          gps_altitude?: number | null
           id?: string
           is_active?: boolean | null
           keep_limit?: number | null
@@ -862,6 +869,7 @@ export type Database = {
           tippet_unit?: string | null
           updated_at?: string | null
           user_id?: string | null
+          venue_id?: string | null
           venue_name: string
           venue_type?: string | null
           weather_conditions?: string | null
@@ -880,9 +888,12 @@ export type Database = {
           created_at?: string | null
           dropper_count?: number | null
           duration_minutes?: number | null
+          end_latitude?: number | null
+          end_longitude?: number | null
           end_time?: string | null
           fishing_type?: string | null
           fishing_type_raw?: string | null
+          gps_altitude?: number | null
           id?: string
           is_active?: boolean | null
           keep_limit?: number | null
@@ -912,6 +923,7 @@ export type Database = {
           tippet_unit?: string | null
           updated_at?: string | null
           user_id?: string | null
+          venue_id?: string | null
           venue_name?: string
           venue_type?: string | null
           weather_conditions?: string | null
