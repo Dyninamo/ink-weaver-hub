@@ -3576,6 +3576,56 @@ export type Database = {
           },
         ]
       }
+      session_trails: {
+        Row: {
+          accuracy: number | null
+          altitude: number | null
+          compass_deg: number | null
+          id: string
+          latitude: number | null
+          light_lux: number | null
+          longitude: number | null
+          pressure_hpa: number | null
+          session_id: string
+          sort_order: number
+          timestamp: string
+        }
+        Insert: {
+          accuracy?: number | null
+          altitude?: number | null
+          compass_deg?: number | null
+          id?: string
+          latitude?: number | null
+          light_lux?: number | null
+          longitude?: number | null
+          pressure_hpa?: number | null
+          session_id: string
+          sort_order: number
+          timestamp: string
+        }
+        Update: {
+          accuracy?: number | null
+          altitude?: number | null
+          compass_deg?: number | null
+          id?: string
+          latitude?: number | null
+          light_lux?: number | null
+          longitude?: number | null
+          pressure_hpa?: number | null
+          session_id?: string
+          sort_order?: number
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_trails_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_venue_map: {
         Row: {
           created_at: string
@@ -3605,6 +3655,65 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "venues_new"
             referencedColumns: ["venue_id"]
+          },
+        ]
+      }
+      session_weather_log: {
+        Row: {
+          cloud_cover_pct: number | null
+          id: string
+          is_day: boolean | null
+          phone_pressure_hpa: number | null
+          pressure_msl_hpa: number | null
+          rain_mm: number | null
+          rejected: boolean
+          session_id: string
+          sort_order: number
+          temperature_c: number | null
+          timestamp: string
+          wind_direction_deg: number | null
+          wind_gusts_kmh: number | null
+          wind_speed_kmh: number | null
+        }
+        Insert: {
+          cloud_cover_pct?: number | null
+          id?: string
+          is_day?: boolean | null
+          phone_pressure_hpa?: number | null
+          pressure_msl_hpa?: number | null
+          rain_mm?: number | null
+          rejected?: boolean
+          session_id: string
+          sort_order: number
+          temperature_c?: number | null
+          timestamp: string
+          wind_direction_deg?: number | null
+          wind_gusts_kmh?: number | null
+          wind_speed_kmh?: number | null
+        }
+        Update: {
+          cloud_cover_pct?: number | null
+          id?: string
+          is_day?: boolean | null
+          phone_pressure_hpa?: number | null
+          pressure_msl_hpa?: number | null
+          rain_mm?: number | null
+          rejected?: boolean
+          session_id?: string
+          sort_order?: number
+          temperature_c?: number | null
+          timestamp?: string
+          wind_direction_deg?: number | null
+          wind_gusts_kmh?: number | null
+          wind_speed_kmh?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_weather_log_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "fishing_sessions"
+            referencedColumns: ["id"]
           },
         ]
       }
