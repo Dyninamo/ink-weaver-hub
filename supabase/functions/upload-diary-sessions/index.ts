@@ -22,9 +22,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Explicitly pass through all known fields, including the new ones
+    // (venue_id, end_latitude, end_longitude, gps_altitude) added in prompt 110.
+    const rows = sessions.map((session: any) => ({
+      ...session,
+      venue_id: session.venue_id ?? null,
+      end_latitude: session.end_latitude ?? null,
+      end_longitude: session.end_longitude ?? null,
+      gps_altitude: session.gps_altitude ?? null,
+    }));
+
     const { error } = await supabaseAdmin
       .from("fishing_sessions")
-      .upsert(sessions, { onConflict: "id" });
+      .upsert(rows, { onConflict: "id" });
 
     if (error) {
       console.error("Upsert error:", error);
