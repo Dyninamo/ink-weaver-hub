@@ -3307,12 +3307,16 @@ export type Database = {
           change_reason: string | null
           change_to: Json | null
           depth_zone: string | null
+          event_cloud_pct: number | null
           event_conditions: string | null
           event_pressure: number | null
+          event_pressure_trend: string | null
+          event_rain_mm: number | null
           event_temp: number | null
           event_time: string
           event_type: string
           event_wind_dir: string | null
+          event_wind_gusts: number | null
           event_wind_speed: number | null
           flies_on_cast: Json | null
           fly_known: boolean | null
@@ -3320,6 +3324,8 @@ export type Database = {
           fly_position_unknown: boolean
           fly_size: number | null
           got_away_stage: string | null
+          gps_accuracy: number | null
+          gps_altitude: number | null
           id: string
           is_best_fish: boolean | null
           latitude: number | null
@@ -3333,6 +3339,9 @@ export type Database = {
           rig: string | null
           rig_position: string | null
           rod_index: number
+          sensor_compass_deg: number | null
+          sensor_light_lux: number | null
+          sensor_pressure_hpa: number | null
           session_id: string
           size_estimate: string | null
           sort_order: number
@@ -3350,12 +3359,16 @@ export type Database = {
           change_reason?: string | null
           change_to?: Json | null
           depth_zone?: string | null
+          event_cloud_pct?: number | null
           event_conditions?: string | null
           event_pressure?: number | null
+          event_pressure_trend?: string | null
+          event_rain_mm?: number | null
           event_temp?: number | null
           event_time?: string
           event_type: string
           event_wind_dir?: string | null
+          event_wind_gusts?: number | null
           event_wind_speed?: number | null
           flies_on_cast?: Json | null
           fly_known?: boolean | null
@@ -3363,6 +3376,8 @@ export type Database = {
           fly_position_unknown?: boolean
           fly_size?: number | null
           got_away_stage?: string | null
+          gps_accuracy?: number | null
+          gps_altitude?: number | null
           id?: string
           is_best_fish?: boolean | null
           latitude?: number | null
@@ -3376,6 +3391,9 @@ export type Database = {
           rig?: string | null
           rig_position?: string | null
           rod_index?: number
+          sensor_compass_deg?: number | null
+          sensor_light_lux?: number | null
+          sensor_pressure_hpa?: number | null
           session_id: string
           size_estimate?: string | null
           sort_order: number
@@ -3393,12 +3411,16 @@ export type Database = {
           change_reason?: string | null
           change_to?: Json | null
           depth_zone?: string | null
+          event_cloud_pct?: number | null
           event_conditions?: string | null
           event_pressure?: number | null
+          event_pressure_trend?: string | null
+          event_rain_mm?: number | null
           event_temp?: number | null
           event_time?: string
           event_type?: string
           event_wind_dir?: string | null
+          event_wind_gusts?: number | null
           event_wind_speed?: number | null
           flies_on_cast?: Json | null
           fly_known?: boolean | null
@@ -3406,6 +3428,8 @@ export type Database = {
           fly_position_unknown?: boolean
           fly_size?: number | null
           got_away_stage?: string | null
+          gps_accuracy?: number | null
+          gps_altitude?: number | null
           id?: string
           is_best_fish?: boolean | null
           latitude?: number | null
@@ -3419,6 +3443,9 @@ export type Database = {
           rig?: string | null
           rig_position?: string | null
           rod_index?: number
+          sensor_compass_deg?: number | null
+          sensor_light_lux?: number | null
+          sensor_pressure_hpa?: number | null
           session_id?: string
           size_estimate?: string | null
           sort_order?: number
