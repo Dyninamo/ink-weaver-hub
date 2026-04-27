@@ -22,9 +22,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Explicitly pass through new fields added in prompts 111 + earlier schema.
+    const rows = events.map((event: any) => ({
+      ...event,
+      // GPS quality
+      gps_accuracy: event.gps_accuracy ?? null,
+      gps_altitude: event.gps_altitude ?? null,
+      // Phone sensor snapshot
+      sensor_pressure_hpa: event.sensor_pressure_hpa ?? null,
+      sensor_light_lux: event.sensor_light_lux ?? null,
+      sensor_compass_deg: event.sensor_compass_deg ?? null,
+      // Weather at event time
+      event_wind_gusts: event.event_wind_gusts ?? null,
+      event_rain_mm: event.event_rain_mm ?? null,
+      event_cloud_pct: event.event_cloud_pct ?? null,
+      event_pressure_trend: event.event_pressure_trend ?? null,
+      // Measurement fields
+      weight_display: event.weight_display ?? null,
+      measurement_mode: event.measurement_mode ?? null,
+      length_inches: event.length_inches ?? null,
+    }));
+
     const { error } = await supabaseAdmin
       .from("session_events")
-      .upsert(events, { onConflict: "id" });
+      .upsert(rows, { onConflict: "id" });
 
     if (error) {
       console.error("Upsert error:", error);
