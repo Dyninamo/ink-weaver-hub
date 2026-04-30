@@ -164,7 +164,7 @@ export default function ManagerStockingForm() {
   }
 
   const grant = scope.grantsByVenue[venue.venue_id];
-  const canWrite = grant?.scope_type === "venue";
+  const canWrite = grant?.can_write ?? false;
 
   if (!canWrite) {
     return (

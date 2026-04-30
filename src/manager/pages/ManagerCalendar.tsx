@@ -84,7 +84,7 @@ export default function ManagerCalendar() {
     );
   }
 
-  const canWrite = scope.grantsByVenue[venue.venue_id]?.scope_type === "venue";
+  const canWrite = scope.grantsByVenue[venue.venue_id]?.can_write ?? false;
 
   return (
     <ManagerLayout currentVenue={venue}>

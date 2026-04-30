@@ -21,13 +21,15 @@ export interface ManagerGroup {
   role: string;
 }
 
+export const WRITER_ROLES = new Set(["owner", "head_bailiff", "bailiff"]);
+
 export interface ManagerScope {
   isLoading: boolean;
   error: string | null;
   groups: ManagerGroup[];
   venues: ManagerVenue[];
   // grants keyed by venue_id → role + scope (for write access checks)
-  grantsByVenue: Record<string, { role: string; scope_type: "venue" | "group"; manager_id: string }>;
+  grantsByVenue: Record<string, { role: string; scope_type: "venue" | "group"; manager_id: string; can_write: boolean }>;
   reload: () => void;
 }
 
@@ -95,14 +97,24 @@ export function useManagerScope(): ManagerScope {
         if (g.scope_type === "venue") {
           const v = (venuesDirect.data ?? []).find((x: any) => x.venue_id === g.scope_id);
           if (v) {
-            grantsByVenue[v.venue_id] = { role: g.role, scope_type: "venue", manager_id: g.id };
+            grantsByVenue[v.venue_id] = {
+              role: g.role,
+              scope_type: "venue",
+              manager_id: g.id,
+              can_write: WRITER_ROLES.has(g.role),
+            };
             venuesMap.set(v.venue_id, { ...v, role: g.role, scope_type: "venue" });
           }
         } else if (g.scope_type === "group") {
           for (const v of venuesViaGroup.data ?? []) {
             if (v.group_id === g.scope_id && !venuesMap.has(v.venue_id)) {
               // group-scope is read-only by spec
-              grantsByVenue[v.venue_id] = { role: g.role, scope_type: "group", manager_id: g.id };
+              grantsByVenue[v.venue_id] = {
+                role: g.role,
+                scope_type: "group",
+                manager_id: g.id,
+                can_write: false,
+              };
               venuesMap.set(v.venue_id, { ...v, role: g.role, scope_type: "group" });
             }
           }
