@@ -6712,6 +6712,14 @@ export type Database = {
       clear_table: { Args: { target_table: string }; Returns: undefined }
       get_my_group_ids: { Args: never; Returns: string[] }
       get_my_profile_id: { Args: never; Returns: string }
+      has_manager_read_access: {
+        Args: { p_venue_id: string }
+        Returns: boolean
+      }
+      has_manager_venue_access: {
+        Args: { p_venue_id: string }
+        Returns: boolean
+      }
       increment_share_view: { Args: { p_token: string }; Returns: undefined }
       is_group_admin: { Args: { target_group_id: string }; Returns: boolean }
     }
