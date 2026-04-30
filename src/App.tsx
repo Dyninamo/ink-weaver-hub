@@ -32,6 +32,17 @@ import SessionShareView from "./pages/SessionShareView";
 import GroupJoinView from "./pages/GroupJoinView";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppShell from "./layouts/AppShell";
+import ManagerProtectedRoute from "./manager/ManagerProtectedRoute";
+import ManagerHome from "./manager/pages/ManagerHome";
+import ManagerNoAccess from "./manager/pages/ManagerNoAccess";
+import ManagerClaim from "./manager/pages/ManagerClaim";
+import ManagerVenueHome from "./manager/pages/ManagerVenueHome";
+import ManagerStockingForm from "./manager/pages/ManagerStockingForm";
+import ManagerCalendar from "./manager/pages/ManagerCalendar";
+
+const Manager = ({ children }: { children: React.ReactNode }) => (
+  <ManagerProtectedRoute>{children}</ManagerProtectedRoute>
+);
 
 const Shelled = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
@@ -120,6 +131,16 @@ const App = () => (
             <Route path="/admin/test-advice" element={<Shelled><AdminTestAdvice /></Shelled>} />
             <Route path="/admin/recompute" element={<Shelled><AdminRecompute /></Shelled>} />
             <Route path="/admin/venue-submissions" element={<Shelled><AdminVenueSubmissions /></Shelled>} />
+
+            {/* Manager Portal */}
+            <Route path="/manager" element={<Manager><ManagerHome /></Manager>} />
+            <Route path="/manager/no-access" element={<Manager><ManagerNoAccess /></Manager>} />
+            <Route path="/manager/claim" element={<Manager><ManagerClaim /></Manager>} />
+            <Route path="/manager/:slug" element={<Manager><ManagerVenueHome /></Manager>} />
+            <Route path="/manager/:slug/stock" element={<Manager><ManagerStockingForm /></Manager>} />
+            <Route path="/manager/:slug/stock/:id" element={<Manager><ManagerStockingForm /></Manager>} />
+            <Route path="/manager/:slug/calendar" element={<Manager><ManagerCalendar /></Manager>} />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
