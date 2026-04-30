@@ -771,6 +771,84 @@ export type Database = {
         }
         Relationships: []
       }
+      fishery_groups: {
+        Row: {
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fishery_managers: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invited_at: string
+          invited_by: string | null
+          role: string
+          scope_id: string
+          scope_type: string
+          status: string
+          tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          role?: string
+          scope_id: string
+          scope_type: string
+          status?: string
+          tier?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          role?: string
+          scope_id?: string
+          scope_type?: string
+          status?: string
+          tier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fishing_sessions: {
         Row: {
           angler_location: string | null
@@ -4487,6 +4565,87 @@ export type Database = {
         }
         Relationships: []
       }
+      stocking_events: {
+        Row: {
+          avg_weight_lb: number
+          cost_estimate: number | null
+          cost_total: number | null
+          created_at: string
+          created_by: string
+          date_stocked: string
+          distribution_points: Json | null
+          distribution_summary: string | null
+          ea_permit_ref: string | null
+          id: string
+          notes: string | null
+          quantity: number
+          size_band: string | null
+          species: string
+          supplier_id: string | null
+          supplier_name: string | null
+          triploid: boolean
+          updated_at: string
+          venue_id: string
+        }
+        Insert: {
+          avg_weight_lb: number
+          cost_estimate?: number | null
+          cost_total?: number | null
+          created_at?: string
+          created_by: string
+          date_stocked: string
+          distribution_points?: Json | null
+          distribution_summary?: string | null
+          ea_permit_ref?: string | null
+          id?: string
+          notes?: string | null
+          quantity: number
+          size_band?: string | null
+          species: string
+          supplier_id?: string | null
+          supplier_name?: string | null
+          triploid?: boolean
+          updated_at?: string
+          venue_id: string
+        }
+        Update: {
+          avg_weight_lb?: number
+          cost_estimate?: number | null
+          cost_total?: number | null
+          created_at?: string
+          created_by?: string
+          date_stocked?: string
+          distribution_points?: Json | null
+          distribution_summary?: string | null
+          ea_permit_ref?: string | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          size_band?: string | null
+          species?: string
+          supplier_id?: string | null
+          supplier_name?: string | null
+          triploid?: boolean
+          updated_at?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stocking_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "fishery_managers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stocking_events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues_new"
+            referencedColumns: ["venue_id"]
+          },
+        ]
+      }
       stocking_records: {
         Row: {
           avg_weight_lb: number | null
@@ -5630,6 +5789,7 @@ export type Database = {
           enrichment_confidence: string | null
           enrichment_source: string | null
           full_name: string
+          group_id: string | null
           has_diary: boolean
           has_passport: boolean
           has_reports: boolean
@@ -5684,6 +5844,7 @@ export type Database = {
           enrichment_confidence?: string | null
           enrichment_source?: string | null
           full_name: string
+          group_id?: string | null
           has_diary?: boolean
           has_passport?: boolean
           has_reports?: boolean
@@ -5738,6 +5899,7 @@ export type Database = {
           enrichment_confidence?: string | null
           enrichment_source?: string | null
           full_name?: string
+          group_id?: string | null
           has_diary?: boolean
           has_passport?: boolean
           has_reports?: boolean
@@ -5777,6 +5939,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "venues_new_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "fishery_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "venues_new_region_id_fkey"
             columns: ["region_id"]
