@@ -2628,6 +2628,7 @@ export type Database = {
         Row: {
           best_spots: string[] | null
           content: string | null
+          content_original: string | null
           created_at: string | null
           date: string
           fish_killed: string | null
@@ -2681,6 +2682,7 @@ export type Database = {
         Insert: {
           best_spots?: string[] | null
           content?: string | null
+          content_original?: string | null
           created_at?: string | null
           date: string
           fish_killed?: string | null
@@ -2734,6 +2736,7 @@ export type Database = {
         Update: {
           best_spots?: string[] | null
           content?: string | null
+          content_original?: string | null
           created_at?: string | null
           date?: string
           fish_killed?: string | null
@@ -2789,6 +2792,7 @@ export type Database = {
       reports_raw: {
         Row: {
           content: string | null
+          content_original: string | null
           date: string | null
           extraction_confidence: number | null
           fishery_id: number | null
@@ -2803,6 +2807,7 @@ export type Database = {
         }
         Insert: {
           content?: string | null
+          content_original?: string | null
           date?: string | null
           extraction_confidence?: number | null
           fishery_id?: number | null
@@ -2817,6 +2822,7 @@ export type Database = {
         }
         Update: {
           content?: string | null
+          content_original?: string | null
           date?: string | null
           extraction_confidence?: number | null
           fishery_id?: number | null
