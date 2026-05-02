@@ -2789,54 +2789,6 @@ export type Database = {
         }
         Relationships: []
       }
-      reports_raw: {
-        Row: {
-          content: string | null
-          content_original: string | null
-          date: string | null
-          extraction_confidence: number | null
-          fishery_id: number | null
-          headers: string | null
-          id: number
-          platform_source: string | null
-          region: string | null
-          report_url: string | null
-          rod_averages: number | null
-          sha256_hash: string | null
-          venue: string | null
-        }
-        Insert: {
-          content?: string | null
-          content_original?: string | null
-          date?: string | null
-          extraction_confidence?: number | null
-          fishery_id?: number | null
-          headers?: string | null
-          id?: never
-          platform_source?: string | null
-          region?: string | null
-          report_url?: string | null
-          rod_averages?: number | null
-          sha256_hash?: string | null
-          venue?: string | null
-        }
-        Update: {
-          content?: string | null
-          content_original?: string | null
-          date?: string | null
-          extraction_confidence?: number | null
-          fishery_id?: number | null
-          headers?: string | null
-          id?: never
-          platform_source?: string | null
-          region?: string | null
-          report_url?: string | null
-          rod_averages?: number | null
-          sha256_hash?: string | null
-          venue?: string | null
-        }
-        Relationships: []
-      }
       retrieves: {
         Row: {
           created_at: string | null
