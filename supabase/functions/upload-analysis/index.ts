@@ -18,7 +18,7 @@ const ALLOWED_TABLES = [
   'river_condition_modifiers', 'river_species_composition',
   'river_advice_confidence',
   // Raw / crawl
-  'reports_raw', 'harvested_events', 'venues', 'counties', 'fisheries',
+  'harvested_events', 'venues', 'counties', 'fisheries',
   // Water-type advice
   'wt_advice_profiles', 'wt_monthly_fly_advice', 'wt_monthly_method_advice',
   'wt_condition_advice', 'wt_seasonal_overview', 'wt_where_to_fish',
@@ -44,7 +44,6 @@ const SERIAL_ID_TABLES = new Set([
   'stillwater_fly_rankings',
   'river_fly_recommendations',
   'river_recommendation_lookup',
-  'reports_raw',
   'harvested_events',
   'venues',
   'pattern_weather_effects',
