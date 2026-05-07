@@ -322,6 +322,33 @@ export async function listSessions(userId: string, options?: {
 // EVENT CRUD
 // ============================================================
 
+/**
+ * Normalises rig_position to the canonical lowercase water-column set.
+ * Accepts UI's capitalised + multi-word labels and maps them onto
+ * {point, middle, top}. UK convention treats the bob fly as the top fly,
+ * so "Bob fly" maps to "top". Unknown inputs return null so the DB
+ * CHECK constraint guarantees only valid values land.
+ */
+function normalizeRigPosition(v?: string | null): string | null {
+  if (!v) return null;
+  const s = String(v).trim().toLowerCase();
+  switch (s) {
+    case "point":
+      return "point";
+    case "middle":
+    case "middle dropper":
+      return "middle";
+    case "top":
+    case "top dropper":
+    case "bob fly":
+    case "bob":
+      return "top";
+    default:
+      console.warn("[diaryService] Unknown rig_position:", v);
+      return null;
+  }
+}
+
 export async function addEvent(event: Partial<SessionEvent>) {
   // Auto-calculate sort_order
   const { count } = await supabase
@@ -329,9 +356,15 @@ export async function addEvent(event: Partial<SessionEvent>) {
     .select('*', { count: 'exact', head: true })
     .eq('session_id', event.session_id!);
 
+  const normalised = {
+    ...event,
+    rig_position: normalizeRigPosition(event.rig_position),
+    sort_order: (count || 0) + 1,
+  };
+
   const { data, error } = await supabase
     .from('session_events')
-    .insert({ ...event, sort_order: (count || 0) + 1 } as any)
+    .insert(normalised as any)
     .select()
     .single();
   if (error) throw error;
