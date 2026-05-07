@@ -623,6 +623,8 @@ export type Database = {
           fishing_type: string | null
           fishing_type_raw: string | null
           gps_altitude: number | null
+          gps_start_lat: number | null
+          gps_start_lon: number | null
           id: string
           is_active: boolean | null
           keep_limit: number | null
@@ -647,6 +649,8 @@ export type Database = {
           source_id: string | null
           spot_name: string | null
           start_time: string | null
+          submission_due: string | null
+          submission_status: string | null
           tippet_length_ft: number | null
           tippet_strength: number | null
           tippet_unit: string | null
@@ -677,6 +681,8 @@ export type Database = {
           fishing_type?: string | null
           fishing_type_raw?: string | null
           gps_altitude?: number | null
+          gps_start_lat?: number | null
+          gps_start_lon?: number | null
           id?: string
           is_active?: boolean | null
           keep_limit?: number | null
@@ -701,6 +707,8 @@ export type Database = {
           source_id?: string | null
           spot_name?: string | null
           start_time?: string | null
+          submission_due?: string | null
+          submission_status?: string | null
           tippet_length_ft?: number | null
           tippet_strength?: number | null
           tippet_unit?: string | null
@@ -731,6 +739,8 @@ export type Database = {
           fishing_type?: string | null
           fishing_type_raw?: string | null
           gps_altitude?: number | null
+          gps_start_lat?: number | null
+          gps_start_lon?: number | null
           id?: string
           is_active?: boolean | null
           keep_limit?: number | null
@@ -755,6 +765,8 @@ export type Database = {
           source_id?: string | null
           spot_name?: string | null
           start_time?: string | null
+          submission_due?: string | null
+          submission_status?: string | null
           tippet_length_ft?: number | null
           tippet_strength?: number | null
           tippet_unit?: string | null
