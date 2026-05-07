@@ -5559,6 +5559,7 @@ export type Database = {
           enriched_at: string | null
           enrichment_confidence: string | null
           enrichment_source: string | null
+          facebook_url: string | null
           full_name: string
           group_id: string | null
           has_diary: boolean
@@ -5582,6 +5583,7 @@ export type Database = {
           platform_type: string | null
           postcode: string | null
           region_id: number
+          report_submission_form_url: string | null
           return_email: string | null
           river_name: string | null
           root_url: string | null
@@ -5614,6 +5616,7 @@ export type Database = {
           enriched_at?: string | null
           enrichment_confidence?: string | null
           enrichment_source?: string | null
+          facebook_url?: string | null
           full_name: string
           group_id?: string | null
           has_diary?: boolean
@@ -5637,6 +5640,7 @@ export type Database = {
           platform_type?: string | null
           postcode?: string | null
           region_id: number
+          report_submission_form_url?: string | null
           return_email?: string | null
           river_name?: string | null
           root_url?: string | null
@@ -5669,6 +5673,7 @@ export type Database = {
           enriched_at?: string | null
           enrichment_confidence?: string | null
           enrichment_source?: string | null
+          facebook_url?: string | null
           full_name?: string
           group_id?: string | null
           has_diary?: boolean
@@ -5692,6 +5697,7 @@ export type Database = {
           platform_type?: string | null
           postcode?: string | null
           region_id?: number
+          report_submission_form_url?: string | null
           return_email?: string | null
           river_name?: string | null
           root_url?: string | null
