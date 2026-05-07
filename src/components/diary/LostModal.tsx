@@ -82,7 +82,9 @@ export default function LostModal({
         event_time: new Date().toISOString(),
         sort_order: eventCount + 1,
         got_away_stage: stage!,
-        rig_position: flyUnknown ? null : flyPos,
+        // rig_position intentionally omitted — flyPos is a fly slot key
+        // ("Point" / "Top" / "Dropper 1" / etc.), not a water-column
+        // position. Fly identity is captured by fly_pattern below.
         fly_pattern: flyPattern,
         // @ts-ignore — column added in migration, types regenerate after
         fly_position_unknown: flyUnknown,
