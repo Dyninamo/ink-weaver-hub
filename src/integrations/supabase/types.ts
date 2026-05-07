@@ -3342,7 +3342,9 @@ export type Database = {
           change_from: Json | null
           change_reason: string | null
           change_to: Json | null
+          created_at: string | null
           depth_zone: string | null
+          dropper_position: string | null
           event_cloud_pct: number | null
           event_conditions: string | null
           event_pressure: number | null
@@ -3362,8 +3364,12 @@ export type Database = {
           got_away_stage: string | null
           gps_accuracy: number | null
           gps_altitude: number | null
+          gps_latitude: number | null
+          gps_longitude: number | null
           id: string
+          input_method: string | null
           is_best_fish: boolean | null
+          kept_released: string | null
           latitude: number | null
           length_inches: number | null
           line_type: string | null
@@ -3371,6 +3377,7 @@ export type Database = {
           measurement_mode: string | null
           notes: string | null
           photo_url: string | null
+          quantity: number | null
           retrieve: string | null
           rig: string | null
           rig_position: string | null
@@ -3384,6 +3391,7 @@ export type Database = {
           species: string | null
           spot: string | null
           style: string | null
+          voice_transcript: string | null
           weight_display: string | null
           weight_lb: number | null
           weight_oz: number | null
@@ -3394,7 +3402,9 @@ export type Database = {
           change_from?: Json | null
           change_reason?: string | null
           change_to?: Json | null
+          created_at?: string | null
           depth_zone?: string | null
+          dropper_position?: string | null
           event_cloud_pct?: number | null
           event_conditions?: string | null
           event_pressure?: number | null
@@ -3414,8 +3424,12 @@ export type Database = {
           got_away_stage?: string | null
           gps_accuracy?: number | null
           gps_altitude?: number | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
           id?: string
+          input_method?: string | null
           is_best_fish?: boolean | null
+          kept_released?: string | null
           latitude?: number | null
           length_inches?: number | null
           line_type?: string | null
@@ -3423,6 +3437,7 @@ export type Database = {
           measurement_mode?: string | null
           notes?: string | null
           photo_url?: string | null
+          quantity?: number | null
           retrieve?: string | null
           rig?: string | null
           rig_position?: string | null
@@ -3436,6 +3451,7 @@ export type Database = {
           species?: string | null
           spot?: string | null
           style?: string | null
+          voice_transcript?: string | null
           weight_display?: string | null
           weight_lb?: number | null
           weight_oz?: number | null
@@ -3446,7 +3462,9 @@ export type Database = {
           change_from?: Json | null
           change_reason?: string | null
           change_to?: Json | null
+          created_at?: string | null
           depth_zone?: string | null
+          dropper_position?: string | null
           event_cloud_pct?: number | null
           event_conditions?: string | null
           event_pressure?: number | null
@@ -3466,8 +3484,12 @@ export type Database = {
           got_away_stage?: string | null
           gps_accuracy?: number | null
           gps_altitude?: number | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
           id?: string
+          input_method?: string | null
           is_best_fish?: boolean | null
+          kept_released?: string | null
           latitude?: number | null
           length_inches?: number | null
           line_type?: string | null
@@ -3475,6 +3497,7 @@ export type Database = {
           measurement_mode?: string | null
           notes?: string | null
           photo_url?: string | null
+          quantity?: number | null
           retrieve?: string | null
           rig?: string | null
           rig_position?: string | null
@@ -3488,6 +3511,7 @@ export type Database = {
           species?: string | null
           spot?: string | null
           style?: string | null
+          voice_transcript?: string | null
           weight_display?: string | null
           weight_lb?: number | null
           weight_oz?: number | null
