@@ -4814,6 +4814,78 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          confirm_mode: string
+          default_outcome: string
+          default_retrieve: string | null
+          default_species_river: string
+          default_species_stillwater: string
+          size_mode: string
+          size_unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confirm_mode?: string
+          default_outcome?: string
+          default_retrieve?: string | null
+          default_species_river?: string
+          default_species_stillwater?: string
+          size_mode?: string
+          size_unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confirm_mode?: string
+          default_outcome?: string
+          default_retrieve?: string | null
+          default_species_river?: string
+          default_species_stillwater?: string
+          size_mode?: string
+          size_unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_presets: {
+        Row: {
+          created_at: string
+          id: string
+          include_flies: boolean
+          last_used_at: string
+          name: string
+          rod: Json
+          updated_at: string
+          user_id: string
+          water_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          include_flies?: boolean
+          last_used_at?: string
+          name: string
+          rod: Json
+          updated_at?: string
+          user_id: string
+          water_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          include_flies?: boolean
+          last_used_at?: string
+          name?: string
+          rod?: Json
+          updated_at?: string
+          user_id?: string
+          water_type?: string | null
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           angler_id: string | null
