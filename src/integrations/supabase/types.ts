@@ -634,10 +634,6 @@ export type Database = {
           longitude: number | null
           notes: string | null
           plan: string | null
-          reported_at: string | null
-          reported_body_snapshot: string | null
-          reported_include_gps: boolean
-          reported_to_email: string | null
           rod_length_ft: number | null
           rod_weight: number | null
           rods: number | null
@@ -692,10 +688,6 @@ export type Database = {
           longitude?: number | null
           notes?: string | null
           plan?: string | null
-          reported_at?: string | null
-          reported_body_snapshot?: string | null
-          reported_include_gps?: boolean
-          reported_to_email?: string | null
           rod_length_ft?: number | null
           rod_weight?: number | null
           rods?: number | null
@@ -750,10 +742,6 @@ export type Database = {
           longitude?: number | null
           notes?: string | null
           plan?: string | null
-          reported_at?: string | null
-          reported_body_snapshot?: string | null
-          reported_include_gps?: boolean
-          reported_to_email?: string | null
           rod_length_ft?: number | null
           rod_weight?: number | null
           rods?: number | null
@@ -5596,7 +5584,6 @@ export type Database = {
           postcode: string | null
           region_id: number
           report_submission_form_url: string | null
-          return_email: string | null
           river_name: string | null
           root_url: string | null
           search_text: string
@@ -5653,7 +5640,6 @@ export type Database = {
           postcode?: string | null
           region_id: number
           report_submission_form_url?: string | null
-          return_email?: string | null
           river_name?: string | null
           root_url?: string | null
           search_text?: string
@@ -5710,7 +5696,6 @@ export type Database = {
           postcode?: string | null
           region_id?: number
           report_submission_form_url?: string | null
-          return_email?: string | null
           river_name?: string | null
           root_url?: string | null
           search_text?: string
