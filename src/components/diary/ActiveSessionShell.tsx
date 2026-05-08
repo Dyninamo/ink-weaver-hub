@@ -59,6 +59,7 @@ export default function ActiveSessionShell({
   const { refresh: refreshActiveSession } = useActiveSession();
   const [phase, setPhase] = useState<SessionPhase>("ready");
   const [outreachOpen, setOutreachOpen] = useState(false);
+  const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
   const [outreachChecked, setOutreachChecked] = useState(false);
 
   const sessionId = session.id!;
