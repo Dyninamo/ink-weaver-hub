@@ -53,27 +53,10 @@ export default function DiaryNew() {
     if (venue && VENUE_TYPES[venue]) setVenueType(VENUE_TYPES[venue]);
   }, [venue]);
 
-  // Resolve venue.water_type from venues_new on demand (for preset filter)
-  const [venueWaterType, setVenueWaterType] = useState<"stillwater" | "river">(venueType);
-  useEffect(() => {
-    let cancelled = false;
-    async function lookup() {
-      if (!venue) return;
-      const { data } = await supabase
-        .from("venues_new")
-        .select("water_type")
-        .ilike("name", venue)
-        .limit(1)
-        .maybeSingle();
-      if (cancelled) return;
-      const wt = (data?.water_type ?? "").toLowerCase();
-      if (wt === "river") setVenueWaterType("river");
-      else if (wt === "stillwater") setVenueWaterType("stillwater");
-      else setVenueWaterType(venueType);
-    }
-    lookup();
-    return () => { cancelled = true; };
-  }, [venue, venueType]);
+  // venueType (set above from the VENUE_TYPES map) is the canonical PWA water-type.
+  // venues_new exposes water_type_id (FK), not a string column, so we don't query it here —
+  // venueType is already the right "stillwater" | "river" value for the preset filter.
+  const venueWaterType = venueType;
 
   async function handleCommit(commit: WizardCommit) {
     if (!user) {
