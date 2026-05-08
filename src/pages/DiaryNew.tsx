@@ -46,6 +46,7 @@ export default function DiaryNew() {
 
   const [venue, setVenue] = useState("");
   const [venueType, setVenueType] = useState<"stillwater" | "river">("stillwater");
+  const HOME_OPTION: VenueOption = { name: "Home", waterType: null };
   const [venueTypeResolved, setVenueTypeResolved] = useState(false);
   const [venueTypeManual, setVenueTypeManual] = useState(false);
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().split("T")[0]);
@@ -65,12 +66,11 @@ export default function DiaryNew() {
         .order("name")
         .limit(2000);
       if (!data) return;
-      setVenues(
-        data.map((v: any) => ({
-          name: v.name,
-          waterType: classifyWaterType(v.water_types?.water_type),
-        }))
-      );
+      const realVenues: VenueOption[] = data.map((v: any) => ({
+        name: v.name,
+        waterType: classifyWaterType(v.water_types?.water_type),
+      }));
+      setVenues([HOME_OPTION, ...realVenues]);
     }
     loadVenues();
   }, []);
@@ -85,6 +85,10 @@ export default function DiaryNew() {
   useEffect(() => {
     if (!venue) return;
     if (venueTypeManual) return; // user override wins
+    if (venue === "Home") {
+      setVenueTypeResolved(false); // forces user to pick via the toggle
+      return;
+    }
     const inMemory = venues.find((v) => v.name === venue);
     if (inMemory) {
       if (inMemory.waterType) {
@@ -117,9 +121,12 @@ export default function DiaryNew() {
 
   const venueWaterType = venueType;
 
-  const filteredVenues = venueFilter.trim()
-    ? venues.filter((v) => v.name.toLowerCase().includes(venueFilter.toLowerCase()))
-    : venues;
+  const realVenues = venues.filter((v) => v.name !== "Home");
+  const filteredRealVenues = venueFilter.trim()
+    ? realVenues.filter((v) => v.name.toLowerCase().includes(venueFilter.toLowerCase()))
+    : realVenues;
+
+  const canBuildRig = !!venue.trim() && (venue !== "Home" || venueTypeManual);
 
   async function handleCommit(commit: WizardCommit) {
     if (!user) {
@@ -263,7 +270,7 @@ export default function DiaryNew() {
           <SetupWizard
             userId={user.id}
             venueName={venue}
-            venueWaterType={venueWaterType}
+            venueWaterType={venue === "Home" && !venueTypeManual ? null : venueWaterType}
             onCancel={() => setShowWizard(false)}
             onComplete={handleCommit}
           />
