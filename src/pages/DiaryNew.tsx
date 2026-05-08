@@ -267,6 +267,11 @@ export default function DiaryNew() {
           />
         </div>
 
+        <div>
+          <Label className="mb-1.5 block">Leader</Label>
+          <LeaderPicker value={leader} onChange={setLeader} prefillUserId={user?.id} />
+        </div>
+
         <details className="border rounded-md p-3">
           <summary className="text-sm font-medium cursor-pointer">
             Weather (optional)
