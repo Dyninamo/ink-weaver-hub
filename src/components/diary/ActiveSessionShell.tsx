@@ -2,8 +2,7 @@
 // active branch. Owns phase state, renders the EndPill at shell level so it
 // persists across catch / blank / lost / change phases, and routes phases as
 // full-page bodies (no Dialog overlays). Per prompt 143.
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { toast } from "sonner";
 import CoachBanner from "./CoachBanner";
 import ReadyView from "./ReadyView";
