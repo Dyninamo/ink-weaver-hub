@@ -185,7 +185,7 @@ export async function getFishingAdvice(
   } catch (err) {
     logEvent('advice.fallback_v1', { venue, date, error: (err as Error).message })
     console.error('v2 advice failed, falling back to legacy:', err)
-    const result = await getBasicAdvice(venue, date, _weatherData)
+    const result = await getBasicAdvice(venue, date, _weatherData, waterTypeOverride)
     logEvent('advice.received', {
       venue,
       date,
