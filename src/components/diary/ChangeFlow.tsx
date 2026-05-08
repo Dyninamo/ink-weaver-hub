@@ -403,6 +403,11 @@ function FlyChangeEditor({
   const flies = currentSetup.flies_on_cast as any;
   const positions = flies ? Object.keys(flies) : [];
 
+  // Single-fly auto-pick (lifts up to parent so save handler sees it).
+  useEffect(() => {
+    if (positions.length === 1 && !flyPos) setFlyPos(positions[0]);
+  }, [positions, flyPos, setFlyPos]);
+
   // No flies recorded yet
   if (positions.length === 0) {
     return (
@@ -412,10 +417,7 @@ function FlyChangeEditor({
     );
   }
 
-  // Single-fly: auto-pick the only position
-  const effectivePos = flyPos ?? (positions.length === 1 ? positions[0] : null);
-
-  if (!effectivePos) {
+  if (!flyPos) {
     return (
       <div className="space-y-2">
         <p className="smallcaps">Pick a position</p>
