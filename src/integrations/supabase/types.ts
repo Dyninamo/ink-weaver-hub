@@ -159,6 +159,45 @@ export type Database = {
           },
         ]
       }
+      app_events: {
+        Row: {
+          app_version: string | null
+          client_time: string
+          event_type: string
+          id: number
+          payload: Json | null
+          route: string | null
+          server_time: string
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          app_version?: string | null
+          client_time: string
+          event_type: string
+          id?: number
+          payload?: Json | null
+          route?: string | null
+          server_time?: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          app_version?: string | null
+          client_time?: string
+          event_type?: string
+          id?: number
+          payload?: Json | null
+          route?: string | null
+          server_time?: string
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       basic_advice: {
         Row: {
           advice_text: string
