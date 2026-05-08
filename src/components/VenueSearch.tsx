@@ -14,10 +14,37 @@ import { haversineDistanceMiles } from "@/utils/distance";
 import VenueSubmissionForm from "@/components/VenueSubmissionForm";
 
 interface VenueSearchProps {
-  onAdviceRequest: (venueId: string, venueName: string, date: string) => void;
+  onAdviceRequest: (
+    venueId: string,
+    venueName: string,
+    date: string,
+    waterTypeOverride?: "stillwater" | "river"
+  ) => void;
   isLoading?: boolean;
   loadingMessage?: string;
 }
+
+// Synthetic Home pseudo-venue. NOT in venues_new — sentinel id used by
+// Dashboard.handleAdviceRequest to skip user_venue_history insert and by
+// the get-ai-advice-v2 edge function to bail with a friendly response.
+// Per prompt 146.
+const HOME_SENTINEL_ID = "__home__";
+const HOME_PSEUDO: VenueResult = {
+  venue_id: HOME_SENTINEL_ID,
+  name: "Home",
+  full_name: "Home (practice / no real venue)",
+  level: "venue",
+  water_type_id: 0,
+  region_id: 0,
+  county: null,
+  river_name: null,
+  latitude: null,
+  longitude: null,
+  parent_id: null,
+  session_count: 0,
+  display_context: "Practice — pick water type below",
+  search_text: "home practice",
+};
 
 interface VenueResult {
   venue_id: string;
