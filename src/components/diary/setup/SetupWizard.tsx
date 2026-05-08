@@ -53,7 +53,7 @@ interface ProfileDefaults {
 interface SetupWizardProps {
   userId: string;
   venueName: string;
-  venueWaterType: "stillwater" | "river";
+  venueWaterType: "stillwater" | "river" | null;
   onCancel: () => void;
   onComplete: (commit: WizardCommit) => Promise<void> | void;
 }
