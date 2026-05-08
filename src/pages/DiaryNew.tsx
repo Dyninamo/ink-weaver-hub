@@ -117,6 +117,10 @@ export default function DiaryNew() {
         weather_conditions: weatherConditions || null,
         is_active: true,
         keep_limit: keepLimit ? parseInt(keepLimit, 10) : null,
+        leader_material: leader.material,
+        leader_length_ft: leader.length_ft,
+        leader_strength_lb: leader.strength_lb,
+        leader_id: leader.leader_id,
       } as any);
 
       // Resolve venue_id from venues_new (needed for affiliation + email lookup)
