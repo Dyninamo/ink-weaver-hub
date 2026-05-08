@@ -412,12 +412,10 @@ function FlyChangeEditor({
     );
   }
 
-  // Single-fly: skip position picker
-  if (positions.length === 1 && !flyPos) {
-    setFlyPos(positions[0]);
-  }
+  // Single-fly: auto-pick the only position
+  const effectivePos = flyPos ?? (positions.length === 1 ? positions[0] : null);
 
-  if (!flyPos) {
+  if (!effectivePos) {
     return (
       <div className="space-y-2">
         <p className="smallcaps">Pick a position</p>
