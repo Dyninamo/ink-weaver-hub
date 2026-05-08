@@ -46,6 +46,7 @@ export default function DiaryNew() {
   const [plan, setPlan] = useState("");
   const [rods, setRods] = useState(1);
   const [keepLimit, setKeepLimit] = useState<string>("");
+  const [leader, setLeader] = useState<LeaderValue>(EMPTY_LEADER);
 
   // Weather
   const [weatherTemp, setWeatherTemp] = useState<string>("");
