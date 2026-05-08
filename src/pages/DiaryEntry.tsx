@@ -20,24 +20,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-// CatchModal kept on disk per prompt 142 (strip in follow-up); mounting replaced by CatchFlow.
-import CatchFlow from "@/components/diary/CatchFlow";
+// Active-session phases now live in ActiveSessionShell (prompt 143). The
+// legacy modal mounts (CatchModal, BlankModal, LostModal, ChangeWhatPicker,
+// ChangeFlyFlow, ChangeSetupModal, LineCascadePrompt, RodPickerSheet,
+// EndSessionConfirm/Syncing/View) are no longer mounted here.
+import ActiveSessionShell from "@/components/diary/ActiveSessionShell";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
 import NotableFishDialog from "@/components/social/NotableFishDialog";
-import VenueOutreachDialog from "@/components/diary/VenueOutreachDialog";
 import { supabase } from "@/integrations/supabase/client";
-import BlankModal from "@/components/diary/BlankModal";
-import LostModal from "@/components/diary/LostModal";
-import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
-import ChangeFlyFlow from "@/components/diary/ChangeFlyFlow";
-import ChangeWhatPicker, { type ChangeField } from "@/components/diary/ChangeWhatPicker";
-import LineCascadePrompt from "@/components/diary/LineCascadePrompt";
-import RodPickerSheet, { type SessionRod } from "@/components/diary/RodPickerSheet";
-import ReadyView from "@/components/diary/ReadyView";
-import CoachBanner from "@/components/diary/CoachBanner";
 import EndSessionView from "@/components/diary/EndSessionView";
-import EndSessionConfirm from "@/components/diary/EndSessionConfirm";
-import EndSessionSyncing from "@/components/diary/EndSessionSyncing";
 import {
   getSession,
   getSessionEvents,
