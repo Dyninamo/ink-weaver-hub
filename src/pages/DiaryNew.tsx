@@ -348,6 +348,7 @@ export default function DiaryNew() {
                   onClick={() => {
                     setVenueType(wt);
                     setVenueTypeManual(true);
+                    logEvent("diary.water_type_override", { venue, water_type: wt, was_resolved: venueTypeResolved });
                   }}
                 >
                   {wt}
@@ -402,6 +403,7 @@ export default function DiaryNew() {
               );
               return;
             }
+            logEvent("diary.build_rig_clicked", { venue, venueType, sessionDate, fishingType });
             setShowWizard(true);
           }}
           disabled={!canBuildRig}
