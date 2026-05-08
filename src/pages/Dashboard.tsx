@@ -58,14 +58,22 @@ const Dashboard = () => {
     return user.email.charAt(0).toUpperCase();
   };
 
-  const handleAdviceRequest = async (venueId: string, venueName: string, dateString: string) => {
+  const handleAdviceRequest = async (
+    venueId: string,
+    venueName: string,
+    dateString: string,
+    waterTypeOverride?: "stillwater" | "river"
+  ) => {
     setError(null);
     setWeatherWarning(false);
     setIsLoading(true);
 
+    const isHomeSentinel = venueId === "__home__";
+
     try {
-      // Log venue selection to history (fire-and-forget)
-      if (user) {
+      // Log venue selection to history (fire-and-forget) — skip for Home sentinel
+      // since the FK references venues_new and the sentinel won't resolve.
+      if (user && !isHomeSentinel) {
         supabase
           .from("user_venue_history")
           .insert({ user_id: user.id, venue_id: venueId, action: "advice" })
@@ -91,7 +99,7 @@ const Dashboard = () => {
       }
 
       setLoadingMessage("Analysing conditions and fetching weather...");
-      const result = await getFishingAdvice(venueName, dateString);
+      const result = await getFishingAdvice(venueName, dateString, undefined, false, waterTypeOverride);
 
       if ('weather' in result && result.weather) {
         navigate("/results", {
