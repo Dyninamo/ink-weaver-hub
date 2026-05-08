@@ -545,37 +545,7 @@ html[data-motion="reduced"] .mic-ring { animation: none !important; }
 /* ============================================================
    Setup Wizard (Prompt 82 / Flow 02)
    ============================================================ */
-.wizard-shell {
-  background: var(--paper-50);
-  color: var(--ink-900);
-  min-height: 100vh;
-  font-family: var(--font-family);
-}
-.wizard-inner { max-width: 440px; margin: 0 auto; padding: 16px 20px 120px; }
-.wizard-banner {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-500);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-widest);
-  margin-bottom: 12px;
-}
-.wizard-progress {
-  position: sticky; top: 0;
-  display: flex; gap: 4px;
-  padding: 12px 0;
-  background: var(--paper-50);
-  z-index: 10;
-}
-.wizard-progress .pill {
-  width: 14px; height: 3px;
-  border-radius: 2px;
-  background: var(--paper-200);
-  border: none; padding: 0;
-  cursor: default;
-}
-.wizard-progress .pill.done { background: var(--ink-500); cursor: pointer; }
-.wizard-progress .pill.active { background: var(--gild-500); }
+/* .wizard-shell / .wizard-inner / .wizard-banner / .wizard-progress removed (prompt 137 — SetupWizard deleted in prompt 135) */
 .step-title {
   font-size: 26px; font-weight: 600;
   color: var(--ink-900);
@@ -655,34 +625,7 @@ html[data-motion="reduced"] .mic-ring { animation: none !important; }
   color: var(--paper-50);
   border-color: var(--gild-700);
 }
-.wizard-footer {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--paper-50);
-  border-top: 1px solid var(--paper-200);
-  padding: 12px 16px env(safe-area-inset-bottom, 16px);
-  display: flex; gap: 8px; justify-content: center;
-  z-index: 20;
-}
-.wizard-footer .inner { display: flex; gap: 8px; max-width: 440px; width: 100%; }
-.wizard-btn {
-  flex: 1; min-height: 48px;
-  border-radius: var(--radius-md);
-  font-family: var(--font-family); font-size: 15px; font-weight: 600;
-  cursor: pointer; transition: all var(--motion-fast);
-  border: 1px solid var(--paper-300);
-  background: var(--paper-100); color: var(--ink-700);
-}
-.wizard-btn.primary {
-  background: var(--ink-900); color: var(--paper-50);
-  border-color: var(--ink-900);
-  box-shadow: var(--shadow-ink);
-  flex: 2;
-}
-.wizard-btn.primary:disabled {
-  background: var(--paper-200); color: var(--ink-300);
-  border-color: var(--paper-300); box-shadow: none; cursor: not-allowed;
-}
-.wizard-btn.skip { flex: 1; }
+/* .wizard-footer / .wizard-btn removed (prompt 137 — SetupWizard deleted in prompt 135) */
 .dropper-chip {
   display: flex; flex-direction: column;
   align-items: center; gap: 4px;
