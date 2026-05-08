@@ -161,9 +161,13 @@ export default function SetupWizard({
       flyCount: (rod.flyCount as any) ?? 2,
       flies: rod.flies ?? {},
     }));
-    if (rod.rodWeight != null) {
-      const inches = rod.rodLengthFt ? Math.round(rod.rodLengthFt * 12) : rodMedianInchesForWeight(rod.rodWeight);
-      setLengthInches(inches);
+    // Pre-fill length: prefer preset's value, else the new weight's median, else null.
+    if (rod.rodLengthFt) {
+      setLengthInches(Math.round(rod.rodLengthFt * 12));
+    } else if (rod.rodWeight != null) {
+      setLengthInches(rodMedianInchesForWeight(rod.rodWeight));
+    } else {
+      setLengthInches(null);
     }
     if (hasFlies) setPhase("spot");
     else setPhase("flies");
@@ -254,6 +258,15 @@ export default function SetupWizard({
         <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
       </div>
 
+      {/* Saved rigs banner only on first phase — placed above RigSoFar so it's first in view */}
+      {phase === "rod" && rodSubStep === "weight" && (
+        <SavedRigsBanner
+          userId={userId}
+          venueWaterType={venueWaterType}
+          onApply={(p) => applyPreset(p.rod, p.hasFlies)}
+        />
+      )}
+
       {/* RigSoFar */}
       <RigSoFarCard state={state} />
 
@@ -328,15 +341,6 @@ export default function SetupWizard({
           />
         )}
       </div>
-
-      {/* Saved rigs banner only on first phase */}
-      {phase === "rod" && rodSubStep === "weight" && (
-        <SavedRigsBanner
-          userId={userId}
-          venueWaterType={venueWaterType}
-          onApply={(p) => applyPreset(p.rod, p.hasFlies)}
-        />
-      )}
 
       {/* Footer */}
       <div className="pt-2">
