@@ -222,8 +222,8 @@ export default function CatchModal({
     }
   }
 
-  const totalSteps = 5;
-  const stepLabels = ["Weight", "Fly", "Position", "Retrieve", "Line"];
+  const totalSteps = 6;
+  const stepLabels = ["Weight", "Fly", "Position", "Retrieve", "Depth", "Line"];
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
