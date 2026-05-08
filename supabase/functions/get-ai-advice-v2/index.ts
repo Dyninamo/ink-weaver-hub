@@ -264,12 +264,34 @@ serve(async (req) => {
   }
 
   try {
-    const { venue_name, target_date, user_id, debug, forecast_override, skip_ai } = await req.json();
+    const { venue_name, target_date, user_id, debug, forecast_override, skip_ai, water_type_override } = await req.json();
 
     if (!venue_name || !target_date) {
       return new Response(
         JSON.stringify({ error: "Missing venue_name and target_date" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── Sentinel / Home pseudo-venue guard ──────────────────────
+    // Prevents the ilike("name", "%Home%") below from fuzzy-matching real
+    // venues like "Home Fishery" on the Wye when the user picked the Home
+    // pseudo-venue from VenueSearch. Per prompt 146.
+    const isHomeSentinel =
+      venue_name === "__home__" ||
+      venue_name.trim().toLowerCase() === "home";
+
+    if (isHomeSentinel) {
+      const wt = water_type_override ?? null;
+      return new Response(
+        JSON.stringify({
+          error: "home_pseudo_venue",
+          message: wt
+            ? `Archetype-level ${wt} advice for Home is coming soon. For now, please pick a real venue from search to get tactical advice.`
+            : "We couldn't resolve this venue. Pick a real venue from search, or set Stillwater/River for archetype advice.",
+          water_type_override: wt,
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
