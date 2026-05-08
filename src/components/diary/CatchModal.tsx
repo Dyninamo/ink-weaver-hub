@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, Check, Ruler, Weight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import FlyPicker from "./FlyPicker";
-import DiaryAutocomplete from "./DiaryAutocomplete";
 import {
   addEvent,
   type CurrentSetup,
@@ -21,6 +20,7 @@ import {
   convertLengthToWeight,
   FRIENDLY_LINE_NAMES,
 } from "@/services/diaryService";
+import { retrievesForStyle, depthsForStyle } from "@/services/styleRules";
 import { toast } from "sonner";
 
 interface CatchModalProps {
