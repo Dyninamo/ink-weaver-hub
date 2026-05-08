@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client'
+import { logEvent } from '@/services/eventLogger'
 
 // Legacy types kept for backward compatibility with existing components
 export interface WeatherData {
@@ -160,10 +161,31 @@ export async function getFishingAdvice(
   _weatherData?: { temperature: number; windSpeed: number; precipitation: number; pressure?: number; humidity?: number },
   _isPremium: boolean = false
 ): Promise<AdviceV2Response | FishingAdviceResponse> {
+  logEvent('advice.request', { venue, date })
   try {
-    return await getAdviceV2(venue, date)
+    const result = await getAdviceV2(venue, date)
+    logEvent('advice.received', {
+      venue,
+      date,
+      from: 'v2',
+      water_type_in_response: (result as any)?.venue?.water_type ?? (result as any)?.weather?.water_type ?? null,
+      season: (result as any)?.season ?? null,
+      tactical_fly_count: (result as any)?.tactical?.flies?.length ?? null,
+      had_weather: !!(result as any)?.weather,
+    })
+    return result
   } catch (err) {
+    logEvent('advice.fallback_v1', { venue, date, error: (err as Error).message })
     console.error('v2 advice failed, falling back to legacy:', err)
-    return await getBasicAdvice(venue, date, _weatherData)
+    const result = await getBasicAdvice(venue, date, _weatherData)
+    logEvent('advice.received', {
+      venue,
+      date,
+      from: 'v1',
+      tier: (result as any)?.tier ?? null,
+      season: (result as any)?.season ?? null,
+      weatherCategory: (result as any)?.weatherCategory ?? null,
+    })
+    return result
   }
 }

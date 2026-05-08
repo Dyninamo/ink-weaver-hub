@@ -26,6 +26,7 @@ import AdminDbStatus from "./pages/AdminDbStatus";
 import AdminTestAdvice from "./pages/AdminTestAdvice";
 import AdminRecompute from "./pages/AdminRecompute";
 import AdminVenueSubmissions from "./pages/AdminVenueSubmissions";
+import AdminEvents from "./pages/AdminEvents";
 import SocialFeed from "./pages/SocialFeed";
 import Leaderboard from "./pages/Leaderboard";
 import SessionShareView from "./pages/SessionShareView";
@@ -131,6 +132,7 @@ const App = () => (
             <Route path="/admin/test-advice" element={<Shelled><AdminTestAdvice /></Shelled>} />
             <Route path="/admin/recompute" element={<Shelled><AdminRecompute /></Shelled>} />
             <Route path="/admin/venue-submissions" element={<Shelled><AdminVenueSubmissions /></Shelled>} />
+            <Route path="/admin/events" element={<Shelled><AdminEvents /></Shelled>} />
 
             {/* Manager Portal */}
             <Route path="/manager" element={<Manager><ManagerHome /></Manager>} />
