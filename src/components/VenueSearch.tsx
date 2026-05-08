@@ -597,10 +597,18 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
     setActiveQuickDate(null); // Clear chip highlight when calendar is used
   };
 
+  const isHome = selectedVenue?.venue_id === HOME_SENTINEL_ID;
+  const canSubmit = !!selectedVenue && !!selectedDate && (!isHome || !!homeWaterType);
+
   const handleSubmit = () => {
-    if (!selectedVenue || !selectedDate) return;
+    if (!canSubmit || !selectedVenue || !selectedDate) return;
     setAdviceError(null);
-    onAdviceRequest(selectedVenue.venue_id, selectedVenue.name, format(selectedDate, "yyyy-MM-dd"));
+    onAdviceRequest(
+      selectedVenue.venue_id,
+      selectedVenue.name,
+      format(selectedDate, "yyyy-MM-dd"),
+      isHome ? homeWaterType ?? undefined : undefined
+    );
   };
 
   // Allow parent to signal errors via a callback — we detect via isLoading going false with no navigation
