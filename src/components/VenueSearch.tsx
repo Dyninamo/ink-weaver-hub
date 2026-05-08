@@ -161,7 +161,17 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
   // Add-a-water form
   const [showAddForm, setShowAddForm] = useState(false);
 
+  // Home pseudo-venue water-type override (per prompt 146)
+  const [homeWaterType, setHomeWaterType] = useState<"stillwater" | "river" | null>(null);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset Home water-type whenever the selection changes away from Home
+  useEffect(() => {
+    if (!selectedVenue || selectedVenue.venue_id !== HOME_SENTINEL_ID) {
+      setHomeWaterType(null);
+    }
+  }, [selectedVenue]);
 
   // Load water types on mount
   useEffect(() => {
