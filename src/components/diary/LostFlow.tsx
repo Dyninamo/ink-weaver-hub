@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { addEvent, type CurrentSetup } from "@/services/diaryService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { logEvent } from "@/services/eventLogger";
 
 const STAGES = [
   { value: "on_strike", label: "On strike" },

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { addEvent, type CurrentSetup, type FliesOnCast, type FlyOnCast } from "@/services/diaryService";
 import { toast } from "sonner";
+import { logEvent } from "@/services/eventLogger";
 import FlyPicker from "./FlyPicker";
 import LeaderPicker, { type LeaderValue, EMPTY_LEADER } from "./LeaderPicker";
 import SpotPicker from "./SpotPicker";
