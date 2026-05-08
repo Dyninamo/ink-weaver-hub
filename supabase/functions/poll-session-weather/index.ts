@@ -57,13 +57,39 @@ serve(async (req) => {
       );
     }
 
-    // ── Look up venue coordinates from venue_metadata ──────────
-    const { data: venue } = await supabase
-      .from("venue_metadata")
-      .select("latitude, longitude")
-      .ilike("name", `%${session.venue_name}%`)
-      .limit(1)
-      .single();
+    // ── Look up venue coordinates (venues_new is canonical; venue_metadata fallback) ─
+    let venue: { latitude: number | null; longitude: number | null } | null = null;
+    {
+      const { data } = await supabase
+        .from("venues_new")
+        .select("latitude, longitude")
+        .ilike("name", session.venue_name)
+        .not("latitude", "is", null)
+        .not("longitude", "is", null)
+        .limit(1)
+        .maybeSingle();
+      venue = data;
+    }
+    if (!venue?.latitude || !venue?.longitude) {
+      const { data } = await supabase
+        .from("venues_new")
+        .select("latitude, longitude")
+        .ilike("name", `%${session.venue_name}%`)
+        .not("latitude", "is", null)
+        .not("longitude", "is", null)
+        .limit(1)
+        .maybeSingle();
+      venue = data;
+    }
+    if (!venue?.latitude || !venue?.longitude) {
+      const { data } = await supabase
+        .from("venue_metadata")
+        .select("latitude, longitude")
+        .ilike("name", `%${session.venue_name}%`)
+        .limit(1)
+        .maybeSingle();
+      venue = data;
+    }
 
     if (!venue?.latitude || !venue?.longitude) {
       return new Response(
