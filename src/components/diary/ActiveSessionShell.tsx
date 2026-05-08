@@ -103,7 +103,15 @@ export default function ActiveSessionShell({
             .gte("sent_at", ninetyDaysAgo)
             .limit(1)
             .maybeSingle();
-          if (!recent) setOutreachOpen(true);
+          if (!recent) {
+            const { data: venueData } = await supabase
+              .from("venues_new")
+              .select("contact_email")
+              .eq("venue_id", venueId)
+              .single();
+            setOutreachEmail(venueData?.contact_email || null);
+            setOutreachOpen(true);
+          }
         }
       } catch (err) {
         console.warn("Outreach check failed (non-critical):", err);
