@@ -415,75 +415,48 @@ export default function DiaryEntry() {
     );
   }
 
-  // 3-phase end-session flow takes over the page (shell tab bar stays visible).
-  if (endPhase === "confirm") {
+  // Active session: hand off to ActiveSessionShell which owns phase routing,
+  // EndPill persistence, and end-session ceremony (prompt 143).
+  if (isActive) {
     return (
-      <EndSessionConfirm
+      <ActiveSessionShell
         session={session}
         events={events}
-        activeRod={{
-          rodWeight: (session as any).rod_weight ?? null,
-          rodLengthFt: (session as any).rod_length_ft ?? null,
-          line: (session as any).line_profile ?? null,
-        }}
-        onCancel={() => setEndPhase(null)}
-        onConfirm={handleConfirmEnd}
-      />
-    );
-  }
-  if (endPhase === "syncing") {
-    return (
-      <EndSessionSyncing
+        currentSetup={currentSetup}
+        setCurrentSetup={setCurrentSetup}
+        latestWeather={latestWeather}
+        setLatestWeather={setLatestWeather}
+        lastSpecies={lastSpecies}
+        reloadData={loadData}
+        activeRodIndex={activeRodIndex}
+        setActiveRodIndex={setActiveRodIndex}
+        venueId={venueId}
         isOnline={isOnline}
-        onComplete={() => {
-          void handleSyncingComplete();
-        }}
       />
     );
   }
 
-  const bgClass = isActive ? "bg-[#0F1A24] text-[#E8EFF5]" : "bg-background";
-  const mutedClass = isActive ? "text-[#8BA3BB]" : "text-muted-foreground";
+  const bgClass = "bg-background";
+  const mutedClass = "text-muted-foreground";
 
-  // Display weather: prefer live polled data for active sessions
-  const displayWeather = isActive && latestWeather
-    ? {
-        temp: latestWeather.temp,
-        windText: `${latestWeather.wind_speed}mph ${latestWeather.wind_dir}`,
-        conditions: latestWeather.conditions || null,
-        isLive: true,
-      }
-    : {
-        temp: session.weather_temp,
-        windText: session.weather_wind_speed
-          ? `${session.weather_wind_speed}mph ${session.weather_wind_dir || ""}`
-          : null,
-        conditions: session.weather_conditions,
-        isLive: false,
-      };
+  // Display weather (completed view only)
+  const displayWeather = {
+    temp: session.weather_temp,
+    windText: session.weather_wind_speed
+      ? `${session.weather_wind_speed}mph ${session.weather_wind_dir || ""}`
+      : null,
+    conditions: session.weather_conditions,
+    isLive: false,
+  };
 
   return (
-    <div className={cn("min-h-screen pb-32", isActive ? "almanack-surface" : bgClass)}>
-      {justEnded && session && !isActive ? (
+    <div className={cn("min-h-screen pb-32", bgClass)}>
+      {justEnded && session ? (
         <EndSessionView
           session={session}
           events={events}
           anglerName={(session as any).angler_name ?? null}
         />
-      ) : isActive ? (
-        <div className="max-w-[440px] mx-auto">
-          <CoachBanner />
-          <ReadyView
-            session={session}
-            events={events}
-            currentSetup={currentSetup}
-            onCatch={() => setCatchOpen(true)}
-            onLost={() => setLostOpen(true)}
-            onBlank={() => setBlankOpen(true)}
-            onChange={() => setWhatPickerOpen(true)}
-            onEndSession={() => setEndPhase("confirm")}
-          />
-        </div>
       ) : (
       <>
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
