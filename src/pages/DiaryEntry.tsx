@@ -963,21 +963,7 @@ export default function DiaryEntry() {
         />
       )}
 
-      {/* Venue Outreach Dialog */}
-      {venueId && session && (
-        <VenueOutreachDialog
-          open={outreachOpen}
-          onClose={() => {
-            setOutreachOpen(false);
-            toast.success("Session complete!");
-          }}
-          venueName={session.venue_name}
-          venueId={venueId}
-          sessionId={id!}
-          contactEmail={outreachEmail}
-        />
-      )}
-
+      {/* VenueOutreachDialog now mounted inside ActiveSessionShell (prompt 143). */}
 
       {/* Delete-session confirm dialog (rust-accented) */}
       <Dialog open={deleteConfirmOpen} onOpenChange={(o) => !deleting && setDeleteConfirmOpen(o)}>
