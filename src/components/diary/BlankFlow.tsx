@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { addEvent, type CurrentSetup } from "@/services/diaryService";
 import { toast } from "sonner";
+import { logEvent } from "@/services/eventLogger";
 
 const CONFIDENCE_LEVELS = [
   { value: "Dead", label: "Dead", color: "#5A6A7A" },

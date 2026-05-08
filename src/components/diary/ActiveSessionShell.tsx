@@ -2,7 +2,8 @@
 // active branch. Owns phase state, renders the EndPill at shell level so it
 // persists across catch / blank / lost / change phases, and routes phases as
 // full-page bodies (no Dialog overlays). Per prompt 143.
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { logEvent } from "@/services/eventLogger";
 import { toast } from "sonner";
 import CoachBanner from "./CoachBanner";
 import ReadyView from "./ReadyView";
@@ -62,6 +63,10 @@ export default function ActiveSessionShell({
   const [outreachChecked, setOutreachChecked] = useState(false);
 
   const sessionId = session.id!;
+
+  useEffect(() => {
+    logEvent("session.phase_enter", { phase, sessionId }, sessionId);
+  }, [phase, sessionId]);
 
   function repollWeather() {
     if (!sessionId) return;
