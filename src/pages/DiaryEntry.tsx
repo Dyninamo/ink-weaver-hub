@@ -20,24 +20,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-// CatchModal kept on disk per prompt 142 (strip in follow-up); mounting replaced by CatchFlow.
-import CatchFlow from "@/components/diary/CatchFlow";
+// Active-session phases now live in ActiveSessionShell (prompt 143). The
+// legacy modal mounts (CatchModal, BlankModal, LostModal, ChangeWhatPicker,
+// ChangeFlyFlow, ChangeSetupModal, LineCascadePrompt, RodPickerSheet,
+// EndSessionConfirm/Syncing/View) are no longer mounted here.
+import ActiveSessionShell from "@/components/diary/ActiveSessionShell";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
 import NotableFishDialog from "@/components/social/NotableFishDialog";
-import VenueOutreachDialog from "@/components/diary/VenueOutreachDialog";
 import { supabase } from "@/integrations/supabase/client";
-import BlankModal from "@/components/diary/BlankModal";
-import LostModal from "@/components/diary/LostModal";
-import ChangeSetupModal from "@/components/diary/ChangeSetupModal";
-import ChangeFlyFlow from "@/components/diary/ChangeFlyFlow";
-import ChangeWhatPicker, { type ChangeField } from "@/components/diary/ChangeWhatPicker";
-import LineCascadePrompt from "@/components/diary/LineCascadePrompt";
-import RodPickerSheet, { type SessionRod } from "@/components/diary/RodPickerSheet";
-import ReadyView from "@/components/diary/ReadyView";
-import CoachBanner from "@/components/diary/CoachBanner";
 import EndSessionView from "@/components/diary/EndSessionView";
-import EndSessionConfirm from "@/components/diary/EndSessionConfirm";
-import EndSessionSyncing from "@/components/diary/EndSessionSyncing";
 import {
   getSession,
   getSessionEvents,
@@ -424,75 +415,48 @@ export default function DiaryEntry() {
     );
   }
 
-  // 3-phase end-session flow takes over the page (shell tab bar stays visible).
-  if (endPhase === "confirm") {
+  // Active session: hand off to ActiveSessionShell which owns phase routing,
+  // EndPill persistence, and end-session ceremony (prompt 143).
+  if (isActive) {
     return (
-      <EndSessionConfirm
+      <ActiveSessionShell
         session={session}
         events={events}
-        activeRod={{
-          rodWeight: (session as any).rod_weight ?? null,
-          rodLengthFt: (session as any).rod_length_ft ?? null,
-          line: (session as any).line_profile ?? null,
-        }}
-        onCancel={() => setEndPhase(null)}
-        onConfirm={handleConfirmEnd}
-      />
-    );
-  }
-  if (endPhase === "syncing") {
-    return (
-      <EndSessionSyncing
+        currentSetup={currentSetup}
+        setCurrentSetup={setCurrentSetup}
+        latestWeather={latestWeather}
+        setLatestWeather={setLatestWeather}
+        lastSpecies={lastSpecies}
+        reloadData={loadData}
+        activeRodIndex={activeRodIndex}
+        setActiveRodIndex={setActiveRodIndex}
+        venueId={venueId}
         isOnline={isOnline}
-        onComplete={() => {
-          void handleSyncingComplete();
-        }}
       />
     );
   }
 
-  const bgClass = isActive ? "bg-[#0F1A24] text-[#E8EFF5]" : "bg-background";
-  const mutedClass = isActive ? "text-[#8BA3BB]" : "text-muted-foreground";
+  const bgClass = "bg-background";
+  const mutedClass = "text-muted-foreground";
 
-  // Display weather: prefer live polled data for active sessions
-  const displayWeather = isActive && latestWeather
-    ? {
-        temp: latestWeather.temp,
-        windText: `${latestWeather.wind_speed}mph ${latestWeather.wind_dir}`,
-        conditions: latestWeather.conditions || null,
-        isLive: true,
-      }
-    : {
-        temp: session.weather_temp,
-        windText: session.weather_wind_speed
-          ? `${session.weather_wind_speed}mph ${session.weather_wind_dir || ""}`
-          : null,
-        conditions: session.weather_conditions,
-        isLive: false,
-      };
+  // Display weather (completed view only)
+  const displayWeather = {
+    temp: session.weather_temp,
+    windText: session.weather_wind_speed
+      ? `${session.weather_wind_speed}mph ${session.weather_wind_dir || ""}`
+      : null,
+    conditions: session.weather_conditions,
+    isLive: false,
+  };
 
   return (
-    <div className={cn("min-h-screen pb-32", isActive ? "almanack-surface" : bgClass)}>
-      {justEnded && session && !isActive ? (
+    <div className={cn("min-h-screen pb-32", bgClass)}>
+      {justEnded && session ? (
         <EndSessionView
           session={session}
           events={events}
           anglerName={(session as any).angler_name ?? null}
         />
-      ) : isActive ? (
-        <div className="max-w-[440px] mx-auto">
-          <CoachBanner />
-          <ReadyView
-            session={session}
-            events={events}
-            currentSetup={currentSetup}
-            onCatch={() => setCatchOpen(true)}
-            onLost={() => setLostOpen(true)}
-            onBlank={() => setBlankOpen(true)}
-            onChange={() => setWhatPickerOpen(true)}
-            onEndSession={() => setEndPhase("confirm")}
-          />
-        </div>
       ) : (
       <>
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
@@ -963,177 +927,10 @@ export default function DiaryEntry() {
       </>
       )}
 
-      {/* ============================================================ */}
-      {/* MODALS                                                        */}
-      {/* ============================================================ */}
-
-      {catchOpen && (
-        <CatchFlow
-          sessionId={id!}
-          rodIndex={Math.max(0, activeRodIndex - 1)}
-          venueType={session.venue_type as "stillwater" | "river"}
-          venueName={session.venue_name}
-          defaultSpecies={lastSpecies}
-          carryRetrieve={currentSetup.retrieve}
-          carryDepth={currentSetup.depth_zone}
-          latestWeather={latestWeather}
-          onCancel={() => setCatchOpen(false)}
-          onSaved={() => {
-            setCatchOpen(false);
-            handleCatchSaved({});
-          }}
-        />
-      )}
-
-      <BlankModal
-        open={blankOpen}
-        onClose={() => setBlankOpen(false)}
-        sessionId={id!}
-        currentSetup={currentSetup}
-        eventCount={events.length}
-        onSaved={handleBlankSaved}
-        onChangeFirst={() => {
-          setBlankOpen(false);
-          setWhatPickerOpen(true);
-        }}
-        latestWeather={latestWeather}
-      />
-
-      <LostModal
-        open={lostOpen}
-        onClose={() => setLostOpen(false)}
-        sessionId={id!}
-        currentSetup={currentSetup}
-        eventCount={events.length}
-        onSaved={() => {
-          loadData();
-          if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
-        }}
-        latestWeather={latestWeather}
-      />
-
-      <ChangeSetupModal
-        open={changeOpen}
-        onClose={() => setChangeOpen(false)}
-        sessionId={id!}
-        venueType={session.venue_type as "stillwater" | "river"}
-        venueName={session.venue_name}
-        currentSetup={currentSetup}
-        eventCount={events.length}
-        onSaved={handleChangeSaved}
-        latestWeather={latestWeather}
-      />
-
-      {/* Change · what picker */}
-      <ChangeWhatPicker
-        open={whatPickerOpen}
-        onClose={() => setWhatPickerOpen(false)}
-        onPick={(field: ChangeField) => {
-          setWhatPickerOpen(false);
-          if (field === "rod") {
-            setRodPickerOpen(true);
-          } else if (field === "fly") {
-            // Dedicated 3-step per-position fly swap
-            setChangeFlyOpen(true);
-          } else {
-            // Line / leader / style / droppers / retrieve all use ChangeSetupModal
-            setChangeOpen(true);
-          }
-        }}
-      />
-
-      {/* Change · fly (per-position swap) */}
-      <ChangeFlyFlow
-        open={changeFlyOpen}
-        onClose={() => setChangeFlyOpen(false)}
-        sessionId={id!}
-        venueType={session.venue_type as "stillwater" | "river"}
-        venueName={session.venue_name}
-        currentSetup={currentSetup}
-        eventCount={events.length}
-        onSaved={handleChangeSaved}
-        latestWeather={latestWeather}
-      />
-
-      {/* Change · line cascade prompt (shown after a line change is saved) */}
-      <LineCascadePrompt
-        open={lineCascadeOpen}
-        onClose={() => setLineCascadeOpen(false)}
-        newLineName={currentSetup.line_type || "new line"}
-        currentLeader={currentSetup.rig}
-        currentFlies={formatFliesOnCast(currentSetup.flies_on_cast)}
-        onContinue={({ updateLeader, updateFlies }) => {
-          setLineCascadeOpen(false);
-          if (updateLeader || updateFlies) {
-            // Re-open change modal so user can update the cascading bits
-            setChangeOpen(true);
-          }
-        }}
-      />
-
-      {/* Rod picker bottom sheet */}
-      <RodPickerSheet
-        open={rodPickerOpen}
-        onClose={() => setRodPickerOpen(false)}
-        sessionId={id!}
-        events={events}
-        activeRodIndex={activeRodIndex}
-        onSwitchRod={async (rod: SessionRod) => {
-          setActiveRodIndex(rod.rod_index);
-          setRodPickerOpen(false);
-          // Restore that rod's setup into currentSetup
-          setCurrentSetup({
-            style: rod.style,
-            rig: null,
-            line_type: rod.line_name,
-            retrieve: null,
-            flies_on_cast: null,
-            spot: currentSetup.spot,
-            depth_zone: null,
-          } as CurrentSetup);
-          toast.success(`Switched to ${rod.name || `Rod ${rod.rod_index}`}`);
-        }}
-        onSetupNewRod={() => {
-          setRodPickerOpen(false);
-          // Re-uses Change modal to capture the new rod's full rig
-          setChangeOpen(true);
-          toast.info("Set up your new rod — it'll be added to the rod list");
-        }}
-      />
-
-      {/* Implicit Change Prompt */}
-      <Dialog
-        open={implicitChangePrompt !== null}
-        onOpenChange={(o) => !o && setImplicitChangePrompt(null)}
-      >
-        <DialogContent className="max-w-[360px]">
-          <DialogHeader>
-            <DialogTitle>Update setup?</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            You caught that on <strong>{implicitChangePrompt?.newSetup.line_type}</strong>,
-            but your setup is <strong>{currentSetup.line_type}</strong>. Update your current setup?
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => setImplicitChangePrompt(null)}
-            >
-              No, keep as is
-            </Button>
-            <Button
-              className="flex-1 bg-diary-change hover:bg-diary-change/90"
-              onClick={handleImplicitChangeAccept}
-            >
-              Yes, update
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* End Session flow now handled by 3-phase EndSessionConfirm + EndSessionSyncing
-          early returns above; the legacy inline form Dialog has been removed. */}
+      {/* Modals for catch / blank / lost / change / rod / end-session are now
+          mounted by ActiveSessionShell (prompt 143). VenueOutreachDialog is
+          mounted by the shell too. The remaining dialogs below are completed-
+          view only (Share, NotableFish, Delete). */}
 
       {/* Share Session Dialog */}
       {profileId && session && (
@@ -1166,21 +963,7 @@ export default function DiaryEntry() {
         />
       )}
 
-      {/* Venue Outreach Dialog */}
-      {venueId && session && (
-        <VenueOutreachDialog
-          open={outreachOpen}
-          onClose={() => {
-            setOutreachOpen(false);
-            toast.success("Session complete!");
-          }}
-          venueName={session.venue_name}
-          venueId={venueId}
-          sessionId={id!}
-          contactEmail={outreachEmail}
-        />
-      )}
-
+      {/* VenueOutreachDialog now mounted inside ActiveSessionShell (prompt 143). */}
 
       {/* Delete-session confirm dialog (rust-accented) */}
       <Dialog open={deleteConfirmOpen} onOpenChange={(o) => !deleting && setDeleteConfirmOpen(o)}>
