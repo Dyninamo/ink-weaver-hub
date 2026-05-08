@@ -252,11 +252,22 @@ export default function DiaryNew() {
         }
       }
 
+      logEvent("diary.session_started", {
+        session_id: session.id,
+        venue,
+        venueType,
+        has_real_venue_match: !!matchedVenue?.venue_id,
+        rod_weight: rod.rodWeight,
+        fly_count: rod.flyCount,
+        saved_preset: !!commit.savePreset,
+      }, session.id);
+
       toast.success("Session started!");
       refreshActiveSession();
       navigate(`/diary/${session.id}`);
     } catch (err: any) {
       console.error("Failed to start session:", err);
+      logEvent("error", { context: "session_start", message: err?.message ?? String(err) }, createdSessionId ?? null);
       // Rollback
       if (createdRodId) {
         await supabase.from("session_rods" as any).delete().eq("id", createdRodId);
