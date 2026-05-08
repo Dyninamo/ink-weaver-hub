@@ -1,20 +1,14 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, Play } from "lucide-react";
 import { toast } from "sonner";
-import SetupWizard, { type WizardResult } from "@/components/diary/SetupWizard";
-import {
-  createSession,
-  addEvent,
-} from "@/services/diaryService";
-
-type Phase = "header" | "setup";
+import { createSession } from "@/services/diaryService";
 
 const VENUE_TYPES: Record<string, "stillwater" | "river"> = {
   "Grafham Water": "stillwater",
@@ -33,13 +27,11 @@ const WIND_DIRECTIONS = [
   "N", "NE", "E", "SE", "S", "SW", "W", "NW", "Variable", "Calm",
 ] as const;
 
-
-
 export default function DiaryNew() {
   const { user } = useAuth();
   const { refresh: refreshActiveSession } = useActiveSession();
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<Phase>("header");
+  const [searchParams] = useSearchParams();
   const [saving, setSaving] = useState(false);
 
   // --- Session Header fields ---
@@ -52,6 +44,7 @@ export default function DiaryNew() {
   const [fishingType, setFishingType] = useState<string | null>(null);
   const [plan, setPlan] = useState("");
   const [rods, setRods] = useState(1);
+  const [keepLimit, setKeepLimit] = useState<string>("");
 
   // Weather
   const [weatherTemp, setWeatherTemp] = useState<string>("");
@@ -60,10 +53,6 @@ export default function DiaryNew() {
   const [weatherPressure, setWeatherPressure] = useState<string>("");
   const [weatherConditions, setWeatherConditions] = useState<string>("");
 
-  // --- Wizard result (set when user finishes the 9-step wizard) ---
-  const [, setWizardResult] = useState<WizardResult | null>(null);
-
-  // Available venues from reports_enriched
   const [venues, setVenues] = useState<string[]>([]);
 
   useEffect(() => {
@@ -80,24 +69,31 @@ export default function DiaryNew() {
     loadVenues();
   }, []);
 
-  // Update venue type when venue changes
+  // Pre-fill venue from ?venue= querystring (e.g., from VenueDetail CTA)
+  useEffect(() => {
+    const v = searchParams.get("venue");
+    if (v) setVenue(v);
+  }, [searchParams]);
+
   useEffect(() => {
     if (venue && VENUE_TYPES[venue]) {
       setVenueType(VENUE_TYPES[venue]);
     }
   }, [venue]);
 
-  function canProceedToSetup(): boolean {
-    return venue.trim().length > 0;
-  }
-
-  async function handleStartSession(w: WizardResult) {
-    if (!user || !venue.trim()) return;
-    setWizardResult(w);
+  async function handleStartSession() {
+    if (!user) {
+      toast.error("Please sign in again");
+      navigate("/auth");
+      return;
+    }
+    if (!venue.trim()) {
+      toast.error("Pick a venue first");
+      return;
+    }
     setSaving(true);
 
     try {
-      // Build start_time from date + arrival
       let startTime: string | null = null;
       if (arrivalTime) {
         startTime = new Date(`${sessionDate}T${arrivalTime}:00`).toISOString();
@@ -118,41 +114,8 @@ export default function DiaryNew() {
         weather_pressure: weatherPressure ? parseFloat(weatherPressure) : null,
         weather_conditions: weatherConditions || null,
         is_active: true,
-        // Wizard-derived fields
-        rod_weight: w.rod_weight,
-        rod_length_ft: w.rod_length_ft,
-        leader_id: w.leader_id,
-        line_profile: w.line_profile,
-        tippet_length_ft: w.tippet_length_ft,
-        tippet_strength: w.tippet_strength,
-        tippet_unit: w.tippet_unit,
-        dropper_count: w.dropper_count,
-        spot_name: w.spot_name,
-        keep_limit: w.keep_limit,
-        size_mode: w.size_mode,
-        size_units: w.size_units,
+        keep_limit: keepLimit ? parseInt(keepLimit, 10) : null,
       } as any);
-
-      // Create initial "change" event capturing the starting setup
-      const hasSetup = w.style || w.line_name || w.flies_on_cast;
-      if (hasSetup) {
-        await addEvent({
-          session_id: session.id,
-          event_type: "change",
-          event_time: startTime || new Date().toISOString(),
-          sort_order: 0,
-          style: w.style,
-          rig: null,
-          line_type: w.line_name,
-          retrieve: null,
-          flies_on_cast: w.flies_on_cast,
-          spot: w.spot_name,
-          depth_zone: null,
-          change_from: null,
-          change_to: { ...w },
-          change_reason: "Session start",
-        } as any);
-      }
 
       // Resolve venue_id from venues_new (needed for affiliation + email lookup)
       const { data: matchedVenue } = await supabase
@@ -162,7 +125,6 @@ export default function DiaryNew() {
         .limit(1)
         .maybeSingle();
 
-      // Trigger venue affiliation (non-blocking, skip if venue not in directory)
       if (matchedVenue?.venue_id) {
         try {
           await supabase.functions.invoke("on-session-logged", {
@@ -196,195 +158,185 @@ export default function DiaryNew() {
     }
   }
 
-  // ============================================================
-  // RENDER: Phase 1 — Session Header
-  // ============================================================
-  if (phase === "header") {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-[420px] mx-auto p-4 space-y-5">
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/diary")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-semibold font-diary">New Session</h1>
-          </div>
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-[420px] mx-auto p-4 space-y-5">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/diary")}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-semibold font-diary">New Session</h1>
+        </div>
 
-          {/* Venue */}
+        <div>
+          <Label>Venue *</Label>
+          <select
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1.5"
+            value={venue}
+            onChange={(e) => setVenue(e.target.value)}
+          >
+            <option value="">Select venue...</option>
+            {venues.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label>Venue *</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1.5"
-              value={venue}
-              onChange={(e) => setVenue(e.target.value)}
-            >
-              <option value="">Select venue...</option>
-              {venues.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Date + Time */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Date *</Label>
-              <Input
-                type="date"
-                value={sessionDate}
-                onChange={(e) => setSessionDate(e.target.value)}
-                className="mt-1.5"
-              />
-            </div>
-            <div>
-              <Label>Arrival Time</Label>
-              <Input
-                type="time"
-                value={arrivalTime}
-                onChange={(e) => setArrivalTime(e.target.value)}
-                className="mt-1.5"
-              />
-            </div>
-          </div>
-
-          {/* Fishing Type */}
-          <div>
-            <Label>Fishing Type</Label>
-            <div className="flex gap-2 mt-1.5">
-              {FISHING_TYPES.map((ft) => (
-                <Button
-                  key={ft}
-                  variant={fishingType === ft ? "default" : "outline"}
-                  size="sm"
-                  className="flex-1 min-h-[44px]"
-                  onClick={() => setFishingType(fishingType === ft ? null : ft)}
-                >
-                  {ft}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Plan */}
-          <div>
-            <Label>Plan</Label>
+            <Label>Date *</Label>
             <Input
-              placeholder="e.g. Buzzers on floater, try lures if slow"
-              value={plan}
-              onChange={(e) => setPlan(e.target.value)}
+              type="date"
+              value={sessionDate}
+              onChange={(e) => setSessionDate(e.target.value)}
               className="mt-1.5"
             />
           </div>
-
-          {/* Rods */}
           <div>
-            <Label>Rods</Label>
-            <div className="flex gap-2 mt-1.5">
-              {[1, 2, 3, 4].map((r) => (
-                <Button
-                  key={r}
-                  variant={rods === r ? "default" : "outline"}
-                  size="sm"
-                  className="w-12 min-h-[44px]"
-                  onClick={() => setRods(r)}
-                >
-                  {r}
-                </Button>
-              ))}
+            <Label>Arrival Time</Label>
+            <Input
+              type="time"
+              value={arrivalTime}
+              onChange={(e) => setArrivalTime(e.target.value)}
+              className="mt-1.5"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label>Fishing Type</Label>
+          <div className="flex gap-2 mt-1.5">
+            {FISHING_TYPES.map((ft) => (
+              <Button
+                key={ft}
+                variant={fishingType === ft ? "default" : "outline"}
+                size="sm"
+                className="flex-1 min-h-[44px]"
+                onClick={() => setFishingType(fishingType === ft ? null : ft)}
+              >
+                {ft}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Plan</Label>
+          <Input
+            placeholder="e.g. Buzzers on floater, try lures if slow"
+            value={plan}
+            onChange={(e) => setPlan(e.target.value)}
+            className="mt-1.5"
+          />
+        </div>
+
+        <div>
+          <Label>Rods</Label>
+          <div className="flex gap-2 mt-1.5">
+            {[1, 2, 3, 4].map((r) => (
+              <Button
+                key={r}
+                variant={rods === r ? "default" : "outline"}
+                size="sm"
+                className="w-12 min-h-[44px]"
+                onClick={() => setRods(r)}
+              >
+                {r}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label>Keep limit</Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={20}
+            placeholder="0 = catch & release"
+            value={keepLimit}
+            onChange={(e) => setKeepLimit(e.target.value)}
+            className="mt-1.5"
+          />
+        </div>
+
+        <details className="border rounded-md p-3">
+          <summary className="text-sm font-medium cursor-pointer">
+            Weather (optional)
+          </summary>
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <div>
+              <Label className="text-xs">Temp (°C)</Label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                placeholder="e.g. 12"
+                value={weatherTemp}
+                onChange={(e) => setWeatherTemp(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Wind (mph)</Label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                placeholder="e.g. 15"
+                value={weatherWindSpeed}
+                onChange={(e) => setWeatherWindSpeed(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Wind Dir</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-xs mt-1"
+                value={weatherWindDir}
+                onChange={(e) => setWeatherWindDir(e.target.value)}
+              >
+                <option value="">--</option>
+                {WIND_DIRECTIONS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs">Pressure (hPa)</Label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                placeholder="e.g. 1018"
+                value={weatherPressure}
+                onChange={(e) => setWeatherPressure(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Conditions</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-xs mt-1"
+                value={weatherConditions}
+                onChange={(e) => setWeatherConditions(e.target.value)}
+              >
+                <option value="">--</option>
+                {WEATHER_CONDITIONS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
           </div>
+        </details>
 
-          {/* Weather (collapsible) */}
-          <details className="border rounded-md p-3">
-            <summary className="text-sm font-medium cursor-pointer">
-              Weather (optional)
-            </summary>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <div>
-                <Label className="text-xs">Temp (°C)</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="e.g. 12"
-                  value={weatherTemp}
-                  onChange={(e) => setWeatherTemp(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Wind (mph)</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="e.g. 15"
-                  value={weatherWindSpeed}
-                  onChange={(e) => setWeatherWindSpeed(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Wind Dir</Label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-xs mt-1"
-                  value={weatherWindDir}
-                  onChange={(e) => setWeatherWindDir(e.target.value)}
-                >
-                  <option value="">--</option>
-                  {WIND_DIRECTIONS.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label className="text-xs">Pressure (hPa)</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="e.g. 1018"
-                  value={weatherPressure}
-                  onChange={(e) => setWeatherPressure(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label className="text-xs">Conditions</Label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-xs mt-1"
-                  value={weatherConditions}
-                  onChange={(e) => setWeatherConditions(e.target.value)}
-                >
-                  <option value="">--</option>
-                  {WEATHER_CONDITIONS.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </details>
-
-          {/* Next button */}
-          <Button
-            onClick={() => setPhase("setup")}
-            disabled={!canProceedToSetup()}
-            className="w-full min-h-[48px] text-base"
-          >
-            Next: Choose Setup <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
+        <Button
+          onClick={handleStartSession}
+          disabled={saving}
+          className="w-full min-h-[48px] text-base"
+        >
+          <Play className="h-4 w-4 mr-2" />
+          {saving ? "Starting..." : "Start Session"}
+        </Button>
       </div>
-    );
-  }
-
-  // ============================================================
-  // RENDER: Phase 2 — Setup Wizard (9 steps)
-  // ============================================================
-  return (
-    <SetupWizard
-      venueName={venue}
-      venueType={venueType}
-      onBack={() => setPhase("header")}
-      onComplete={handleStartSession}
-    />
+    </div>
   );
 }
