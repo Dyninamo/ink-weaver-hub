@@ -308,7 +308,12 @@ export default function DiaryNew() {
             }}
           >
             <option value="">Select venue…</option>
-            {filteredVenues.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
+            <optgroup label="Practice">
+              <option value="Home">Home (practice / no real venue)</option>
+            </optgroup>
+            <optgroup label="Venues">
+              {filteredRealVenues.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
+            </optgroup>
           </select>
         </div>
 
@@ -371,13 +376,17 @@ export default function DiaryNew() {
 
         <Button
           onClick={() => {
-            if (!venue.trim()) {
-              toast.error("Pick a venue first");
+            if (!canBuildRig) {
+              toast.error(
+                venue === "Home"
+                  ? "Pick Stillwater or River for your home session"
+                  : "Pick a venue first"
+              );
               return;
             }
             setShowWizard(true);
           }}
-          disabled={!venue.trim()}
+          disabled={!canBuildRig}
           className="w-full min-h-[52px] text-base"
         >
           Build your rig <ArrowRight className="h-4 w-4 ml-2" />
