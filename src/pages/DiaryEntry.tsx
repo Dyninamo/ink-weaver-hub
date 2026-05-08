@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import CatchModal from "@/components/diary/CatchModal";
+// CatchModal kept on disk per prompt 142 (strip in follow-up); mounting replaced by CatchFlow.
+import CatchFlow from "@/components/diary/CatchFlow";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
 import NotableFishDialog from "@/components/social/NotableFishDialog";
 import VenueOutreachDialog from "@/components/diary/VenueOutreachDialog";
@@ -966,20 +967,23 @@ export default function DiaryEntry() {
       {/* MODALS                                                        */}
       {/* ============================================================ */}
 
-      <CatchModal
-        open={catchOpen}
-        onClose={() => setCatchOpen(false)}
-        sessionId={id!}
-        venueType={session.venue_type as "stillwater" | "river"}
-        venueName={session.venue_name}
-        currentSetup={currentSetup}
-        lastSpecies={lastSpecies}
-        lastRigPosition={lastRigPosition}
-        lastFlySize={lastFlySize}
-        eventCount={events.length}
-        onSaved={handleCatchSaved}
-        latestWeather={latestWeather}
-      />
+      {catchOpen && (
+        <CatchFlow
+          sessionId={id!}
+          rodIndex={Math.max(0, activeRodIndex - 1)}
+          venueType={session.venue_type as "stillwater" | "river"}
+          venueName={session.venue_name}
+          defaultSpecies={lastSpecies}
+          carryRetrieve={currentSetup.retrieve}
+          carryDepth={currentSetup.depth_zone}
+          latestWeather={latestWeather}
+          onCancel={() => setCatchOpen(false)}
+          onSaved={() => {
+            setCatchOpen(false);
+            handleCatchSaved({});
+          }}
+        />
+      )}
 
       <BlankModal
         open={blankOpen}
