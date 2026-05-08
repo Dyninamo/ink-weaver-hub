@@ -127,11 +127,17 @@ export interface AdviceV2Response {
 export async function getAdviceV2(
   venue: string,
   date: string,
+  waterTypeOverride?: 'stillwater' | 'river',
 ): Promise<AdviceV2Response> {
   const { data: { user } } = await supabase.auth.getUser()
 
   const { data, error } = await supabase.functions.invoke('get-ai-advice-v2', {
-    body: { venue_name: venue, target_date: date, user_id: user?.id ?? null }
+    body: {
+      venue_name: venue,
+      target_date: date,
+      user_id: user?.id ?? null,
+      water_type_override: waterTypeOverride ?? null,
+    }
   })
 
   if (error) throw new AdviceServiceError(error.message || 'Failed to get advice v2')
@@ -142,11 +148,12 @@ export async function getAdviceV2(
 export async function getBasicAdvice(
   venue: string,
   date: string,
-  weatherData?: { temperature: number; windSpeed: number; precipitation: number }
+  weatherData?: { temperature: number; windSpeed: number; precipitation: number },
+  waterTypeOverride?: 'stillwater' | 'river',
 ): Promise<FishingAdviceResponse> {
   const { data: { user } } = await supabase.auth.getUser()
   const { data, error } = await supabase.functions.invoke('get-fishing-advice', {
-    body: { venue, date, userId: user?.id, weatherData }
+    body: { venue, date, userId: user?.id, weatherData, waterTypeOverride: waterTypeOverride ?? null }
   })
   
   if (error) throw new Error(error.message || 'Failed to get advice')
@@ -159,11 +166,12 @@ export async function getFishingAdvice(
   venue: string,
   date: string,
   _weatherData?: { temperature: number; windSpeed: number; precipitation: number; pressure?: number; humidity?: number },
-  _isPremium: boolean = false
+  _isPremium: boolean = false,
+  waterTypeOverride?: 'stillwater' | 'river',
 ): Promise<AdviceV2Response | FishingAdviceResponse> {
-  logEvent('advice.request', { venue, date })
+  logEvent('advice.request', { venue, date, waterTypeOverride: waterTypeOverride ?? null })
   try {
-    const result = await getAdviceV2(venue, date)
+    const result = await getAdviceV2(venue, date, waterTypeOverride)
     logEvent('advice.received', {
       venue,
       date,
@@ -177,7 +185,7 @@ export async function getFishingAdvice(
   } catch (err) {
     logEvent('advice.fallback_v1', { venue, date, error: (err as Error).message })
     console.error('v2 advice failed, falling back to legacy:', err)
-    const result = await getBasicAdvice(venue, date, _weatherData)
+    const result = await getBasicAdvice(venue, date, _weatherData, waterTypeOverride)
     logEvent('advice.received', {
       venue,
       date,

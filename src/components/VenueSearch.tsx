@@ -14,10 +14,37 @@ import { haversineDistanceMiles } from "@/utils/distance";
 import VenueSubmissionForm from "@/components/VenueSubmissionForm";
 
 interface VenueSearchProps {
-  onAdviceRequest: (venueId: string, venueName: string, date: string) => void;
+  onAdviceRequest: (
+    venueId: string,
+    venueName: string,
+    date: string,
+    waterTypeOverride?: "stillwater" | "river"
+  ) => void;
   isLoading?: boolean;
   loadingMessage?: string;
 }
+
+// Synthetic Home pseudo-venue. NOT in venues_new — sentinel id used by
+// Dashboard.handleAdviceRequest to skip user_venue_history insert and by
+// the get-ai-advice-v2 edge function to bail with a friendly response.
+// Per prompt 146.
+const HOME_SENTINEL_ID = "__home__";
+const HOME_PSEUDO: VenueResult = {
+  venue_id: HOME_SENTINEL_ID,
+  name: "Home",
+  full_name: "Home (practice / no real venue)",
+  level: "venue",
+  water_type_id: 0,
+  region_id: 0,
+  county: null,
+  river_name: null,
+  latitude: null,
+  longitude: null,
+  parent_id: null,
+  session_count: 0,
+  display_context: "Practice — pick water type below",
+  search_text: "home practice",
+};
 
 interface VenueResult {
   venue_id: string;
@@ -134,7 +161,17 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
   // Add-a-water form
   const [showAddForm, setShowAddForm] = useState(false);
 
+  // Home pseudo-venue water-type override (per prompt 146)
+  const [homeWaterType, setHomeWaterType] = useState<"stillwater" | "river" | null>(null);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset Home water-type whenever the selection changes away from Home
+  useEffect(() => {
+    if (!selectedVenue || selectedVenue.venue_id !== HOME_SENTINEL_ID) {
+      setHomeWaterType(null);
+    }
+  }, [selectedVenue]);
 
   // Load water types on mount
   useEffect(() => {
@@ -560,10 +597,18 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
     setActiveQuickDate(null); // Clear chip highlight when calendar is used
   };
 
+  const isHome = selectedVenue?.venue_id === HOME_SENTINEL_ID;
+  const canSubmit = !!selectedVenue && !!selectedDate && (!isHome || !!homeWaterType);
+
   const handleSubmit = () => {
-    if (!selectedVenue || !selectedDate) return;
+    if (!canSubmit || !selectedVenue || !selectedDate) return;
     setAdviceError(null);
-    onAdviceRequest(selectedVenue.venue_id, selectedVenue.name, format(selectedDate, "yyyy-MM-dd"));
+    onAdviceRequest(
+      selectedVenue.venue_id,
+      selectedVenue.name,
+      format(selectedDate, "yyyy-MM-dd"),
+      isHome ? homeWaterType ?? undefined : undefined
+    );
   };
 
   // Allow parent to signal errors via a callback — we detect via isLoading going false with no navigation
@@ -686,15 +731,47 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
       <div className={cn("space-y-6 transition-all duration-200", isTransitioning && "opacity-0")}>
         {/* Selected venue card */}
         <div className="border border-border rounded-lg p-4 flex items-start gap-3 transition-all duration-200">
-          {renderStar(selectedVenue.venue_id)}
+          {!isHome && renderStar(selectedVenue.venue_id)}
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-foreground">{selectedVenue.name}</div>
+            <div className="flex items-center gap-2">
+              <div className="font-semibold text-foreground">{selectedVenue.name}</div>
+              {isHome && (
+                <span className="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                  Practice
+                </span>
+              )}
+            </div>
             <div className="text-sm text-muted-foreground">{renderContextLine(venueWithDist)}</div>
           </div>
           <Button variant="link" size="sm" onClick={handleChangeVenue} className="flex-shrink-0 text-primary" disabled={isLoading}>
             Change
           </Button>
         </div>
+
+        {/* Home water-type override (per prompt 146) */}
+        {isHome && (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">What kind of water are you practising for?</p>
+            <div className="flex gap-2">
+              {(["stillwater", "river"] as const).map((wt) => (
+                <button
+                  key={wt}
+                  type="button"
+                  className={cn(
+                    "flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-colors min-h-[40px] capitalize",
+                    homeWaterType === wt
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  )}
+                  onClick={() => setHomeWaterType(wt)}
+                  disabled={isLoading}
+                >
+                  {wt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Date picker section */}
         <div className={cn(
@@ -753,11 +830,11 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
         <div className="space-y-2">
           <Button
             onClick={handleSubmit}
-            disabled={!selectedDate || isLoading}
+            disabled={!canSubmit || isLoading}
             aria-busy={isLoading}
             className={cn(
               "w-full text-lg py-6 transition-all duration-200",
-              selectedDate && !isLoading
+              canSubmit && !isLoading
                 ? ""
                 : "bg-muted text-muted-foreground"
             )}
@@ -766,10 +843,17 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
               <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{loadingMessage || "Processing..."}</>
             ) : !selectedDate ? (
               "Select a date"
+            ) : isHome && !homeWaterType ? (
+              "Pick water type"
             ) : (
               <>Get Advice<ArrowRight className="w-5 h-5 ml-2" /></>
             )}
           </Button>
+          {isHome && !homeWaterType && (
+            <p className="text-xs text-muted-foreground text-center">
+              Pick Stillwater or River for your home query.
+            </p>
+          )}
           {isLoading && (
             <p className="text-xs text-muted-foreground text-center">
               This typically takes 2–5 seconds...
@@ -935,6 +1019,31 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
       {/* Default state: Favourites + Recent */}
       {showDefaultState && (
         <div className="space-y-6 pt-2">
+          {/* Pinned Home pseudo-venue (per prompt 146). Hidden in Near me mode
+              since Home has no GPS coordinates. */}
+          {!nearMeActive && (
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Practice</h3>
+              <Card
+                className="p-3 cursor-pointer hover:bg-muted/60 transition-colors border-dashed"
+                onClick={() => handleSelectVenue(HOME_PSEUDO)}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center text-xs">🎣</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold text-foreground text-sm truncate">{HOME_PSEUDO.name}</div>
+                      <span className="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                        Practice
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">{HOME_PSEUDO.display_context}</div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
           {/* Favourites */}
           <div>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-3">
