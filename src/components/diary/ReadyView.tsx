@@ -240,10 +240,9 @@ export default function ReadyView({
         </div>
       )}
 
-      {/* Floating End-session pill */}
-      <button className="end-session-pill" onClick={onEndSession} type="button">
-        End session{events.length > 0 && ` · ${events.length} logged`}
-      </button>
+      {/* End-session pill is rendered by ActiveSessionShell at shell level
+          so it persists across phase transitions (prompt 143 §1). */}
+      {void onEndSession}
     </div>
   );
 }
