@@ -194,9 +194,11 @@ export default function ChangeFlow({
         event_conditions: latestWeather?.conditions ?? null,
       } as any);
 
+      logEvent("session.change", { session_id: sessionId, field, has_reason: !!reason }, sessionId);
       toast.success("Change saved");
       onSaved(next);
     } catch (err: any) {
+      logEvent("error", { context: "change_save", field, message: err?.message ?? String(err) }, sessionId);
       toast.error(err?.message || "Failed to save change");
     } finally {
       setSaving(false);

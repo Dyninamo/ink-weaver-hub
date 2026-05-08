@@ -65,9 +65,11 @@ export default function BlankFlow({
         event_pressure: latestWeather?.pressure ?? null,
         event_conditions: latestWeather?.conditions ?? null,
       });
+      logEvent("session.blank", { session_id: sessionId, confidence, reason }, sessionId);
       toast.success("Blank period logged");
       onSaved();
     } catch (err: any) {
+      logEvent("error", { context: "blank_save", message: err?.message ?? String(err) }, sessionId);
       toast.error(err.message || "Failed to save blank");
     } finally {
       setSaving(false);
