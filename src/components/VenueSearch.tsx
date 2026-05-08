@@ -1019,6 +1019,31 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
       {/* Default state: Favourites + Recent */}
       {showDefaultState && (
         <div className="space-y-6 pt-2">
+          {/* Pinned Home pseudo-venue (per prompt 146). Hidden in Near me mode
+              since Home has no GPS coordinates. */}
+          {!nearMeActive && (
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Practice</h3>
+              <Card
+                className="p-3 cursor-pointer hover:bg-muted/60 transition-colors border-dashed"
+                onClick={() => handleSelectVenue(HOME_PSEUDO)}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center text-xs">🎣</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold text-foreground text-sm truncate">{HOME_PSEUDO.name}</div>
+                      <span className="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                        Practice
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">{HOME_PSEUDO.display_context}</div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
           {/* Favourites */}
           <div>
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5 mb-3">
