@@ -12,13 +12,29 @@ import { createSession } from "@/services/diaryService";
 import SetupWizard, { type WizardCommit } from "@/components/diary/setup/SetupWizard";
 import { positionsForFlyCount } from "@/components/diary/setup/vocabulary";
 
-const VENUE_TYPES: Record<string, "stillwater" | "river"> = {
-  "Grafham Water": "stillwater",
-  "Pitsford Water": "stillwater",
-  "Rutland Water": "stillwater",
-  "Ravensthorpe Reservoir": "stillwater",
-  "Draycote Water": "stillwater",
-};
+/**
+ * Map descriptive water_types.water_type values onto the PWA's binary
+ * stillwater | river vocabulary used by SavedRigsBanner / wizard defaults.
+ *
+ * NOTE (prompt 141a discovery): the prompt assumed water_types.water_type
+ * was literally 'stillwater' | 'river'. It isn't — values are descriptive
+ * (e.g. 'River - Chalkstream', 'Small Stillwater', 'Large Reservoir',
+ * 'Loch/Lough', 'Both - Stillwater', 'Universal'). We classify here.
+ */
+function classifyWaterType(raw: string | null | undefined): "stillwater" | "river" | null {
+  if (!raw) return null;
+  const v = raw.toLowerCase();
+  if (v.includes("river")) return "river"; // includes "Both - River"
+  if (v.includes("stillwater") || v.includes("reservoir") || v.includes("loch") || v.includes("lough")) {
+    return "stillwater";
+  }
+  return null; // 'Universal' or anything unknown
+}
+
+interface VenueOption {
+  name: string;
+  waterType: "stillwater" | "river" | null;
+}
 
 const FISHING_TYPES = ["Bank", "Boat", "Both"] as const;
 
@@ -30,16 +46,31 @@ export default function DiaryNew() {
 
   const [venue, setVenue] = useState("");
   const [venueType, setVenueType] = useState<"stillwater" | "river">("stillwater");
+  const [venueTypeResolved, setVenueTypeResolved] = useState(false);
+  const [venueTypeManual, setVenueTypeManual] = useState(false);
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().split("T")[0]);
   const [arrivalTime, setArrivalTime] = useState("");
   const [fishingType, setFishingType] = useState<string>("Bank");
-  const [venues, setVenues] = useState<string[]>([]);
+  const [venues, setVenues] = useState<VenueOption[]>([]);
+  const [venueFilter, setVenueFilter] = useState("");
   const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
     async function loadVenues() {
-      const { data } = await supabase.from("reports_enriched").select("venue").order("venue");
-      if (data) setVenues([...new Set(data.map((r: any) => r.venue))]);
+      const { data } = await supabase
+        .from("venues_new")
+        .select("name, water_types(water_type)")
+        .eq("is_active", true)
+        .eq("is_searchable", true)
+        .order("name")
+        .limit(2000);
+      if (!data) return;
+      setVenues(
+        data.map((v: any) => ({
+          name: v.name,
+          waterType: classifyWaterType(v.water_types?.water_type),
+        }))
+      );
     }
     loadVenues();
   }, []);
@@ -49,14 +80,46 @@ export default function DiaryNew() {
     if (v) setVenue(v);
   }, [searchParams]);
 
+  // When venue changes, resolve water type. Prefer in-memory match (no round-trip);
+  // fall back to a DB lookup for venues set via ?venue= querystring or fuzzy hits.
   useEffect(() => {
-    if (venue && VENUE_TYPES[venue]) setVenueType(VENUE_TYPES[venue]);
-  }, [venue]);
+    if (!venue) return;
+    if (venueTypeManual) return; // user override wins
+    const inMemory = venues.find((v) => v.name === venue);
+    if (inMemory) {
+      if (inMemory.waterType) {
+        setVenueType(inMemory.waterType);
+        setVenueTypeResolved(true);
+      } else {
+        setVenueTypeResolved(false);
+      }
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("venues_new")
+        .select("water_types(water_type)")
+        .ilike("name", venue)
+        .limit(1)
+        .maybeSingle();
+      if (cancelled) return;
+      const wt = classifyWaterType((data as any)?.water_types?.water_type);
+      if (wt) {
+        setVenueType(wt);
+        setVenueTypeResolved(true);
+      } else {
+        setVenueTypeResolved(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [venue, venues, venueTypeManual]);
 
-  // venueType (set above from the VENUE_TYPES map) is the canonical PWA water-type.
-  // venues_new exposes water_type_id (FK), not a string column, so we don't query it here —
-  // venueType is already the right "stillwater" | "river" value for the preset filter.
   const venueWaterType = venueType;
+
+  const filteredVenues = venueFilter.trim()
+    ? venues.filter((v) => v.name.toLowerCase().includes(venueFilter.toLowerCase()))
+    : venues;
 
   async function handleCommit(commit: WizardCommit) {
     if (!user) {
@@ -222,15 +285,54 @@ export default function DiaryNew() {
 
         <div>
           <Label>Venue *</Label>
+          <Input
+            type="text"
+            placeholder="Filter venues…"
+            value={venueFilter}
+            onChange={(e) => setVenueFilter(e.target.value)}
+            className="mt-1.5"
+          />
           <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1.5"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-2"
             value={venue}
-            onChange={(e) => setVenue(e.target.value)}
+            onChange={(e) => {
+              setVenue(e.target.value);
+              setVenueTypeManual(false); // new venue → re-enable auto-detect
+            }}
           >
             <option value="">Select venue…</option>
-            {venues.map((v) => <option key={v} value={v}>{v}</option>)}
+            {filteredVenues.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
           </select>
         </div>
+
+        {venue && (
+          <div>
+            <Label>Water type</Label>
+            <div className={`flex gap-2 mt-1.5 ${!venueTypeResolved && !venueTypeManual ? "ring-1 ring-amber-500/50 rounded-md p-1" : ""}`}>
+              {(["stillwater", "river"] as const).map((wt) => (
+                <Button
+                  key={wt}
+                  variant={venueType === wt ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 min-h-[44px] capitalize"
+                  onClick={() => {
+                    setVenueType(wt);
+                    setVenueTypeManual(true);
+                  }}
+                >
+                  {wt}
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {venueTypeManual
+                ? "Manual override active"
+                : venueTypeResolved
+                  ? "Auto-detected — tap to override"
+                  : "Couldn't detect water type — please choose"}
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div>
