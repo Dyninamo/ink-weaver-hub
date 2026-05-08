@@ -630,6 +630,9 @@ export type Database = {
           keep_limit: number | null
           latitude: number | null
           leader_id: number | null
+          leader_length_ft: number | null
+          leader_material: string | null
+          leader_strength_lb: number | null
           line_profile: string | null
           longitude: number | null
           notes: string | null
@@ -684,6 +687,9 @@ export type Database = {
           keep_limit?: number | null
           latitude?: number | null
           leader_id?: number | null
+          leader_length_ft?: number | null
+          leader_material?: string | null
+          leader_strength_lb?: number | null
           line_profile?: string | null
           longitude?: number | null
           notes?: string | null
@@ -738,6 +744,9 @@ export type Database = {
           keep_limit?: number | null
           latitude?: number | null
           leader_id?: number | null
+          leader_length_ft?: number | null
+          leader_material?: string | null
+          leader_strength_lb?: number | null
           line_profile?: string | null
           longitude?: number | null
           notes?: string | null

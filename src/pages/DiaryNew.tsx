@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Play } from "lucide-react";
 import { toast } from "sonner";
 import { createSession } from "@/services/diaryService";
+import LeaderPicker, { EMPTY_LEADER, LeaderValue } from "@/components/diary/LeaderPicker";
 
 const VENUE_TYPES: Record<string, "stillwater" | "river"> = {
   "Grafham Water": "stillwater",
@@ -45,6 +46,7 @@ export default function DiaryNew() {
   const [plan, setPlan] = useState("");
   const [rods, setRods] = useState(1);
   const [keepLimit, setKeepLimit] = useState<string>("");
+  const [leader, setLeader] = useState<LeaderValue>(EMPTY_LEADER);
 
   // Weather
   const [weatherTemp, setWeatherTemp] = useState<string>("");
@@ -115,6 +117,10 @@ export default function DiaryNew() {
         weather_conditions: weatherConditions || null,
         is_active: true,
         keep_limit: keepLimit ? parseInt(keepLimit, 10) : null,
+        leader_material: leader.material,
+        leader_length_ft: leader.length_ft,
+        leader_strength_lb: leader.strength_lb,
+        leader_id: leader.leader_id,
       } as any);
 
       // Resolve venue_id from venues_new (needed for affiliation + email lookup)
@@ -259,6 +265,11 @@ export default function DiaryNew() {
             onChange={(e) => setKeepLimit(e.target.value)}
             className="mt-1.5"
           />
+        </div>
+
+        <div>
+          <Label className="mb-1.5 block">Leader</Label>
+          <LeaderPicker value={leader} onChange={setLeader} prefillUserId={user?.id} />
         </div>
 
         <details className="border rounded-md p-3">
