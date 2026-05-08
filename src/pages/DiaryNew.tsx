@@ -81,6 +81,12 @@ export default function DiaryNew() {
     if (v) setVenue(v);
   }, [searchParams]);
 
+  // Log venue selection
+  useEffect(() => {
+    if (!venue) return;
+    logEvent("diary.venue_selected", { venue, isHome: venue === "Home" });
+  }, [venue]);
+
   // When venue changes, resolve water type. Prefer in-memory match (no round-trip);
   // fall back to a DB lookup for venues set via ?venue= querystring or fuzzy hits.
   useEffect(() => {
