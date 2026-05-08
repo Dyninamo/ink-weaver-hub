@@ -731,15 +731,47 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
       <div className={cn("space-y-6 transition-all duration-200", isTransitioning && "opacity-0")}>
         {/* Selected venue card */}
         <div className="border border-border rounded-lg p-4 flex items-start gap-3 transition-all duration-200">
-          {renderStar(selectedVenue.venue_id)}
+          {!isHome && renderStar(selectedVenue.venue_id)}
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-foreground">{selectedVenue.name}</div>
+            <div className="flex items-center gap-2">
+              <div className="font-semibold text-foreground">{selectedVenue.name}</div>
+              {isHome && (
+                <span className="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                  Practice
+                </span>
+              )}
+            </div>
             <div className="text-sm text-muted-foreground">{renderContextLine(venueWithDist)}</div>
           </div>
           <Button variant="link" size="sm" onClick={handleChangeVenue} className="flex-shrink-0 text-primary" disabled={isLoading}>
             Change
           </Button>
         </div>
+
+        {/* Home water-type override (per prompt 146) */}
+        {isHome && (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">What kind of water are you practising for?</p>
+            <div className="flex gap-2">
+              {(["stillwater", "river"] as const).map((wt) => (
+                <button
+                  key={wt}
+                  type="button"
+                  className={cn(
+                    "flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-colors min-h-[40px] capitalize",
+                    homeWaterType === wt
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  )}
+                  onClick={() => setHomeWaterType(wt)}
+                  disabled={isLoading}
+                >
+                  {wt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Date picker section */}
         <div className={cn(
