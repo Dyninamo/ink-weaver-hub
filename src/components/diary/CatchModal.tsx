@@ -87,12 +87,23 @@ export default function CatchModal({
     lastRigPosition || "Point"
   );
 
-  // Step 5: Retrieve (carry forward)
+  // Step 5: Retrieve (style-pruned chip row, editable per-catch)
+  const allowedRetrieves = retrievesForStyle(currentSetup.style);
   const [retrieve, setRetrieve] = useState<string | null>(
-    currentSetup.retrieve
+    currentSetup.retrieve && allowedRetrieves.includes(currentSetup.retrieve)
+      ? currentSetup.retrieve
+      : allowedRetrieves[0] ?? null
   );
 
-  // Step 6: Line (carry forward — triggers implicit change detection)
+  // Step 6: Depth zone (style-pruned, editable per-catch — defaults to rig value)
+  const allowedDepths = depthsForStyle(currentSetup.style);
+  const [depthZone, setDepthZone] = useState<string | null>(
+    currentSetup.depth_zone && allowedDepths.includes(currentSetup.depth_zone)
+      ? currentSetup.depth_zone
+      : allowedDepths[0] ?? null
+  );
+
+  // Step 7: Line (carry forward — triggers implicit change detection)
   const [lineType, setLineType] = useState<string | null>(
     currentSetup.line_type
   );
