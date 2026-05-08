@@ -29,6 +29,7 @@ import {
   type RodSetupState,
   type FlyPosition,
 } from "./vocabulary";
+import { logEvent } from "@/services/eventLogger";
 
 type Phase = "rod" | "line" | "leader" | "style" | "droppers" | "flies" | "spot";
 const PHASES: Phase[] = ["rod", "line", "leader", "style", "droppers", "flies", "spot"];
@@ -153,6 +154,8 @@ export default function SetupWizard({
 
   const phaseIdx = PHASES.indexOf(phase);
 
+  useEffect(() => { logEvent("wizard.phase_enter", { phase, rodSubStep }); }, [phase, rodSubStep]);
+
   function applyPreset(rod: RodSetupState, hasFlies: boolean) {
     setState((s) => ({
       ...s,
@@ -169,6 +172,7 @@ export default function SetupWizard({
     } else {
       setLengthInches(null);
     }
+    logEvent("wizard.preset_applied", { hasFlies, rodWeight: rod.rodWeight, line: rod.lineProfile });
     if (hasFlies) setPhase("spot");
     else setPhase("flies");
     toast.success("Rig applied — pick a spot to start");
@@ -222,6 +226,14 @@ export default function SetupWizard({
     if (committing) return;
     setCommitting(true);
     try {
+      logEvent("wizard.commit", {
+        rod_weight: state.rodWeight,
+        rod_length_ft: state.rodLengthFt,
+        line: state.lineProfile,
+        style: state.style,
+        fly_count: state.flyCount,
+        saved_preset: savePreset,
+      });
       await onComplete({
         rod: state,
         spotName: spotName.trim() || null,
