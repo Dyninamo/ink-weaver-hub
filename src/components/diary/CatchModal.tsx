@@ -197,7 +197,7 @@ export default function CatchModal({
         rig: currentSetup.rig,
         flies_on_cast: currentSetup.flies_on_cast,
         spot: currentSetup.spot,
-        depth_zone: currentSetup.depth_zone,
+        depth_zone: depthZone,
         event_temp: latestWeather?.temp ?? null,
         event_wind_speed: latestWeather?.wind_speed ?? null,
         event_wind_dir: latestWeather?.wind_dir ?? null,
