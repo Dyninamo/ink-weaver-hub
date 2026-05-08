@@ -54,7 +54,7 @@ export default function ActiveSessionShell({
   session, events, currentSetup, setCurrentSetup, latestWeather, setLatestWeather,
   lastSpecies, reloadData, activeRodIndex, setActiveRodIndex, venueId, isOnline,
 }: Props) {
-  const navigate = useNavigate();
+  
   const { refresh: refreshActiveSession } = useActiveSession();
   const [phase, setPhase] = useState<SessionPhase>("ready");
   const [outreachOpen, setOutreachOpen] = useState(false);
