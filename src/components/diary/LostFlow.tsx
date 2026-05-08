@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { addEvent, type CurrentSetup } from "@/services/diaryService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { logEvent } from "@/services/eventLogger";
 
 const STAGES = [
   { value: "on_strike", label: "On strike" },
@@ -77,9 +78,11 @@ export default function LostFlow({
         event_pressure: latestWeather?.pressure ?? null,
         event_conditions: latestWeather?.conditions ?? null,
       } as any);
+      logEvent("session.lost", { session_id: sessionId, stage, fly_unknown: flyUnknown }, sessionId);
       toast.success("Lost fish logged");
       onSaved();
     } catch (err: any) {
+      logEvent("error", { context: "lost_save", message: err?.message ?? String(err) }, sessionId);
       toast.error(err.message || "Failed to save");
     } finally {
       setSaving(false);

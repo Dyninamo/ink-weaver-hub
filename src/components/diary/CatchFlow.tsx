@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logEvent } from "@/services/eventLogger";
 import FlyPicker from "./FlyPicker";
 import { addEvent, type WeatherSnapshot } from "@/services/diaryService";
 import { retrievesForStyle, depthsForStyle } from "@/services/styleRules";
@@ -194,6 +195,7 @@ export default function CatchFlow({
         reason: prev ? "catch correction" : "recovered missing fly assignment",
       },
     ]);
+    logEvent("catch.fly_correction", { session_id: sessionId, position: pos, was_missing: !prev }, sessionId);
     setPickerForPos(null);
   }
 
@@ -272,9 +274,24 @@ export default function CatchFlow({
         kept_released: outcome,
       } as any);
 
+      logEvent("catch.saved", {
+        session_id: sessionId,
+        rod_index: rodIndex,
+        position,
+        species: speciesEffective,
+        measurement_mode: measureMode,
+        weight_lb,
+        weight_oz,
+        length_inches,
+        retrieve,
+        depth_zone: depthZone,
+        outcome,
+        fly_corrections: flyCorrections.length,
+      }, sessionId);
       toast.success("Catch saved");
       onSaved();
     } catch (err: any) {
+      logEvent("error", { context: "catch_save", message: err?.message ?? String(err) }, sessionId);
       console.error("Catch save failed:", err);
       toast.error(err?.message || "Failed to save catch");
       // Don't dismiss — preserve user input.

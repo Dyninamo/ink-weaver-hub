@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { createSession } from "@/services/diaryService";
 import SetupWizard, { type WizardCommit } from "@/components/diary/setup/SetupWizard";
 import { positionsForFlyCount } from "@/components/diary/setup/vocabulary";
+import { logEvent } from "@/services/eventLogger";
 
 /**
  * Map descriptive water_types.water_type values onto the PWA's binary
@@ -79,6 +80,12 @@ export default function DiaryNew() {
     const v = searchParams.get("venue");
     if (v) setVenue(v);
   }, [searchParams]);
+
+  // Log venue selection
+  useEffect(() => {
+    if (!venue) return;
+    logEvent("diary.venue_selected", { venue, isHome: venue === "Home" });
+  }, [venue]);
 
   // When venue changes, resolve water type. Prefer in-memory match (no round-trip);
   // fall back to a DB lookup for venues set via ?venue= querystring or fuzzy hits.
@@ -245,11 +252,22 @@ export default function DiaryNew() {
         }
       }
 
+      logEvent("diary.session_started", {
+        session_id: session.id,
+        venue,
+        venueType,
+        has_real_venue_match: !!matchedVenue?.venue_id,
+        rod_weight: rod.rodWeight,
+        fly_count: rod.flyCount,
+        saved_preset: !!commit.savePreset,
+      }, session.id);
+
       toast.success("Session started!");
       refreshActiveSession();
       navigate(`/diary/${session.id}`);
     } catch (err: any) {
       console.error("Failed to start session:", err);
+      logEvent("error", { context: "session_start", message: err?.message ?? String(err) }, createdSessionId ?? null);
       // Rollback
       if (createdRodId) {
         await supabase.from("session_rods" as any).delete().eq("id", createdRodId);
@@ -330,6 +348,7 @@ export default function DiaryNew() {
                   onClick={() => {
                     setVenueType(wt);
                     setVenueTypeManual(true);
+                    logEvent("diary.water_type_override", { venue, water_type: wt, was_resolved: venueTypeResolved });
                   }}
                 >
                   {wt}
@@ -384,6 +403,7 @@ export default function DiaryNew() {
               );
               return;
             }
+            logEvent("diary.build_rig_clicked", { venue, venueType, sessionDate, fishingType });
             setShowWizard(true);
           }}
           disabled={!canBuildRig}
