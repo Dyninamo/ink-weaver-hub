@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, Check, Ruler, Weight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import FlyPicker from "./FlyPicker";
-import DiaryAutocomplete from "./DiaryAutocomplete";
 import {
   addEvent,
   type CurrentSetup,
@@ -21,6 +20,7 @@ import {
   convertLengthToWeight,
   FRIENDLY_LINE_NAMES,
 } from "@/services/diaryService";
+import { retrievesForStyle, depthsForStyle } from "@/services/styleRules";
 import { toast } from "sonner";
 
 interface CatchModalProps {
@@ -87,12 +87,23 @@ export default function CatchModal({
     lastRigPosition || "Point"
   );
 
-  // Step 5: Retrieve (carry forward)
+  // Step 5: Retrieve (style-pruned chip row, editable per-catch)
+  const allowedRetrieves = retrievesForStyle(currentSetup.style);
   const [retrieve, setRetrieve] = useState<string | null>(
-    currentSetup.retrieve
+    currentSetup.retrieve && allowedRetrieves.includes(currentSetup.retrieve)
+      ? currentSetup.retrieve
+      : allowedRetrieves[0] ?? null
   );
 
-  // Step 6: Line (carry forward — triggers implicit change detection)
+  // Step 6: Depth zone (style-pruned, editable per-catch — defaults to rig value)
+  const allowedDepths = depthsForStyle(currentSetup.style);
+  const [depthZone, setDepthZone] = useState<string | null>(
+    currentSetup.depth_zone && allowedDepths.includes(currentSetup.depth_zone)
+      ? currentSetup.depth_zone
+      : allowedDepths[0] ?? null
+  );
+
+  // Step 7: Line (carry forward — triggers implicit change detection)
   const [lineType, setLineType] = useState<string | null>(
     currentSetup.line_type
   );
@@ -112,7 +123,16 @@ export default function CatchModal({
       setFlyPattern(null);
       setFlySize(lastFlySize);
       setRigPosition(lastRigPosition || "Point");
-      setRetrieve(currentSetup.retrieve);
+      setRetrieve(
+        currentSetup.retrieve && allowedRetrieves.includes(currentSetup.retrieve)
+          ? currentSetup.retrieve
+          : allowedRetrieves[0] ?? null
+      );
+      setDepthZone(
+        currentSetup.depth_zone && allowedDepths.includes(currentSetup.depth_zone)
+          ? currentSetup.depth_zone
+          : allowedDepths[0] ?? null
+      );
       setLineType(currentSetup.line_type);
       setNotes("");
     }
@@ -177,7 +197,7 @@ export default function CatchModal({
         rig: currentSetup.rig,
         flies_on_cast: currentSetup.flies_on_cast,
         spot: currentSetup.spot,
-        depth_zone: currentSetup.depth_zone,
+        depth_zone: depthZone,
         event_temp: latestWeather?.temp ?? null,
         event_wind_speed: latestWeather?.wind_speed ?? null,
         event_wind_dir: latestWeather?.wind_dir ?? null,
@@ -202,8 +222,8 @@ export default function CatchModal({
     }
   }
 
-  const totalSteps = 5;
-  const stepLabels = ["Weight", "Fly", "Position", "Retrieve", "Line"];
+  const totalSteps = 6;
+  const stepLabels = ["Weight", "Fly", "Position", "Retrieve", "Depth", "Line"];
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -362,35 +382,60 @@ export default function CatchModal({
             </div>
           )}
 
-          {/* STEP 4: Retrieve (CARRY FORWARD) */}
+          {/* STEP 4: Retrieve (style-pruned chip row) */}
           {step === 4 && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Retrieve</Label>
-                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
-                  CARRY FORWARD
-                </span>
-              </div>
-              {currentSetup.retrieve && (
+              <Label>Retrieve</Label>
+              {allowedRetrieves.length === 1 ? (
                 <p className="text-sm text-muted-foreground">
-                  Current: <strong>{currentSetup.retrieve}</strong>
+                  Only option for {currentSetup.style ?? "this style"}:{" "}
+                  <strong>{allowedRetrieves[0]}</strong>
                 </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {allowedRetrieves.map((r) => (
+                    <Button
+                      key={r}
+                      variant={retrieve === r ? "default" : "outline"}
+                      className="min-h-[44px]"
+                      onClick={() => setRetrieve(r)}
+                    >
+                      {r}
+                    </Button>
+                  ))}
+                </div>
               )}
-              <DiaryAutocomplete
-                label=""
-                value={retrieve}
-                options={[]}
-                onChange={setRetrieve}
-                placeholder="Change retrieve or keep current..."
-              />
-              <p className="text-xs text-muted-foreground text-center">
-                Tap "Keep &amp; Next" to keep current retrieve
-              </p>
             </div>
           )}
 
-          {/* STEP 5: Line (CARRY FORWARD — triggers implicit change) */}
+          {/* STEP 5: Depth zone (style-pruned chip row, editable per catch) */}
           {step === 5 && (
+            <div className="space-y-3">
+              <Label>Depth Zone</Label>
+              {allowedDepths.length === 1 ? (
+                <p className="text-sm text-muted-foreground">
+                  Only option for {currentSetup.style ?? "this style"}:{" "}
+                  <strong>{allowedDepths[0]}</strong>
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {allowedDepths.map((d) => (
+                    <Button
+                      key={d}
+                      variant={depthZone === d ? "default" : "outline"}
+                      className="min-h-[44px] text-xs"
+                      onClick={() => setDepthZone(d)}
+                    >
+                      {d}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* STEP 6: Line (CARRY FORWARD — triggers implicit change) */}
+          {step === 6 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label>Line</Label>
