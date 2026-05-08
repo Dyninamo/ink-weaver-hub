@@ -285,15 +285,54 @@ export default function DiaryNew() {
 
         <div>
           <Label>Venue *</Label>
+          <Input
+            type="text"
+            placeholder="Filter venues…"
+            value={venueFilter}
+            onChange={(e) => setVenueFilter(e.target.value)}
+            className="mt-1.5"
+          />
           <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1.5"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-2"
             value={venue}
-            onChange={(e) => setVenue(e.target.value)}
+            onChange={(e) => {
+              setVenue(e.target.value);
+              setVenueTypeManual(false); // new venue → re-enable auto-detect
+            }}
           >
             <option value="">Select venue…</option>
-            {venues.map((v) => <option key={v} value={v}>{v}</option>)}
+            {filteredVenues.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
           </select>
         </div>
+
+        {venue && (
+          <div>
+            <Label>Water type</Label>
+            <div className={`flex gap-2 mt-1.5 ${!venueTypeResolved && !venueTypeManual ? "ring-1 ring-amber-500/50 rounded-md p-1" : ""}`}>
+              {(["stillwater", "river"] as const).map((wt) => (
+                <Button
+                  key={wt}
+                  variant={venueType === wt ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1 min-h-[44px] capitalize"
+                  onClick={() => {
+                    setVenueType(wt);
+                    setVenueTypeManual(true);
+                  }}
+                >
+                  {wt}
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {venueTypeManual
+                ? "Manual override active"
+                : venueTypeResolved
+                  ? "Auto-detected — tap to override"
+                  : "Couldn't detect water type — please choose"}
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div>
