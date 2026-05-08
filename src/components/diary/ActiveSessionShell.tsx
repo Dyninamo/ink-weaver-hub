@@ -280,6 +280,19 @@ export default function ActiveSessionShell({
           eventCount={events.length}
         />
       )}
+      {venueId && (
+        <VenueOutreachDialog
+          open={outreachOpen}
+          onClose={() => {
+            setOutreachOpen(false);
+            toast.success("Session complete!");
+          }}
+          venueName={session.venue_name}
+          venueId={venueId}
+          sessionId={sessionId}
+          contactEmail={outreachEmail}
+        />
+      )}
     </main>
   );
 }
