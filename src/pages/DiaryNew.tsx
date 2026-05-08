@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Play } from "lucide-react";
 import { toast } from "sonner";
 import { createSession } from "@/services/diaryService";
+import LeaderPicker, { EMPTY_LEADER, LeaderValue } from "@/components/diary/LeaderPicker";
 
 const VENUE_TYPES: Record<string, "stillwater" | "river"> = {
   "Grafham Water": "stillwater",
