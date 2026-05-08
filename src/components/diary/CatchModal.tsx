@@ -123,7 +123,16 @@ export default function CatchModal({
       setFlyPattern(null);
       setFlySize(lastFlySize);
       setRigPosition(lastRigPosition || "Point");
-      setRetrieve(currentSetup.retrieve);
+      setRetrieve(
+        currentSetup.retrieve && allowedRetrieves.includes(currentSetup.retrieve)
+          ? currentSetup.retrieve
+          : allowedRetrieves[0] ?? null
+      );
+      setDepthZone(
+        currentSetup.depth_zone && allowedDepths.includes(currentSetup.depth_zone)
+          ? currentSetup.depth_zone
+          : allowedDepths[0] ?? null
+      );
       setLineType(currentSetup.line_type);
       setNotes("");
     }
