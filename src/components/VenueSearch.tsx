@@ -830,11 +830,11 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
         <div className="space-y-2">
           <Button
             onClick={handleSubmit}
-            disabled={!selectedDate || isLoading}
+            disabled={!canSubmit || isLoading}
             aria-busy={isLoading}
             className={cn(
               "w-full text-lg py-6 transition-all duration-200",
-              selectedDate && !isLoading
+              canSubmit && !isLoading
                 ? ""
                 : "bg-muted text-muted-foreground"
             )}
@@ -843,10 +843,17 @@ const VenueSearch = ({ onAdviceRequest, isLoading = false, loadingMessage = "" }
               <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{loadingMessage || "Processing..."}</>
             ) : !selectedDate ? (
               "Select a date"
+            ) : isHome && !homeWaterType ? (
+              "Pick water type"
             ) : (
               <>Get Advice<ArrowRight className="w-5 h-5 ml-2" /></>
             )}
           </Button>
+          {isHome && !homeWaterType && (
+            <p className="text-xs text-muted-foreground text-center">
+              Pick Stillwater or River for your home query.
+            </p>
+          )}
           {isLoading && (
             <p className="text-xs text-muted-foreground text-center">
               This typically takes 2–5 seconds...
