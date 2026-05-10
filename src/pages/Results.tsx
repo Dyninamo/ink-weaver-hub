@@ -551,30 +551,43 @@ export default function Results() {
           </Card>
         )}
 
-        {/* Order Flies */}
-        <div className="text-center space-y-2">
-          <Button
-            onClick={handleOrderFlies}
-            disabled={loadingFlies}
-            className="min-h-[44px] px-8 text-base"
-            size="lg"
-          >
-            {loadingFlies ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading flies...
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="h-4 w-4 mr-2" /> Order Flies
-              </>
-            )}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            {(tactical?.flies?.length ?? 0) > 0 || (prediction?.flies?.length ?? 0) > 0
-              ? "Based on session and report data for this venue"
-              : "Log sessions to unlock personalised fly picks"}
-          </p>
-        </div>
+        {/* Order Flies — hidden for archetype-tier (generic, not actionable) */}
+        {!isArchetype ? (
+          <div className="text-center space-y-2">
+            <Button
+              onClick={handleOrderFlies}
+              disabled={loadingFlies}
+              className="min-h-[44px] px-8 text-base"
+              size="lg"
+            >
+              {loadingFlies ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading flies...
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="h-4 w-4 mr-2" /> Order Flies
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              {(tactical?.flies?.length ?? 0) > 0 || (prediction?.flies?.length ?? 0) > 0
+                ? "Based on session and report data for this venue"
+                : "Log sessions to unlock personalised fly picks"}
+            </p>
+          </div>
+        ) : (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={handleOrderFlies}
+              disabled={loadingFlies}
+              className="text-sm text-primary hover:underline disabled:opacity-50"
+            >
+              {loadingFlies ? "Loading flies…" : "View suggested flies"}
+            </button>
+          </div>
+        )}
 
         {/* Back / New Query button */}
         <Button
