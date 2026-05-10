@@ -88,6 +88,7 @@ export default function AskGhillieOverlay({
           surface: "mid_session",
           venue_name: session.venue_name,
           venue_id: (session as any).venue_id ?? null,
+          venue_type: (session as any).venue_type ?? null,
           session_id: session.id ?? null,
           weather_snapshot: latestWeather ?? null,
         },
