@@ -37,7 +37,28 @@ interface VenueOption {
   waterType: "stillwater" | "river" | null;
 }
 
-const FISHING_TYPES = ["Bank", "Boat", "Both"] as const;
+function nowHHMM(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+async function getBrowserGps(timeoutMs = 8000): Promise<{ lat: number; lon: number } | null> {
+  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(null), timeoutMs);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(t);
+        resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+      },
+      () => {
+        clearTimeout(t);
+        resolve(null);
+      },
+      { enableHighAccuracy: true, timeout: timeoutMs - 500, maximumAge: 60_000 }
+    );
+  });
+}
 
 export default function DiaryNew() {
   const { user } = useAuth();
@@ -51,8 +72,7 @@ export default function DiaryNew() {
   const [venueTypeResolved, setVenueTypeResolved] = useState(false);
   const [venueTypeManual, setVenueTypeManual] = useState(false);
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().split("T")[0]);
-  const [arrivalTime, setArrivalTime] = useState("");
-  const [fishingType, setFishingType] = useState<string>("Bank");
+  const [arrivalTime, setArrivalTime] = useState(nowHHMM());
   const [venues, setVenues] = useState<VenueOption[]>([]);
   const [venueFilter, setVenueFilter] = useState("");
   const [showWizard, setShowWizard] = useState(false);
@@ -142,6 +162,10 @@ export default function DiaryNew() {
       return;
     }
 
+    // Best-effort GPS capture. Browser prompt fires on first call.
+    const gps = await getBrowserGps();
+    logEvent("diary.gps_capture", { granted: !!gps });
+
     let startTime: string | null = null;
     if (arrivalTime) startTime = new Date(`${sessionDate}T${arrivalTime}:00`).toISOString();
 
@@ -158,7 +182,8 @@ export default function DiaryNew() {
         venue_type: venueType,
         session_date: sessionDate,
         start_time: startTime,
-        fishing_type: fishingType,
+        gps_start_lat: gps?.lat ?? null,
+        gps_start_lon: gps?.lon ?? null,
         plan: commit.plan,
         rods: 1,
         keep_limit: commit.keepLimit,
@@ -376,22 +401,7 @@ export default function DiaryNew() {
           </div>
         </div>
 
-        <div>
-          <Label>Fishing type</Label>
-          <div className="flex gap-2 mt-1.5">
-            {FISHING_TYPES.map((ft) => (
-              <Button
-                key={ft}
-                variant={fishingType === ft ? "default" : "outline"}
-                size="sm"
-                className="flex-1 min-h-[44px]"
-                onClick={() => setFishingType(ft)}
-              >
-                {ft}
-              </Button>
-            ))}
-          </div>
-        </div>
+
 
         <Button
           onClick={() => {
@@ -403,7 +413,7 @@ export default function DiaryNew() {
               );
               return;
             }
-            logEvent("diary.build_rig_clicked", { venue, venueType, sessionDate, fishingType });
+            logEvent("diary.build_rig_clicked", { venue, venueType, sessionDate });
             setShowWizard(true);
           }}
           disabled={!canBuildRig}
