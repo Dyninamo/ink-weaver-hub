@@ -65,6 +65,8 @@ export default function ActiveSessionShell({
   const [outreachOpen, setOutreachOpen] = useState(false);
   const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
   const [outreachChecked, setOutreachChecked] = useState(false);
+  const [endSaveDone, setEndSaveDone] = useState(false);
+  const [endSaveError, setEndSaveError] = useState<string | null>(null);
 
   const sessionId = session.id!;
 
@@ -85,12 +87,15 @@ export default function ActiveSessionShell({
   }
 
   async function handleConfirmEnd() {
+    setEndSaveDone(false);
+    setEndSaveError(null);
     setPhase("end_syncing");
     try {
       await endSession(sessionId, {});
+      setEndSaveDone(true);
     } catch (err: any) {
       console.error("endSession failed:", err);
-      toast.error(err?.message || "Failed to end session");
+      setEndSaveError(err?.message || "Failed to end session");
     }
     refreshActiveSession();
   }
