@@ -49,6 +49,7 @@ interface SessionRodLite {
   style: string | null;
   flies_on_cast: FliesOnCast | null;
   dropper_count: number | null;
+  line_profile: string | null;
 }
 
 interface CatchFlowProps {
@@ -105,7 +106,7 @@ export default function CatchFlow({
       setLoading(true);
       const { data, error } = await supabase
         .from("session_rods" as any)
-        .select("id, session_id, rod_index, style, flies_on_cast, dropper_count")
+        .select("id, session_id, rod_index, style, flies_on_cast, dropper_count, line_profile")
         .eq("session_id", sessionId)
         .eq("rod_index", rodIndex)
         .maybeSingle();
@@ -236,6 +237,8 @@ export default function CatchFlow({
         if (!isNaN(f) && f > 0) {
           weight_lb = Math.floor(f);
           weight_oz = Math.round((f - weight_lb) * 16);
+          // 16-oz overflow guard (prompt 149 §4): 2.99 lb → 3 lb 0 oz, not 2 lb 16 oz.
+          if (weight_oz >= 16) { weight_lb += 1; weight_oz = 0; }
           weight_display = weight_oz === 0 ? `${weight_lb} lb` : `${weight_lb} lb ${weight_oz} oz`;
         }
       } else if (measureMode === "length" && lengthIn) {
@@ -626,7 +629,7 @@ export default function CatchFlow({
               <FlyPicker
                 value={localFlies[pickerForPos]?.pattern ?? null}
                 currentStyle={rod.style}
-                currentLine={null}
+                currentLine={rod.line_profile}
                 venueName={venueName}
                 onChange={(res) => handleFlyPicked(pickerForPos, res)}
               />
