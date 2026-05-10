@@ -147,15 +147,19 @@ Deno.serve(async (req) => {
         }\n\nUse these as your PRIMARY recommendations, especially the top-ranked ones. Lean on the rank-1 pattern unless the angler's question explicitly steers elsewhere. The angler wants actionable tactical advice (size, presentation, line, retrieve), not invented fly names.`
       : "";
 
+    const grounded = groundedFlies.length > 0;
+
+    const groundingInstruction = grounded
+      ? `\n\nWhen recommending flies, draw FROM THE GROUND TRUTH LIST above where possible. Lean on the rank-1 pattern unless the question explicitly steers elsewhere. If the question is genuinely off-topic (presentation, knots, not patterns), answer normally without citing flies.`
+      : `\n\nWe have no curated fly data for this water-type and month. Be honest about that uncertainty: recommend conservative generalist patterns (e.g. Pheasant Tail Nymph, Klinkhammer, Cormorant) rather than confidently specific picks, and prefer presentation / method advice over fly names. Do not invent local hatch information.`;
+
     const systemPrompt = `You are "the Ghillie" — a calm, plain-spoken UK fly-fishing guide. Reply with two parts only:
 
 1) NARRATIVE — 2-4 short sentences of practical advice. No fluff, no greetings.
 2) CHIPS — 2-5 actionable chips as a JSON array. Each chip:
    { "category": "swap_in" | "change_line" | "retrieve" | "spot" | "method",
      "label": "<short imperative, max 5 words>",
-     "detail": "<optional one-line reason, <80 chars>" }${groundedListText}
-
-When recommending flies, draw FROM THE GROUND TRUTH LIST above where possible. If the question is genuinely off-topic from the ground truth (e.g. about presentation, knots, not patterns), you can answer normally without citing flies.
+     "detail": "<optional one-line reason, <80 chars>" }${groundedListText}${groundingInstruction}
 
 Output ONLY this exact JSON shape (no markdown):
 {"narrative": "...", "chips": [...], "confidence": "high"|"medium"|"low"}`;
@@ -179,7 +183,6 @@ Output ONLY this exact JSON shape (no markdown):
         const parsed = JSON.parse(cleaned);
         if (typeof parsed.narrative === "string") narrative = parsed.narrative;
         if (Array.isArray(parsed.chips)) chips = parsed.chips.slice(0, 5);
-        const grounded = groundedFlies.length > 0;
         if (parsed.confidence === "low") {
           confidence = "low";
         } else if (grounded) {
@@ -188,8 +191,15 @@ Output ONLY this exact JSON shape (no markdown):
           confidence = "medium";
         }
         model = result.model;
-      } catch {
-        narrative = cleaned || narrative;
+      } catch (parseErr) {
+        console.warn("ask-ghillie JSON parse failed", {
+          model: result.model,
+          stop_reason: (result as any).stop_reason,
+          raw_preview: cleaned.slice(0, 200),
+          parse_error: String(parseErr),
+        });
+        narrative = "I had a hiccup parsing the guide's reply — please try again.";
+        chips = [];
         confidence = "low";
         model = result.model;
       }

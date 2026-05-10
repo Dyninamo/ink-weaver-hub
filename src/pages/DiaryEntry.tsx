@@ -63,7 +63,7 @@ export default function DiaryEntry() {
   // outreach state, justEnded — all stripped (prompt 147 §2). Active sessions
   // bail to ActiveSessionShell before any of that JSX renders.
 
-  const [activeRodIndex, setActiveRodIndex] = useState<number>(1);
+  const [activeRodIndex, setActiveRodIndex] = useState<number>(0);
   const [latestWeather, setLatestWeather] = useState<WeatherSnapshot | null>(null);
   const [isOnline] = useState<boolean>(true);
 

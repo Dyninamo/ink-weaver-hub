@@ -10,6 +10,8 @@ export interface AutocompleteOption {
   matched?: boolean;    // true if this option matches the current tree context
   category?: string;    // for grouping (e.g. fly top_category)
   meta?: string;        // secondary text (e.g. depth zone, pace)
+  /** Always render at the top of the list, regardless of search query. */
+  pinned?: boolean;
 }
 
 interface DiaryAutocompleteProps {
@@ -52,8 +54,8 @@ export default function DiaryAutocomplete({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Split into matched (top) and unmatched (below divider), then filter by search
-  const { matchedOptions, unmatchedOptions, hasMatched } = useMemo(() => {
+  // Split into pinned (always-visible), matched (top) and unmatched (below divider).
+  const { pinnedOptions, matchedOptions, unmatchedOptions, hasMatched } = useMemo(() => {
     const searchLower = search.toLowerCase().trim();
 
     const filterBySearch = (opts: AutocompleteOption[]) =>
@@ -65,26 +67,35 @@ export default function DiaryAutocomplete({
           )
         : opts;
 
-    const matched = filterBySearch(options.filter(o => o.matched === true));
-    const unmatched = filterBySearch(options.filter(o => o.matched !== true));
-    const hasAnyMatched = options.some(o => o.matched === true);
+    // Pinned options bypass the search filter — always visible.
+    const pinned = options.filter(o => o.pinned === true);
+    const rest = options.filter(o => o.pinned !== true);
+
+    const matched = filterBySearch(rest.filter(o => o.matched === true));
+    const unmatched = filterBySearch(rest.filter(o => o.matched !== true));
+    const hasAnyMatched = rest.some(o => o.matched === true);
 
     return {
+      pinnedOptions: pinned,
       matchedOptions: matched,
       unmatchedOptions: unmatched,
       hasMatched: hasAnyMatched,
     };
   }, [options, search]);
 
-  // Flat list for keyboard navigation (matched + divider marker + unmatched)
+  // Flat list for keyboard navigation (pinned + matched + divider + unmatched)
   const flatList = useMemo(() => {
-    const list: (AutocompleteOption | 'divider')[] = [...matchedOptions];
+    const list: (AutocompleteOption | 'divider')[] = [...pinnedOptions];
+    if (pinnedOptions.length > 0 && (matchedOptions.length > 0 || unmatchedOptions.length > 0)) {
+      list.push('divider');
+    }
+    list.push(...matchedOptions);
     if (hasMatched && unmatchedOptions.length > 0) {
       list.push('divider');
     }
     list.push(...unmatchedOptions);
     return list;
-  }, [matchedOptions, unmatchedOptions, hasMatched]);
+  }, [pinnedOptions, matchedOptions, unmatchedOptions, hasMatched]);
 
   const selectableItems = flatList.filter(item => item !== 'divider') as AutocompleteOption[];
 
@@ -188,13 +199,32 @@ export default function DiaryAutocomplete({
           ref={listRef}
           className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-md border bg-popover shadow-md"
         >
+          {/* Pinned options (always visible) */}
+          {pinnedOptions.map((option, idx) => (
+            <OptionItem
+              key={`p-${option.value}`}
+              option={option}
+              isSelected={value === option.value}
+              isHighlighted={highlightIndex === idx}
+              onClick={() => handleSelect(option)}
+            />
+          ))}
+
+          {/* Divider after pinned section */}
+          {pinnedOptions.length > 0 && (matchedOptions.length > 0 || unmatchedOptions.length > 0) && (
+            <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground">
+              <div className="flex-1 h-px bg-border" />
+              <div className="flex-1 h-px bg-border" />
+            </div>
+          )}
+
           {/* Matched options (top section) */}
           {matchedOptions.map((option, idx) => (
             <OptionItem
               key={`m-${option.value}`}
               option={option}
               isSelected={value === option.value}
-              isHighlighted={highlightIndex === idx}
+              isHighlighted={highlightIndex === pinnedOptions.length + idx}
               onClick={() => handleSelect(option)}
             />
           ))}
@@ -214,13 +244,13 @@ export default function DiaryAutocomplete({
               key={`u-${option.value}`}
               option={option}
               isSelected={value === option.value}
-              isHighlighted={highlightIndex === matchedOptions.length + idx}
+              isHighlighted={highlightIndex === pinnedOptions.length + matchedOptions.length + idx}
               onClick={() => handleSelect(option)}
             />
           ))}
 
           {/* Empty state */}
-          {matchedOptions.length === 0 && unmatchedOptions.length === 0 && (
+          {pinnedOptions.length === 0 && matchedOptions.length === 0 && unmatchedOptions.length === 0 && (
             <div className="px-3 py-6 text-center text-sm text-muted-foreground">
               No options found
             </div>

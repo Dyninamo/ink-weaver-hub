@@ -67,7 +67,7 @@ export default function RodPickerSheet({
   const tallies = useMemo(() => {
     const t: Record<number, { caught: number; lost: number; blank: number }> = {};
     for (const e of events) {
-      const idx = (e as any).rod_index ?? 1;
+      const idx = (e as any).rod_index ?? 0;
       if (!t[idx]) t[idx] = { caught: 0, lost: 0, blank: 0 };
       if (e.event_type === "catch") t[idx].caught++;
       else if (e.event_type === "got_away") t[idx].lost++;

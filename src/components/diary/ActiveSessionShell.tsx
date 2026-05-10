@@ -183,7 +183,7 @@ export default function ActiveSessionShell({
     body = (
       <CatchFlow
         sessionId={sessionId}
-        rodIndex={Math.max(0, activeRodIndex - 1)}
+        rodIndex={activeRodIndex}
         venueType={session.venue_type as "stillwater" | "river"}
         venueName={session.venue_name}
         defaultSpecies={lastSpecies}

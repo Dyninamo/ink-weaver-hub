@@ -152,7 +152,12 @@ export default function DiaryNew() {
   const realVenues = venues.filter((v) => v.name !== "Home");
 
   const venueOptions: AutocompleteOption[] = [
-    { value: "Home", label: "Home (practice / no real venue)", category: "Practice" },
+    {
+      value: "Home",
+      label: "Home (practice / no real venue)",
+      category: "Practice",
+      pinned: true, // always visible regardless of search query (prompt 144)
+    },
     ...realVenues.map((v) => ({
       value: v.name,
       label: v.name,
