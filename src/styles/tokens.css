@@ -26,19 +26,19 @@
   --event-lost: #B15A2E;
   --event-blank: #5A6170;
 
-  /* Type */
+  /* Type — mobile-first defaults (desktop bump in @media below) */
   --font-family: 'Manrope', -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-size-xs: 11px;
-  --font-size-sm: 13px;
-  --font-size-base: 15px;
-  --font-size-md: 16px;
-  --font-size-lg: 18px;
-  --font-size-xl: 22px;
-  --font-size-2xl: 26px;
-  --font-size-3xl: 30px;
-  --font-size-4xl: 34px;
-  --font-size-5xl: 38px;
-  --font-size-score: 96px;
+  --font-size-xs: 10px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 19px;
+  --font-size-2xl: 22px;
+  --font-size-3xl: 26px;
+  --font-size-4xl: 30px;
+  --font-size-5xl: 34px;
+  --font-size-score: 84px;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
