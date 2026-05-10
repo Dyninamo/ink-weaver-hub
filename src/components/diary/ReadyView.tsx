@@ -199,8 +199,27 @@ export default function ReadyView({
         </>
       )}
 
-      {/* Event-coloured ledger rows */}
+      {/* Mid-session "Ask the ghillie" affordance — gild row above the
+          event-coloured ledger. Per prompt 148 §2. */}
       <div className="ledger">
+        <button
+          key="ask-ghillie"
+          className="led-row"
+          onClick={onAskGhillie}
+          type="button"
+          style={{ background: "color-mix(in srgb, var(--gild-500) 8%, transparent)" }}
+        >
+          <div className="led-stripe" style={{ background: "var(--gild-500)" }} />
+          <div className="led-icon" style={{ color: "var(--gild-500)" }}>
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div className="led-body">
+            <div className="led-label">Ask the ghillie</div>
+            <div className="led-hint smallcaps">Mid-session advice for here, now</div>
+          </div>
+          <ChevronRight className="led-chev h-5 w-5" />
+        </button>
+
         {rows.map((r) => (
           <button key={r.label} className="led-row" onClick={r.onClick} type="button">
             <div className="led-stripe" style={{ background: r.color }} />
