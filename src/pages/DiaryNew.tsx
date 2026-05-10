@@ -364,10 +364,12 @@ export default function DiaryNew() {
           <div>
             <Label>Water type</Label>
             <div className={`flex gap-2 mt-1.5 ${!venueTypeResolved && !venueTypeManual ? "ring-1 ring-amber-500/50 rounded-md p-1" : ""}`}>
-              {(["stillwater", "river"] as const).map((wt) => (
+              {(["stillwater", "river"] as const).map((wt) => {
+                const isChosen = (venueTypeResolved || venueTypeManual) && venueType === wt;
+                return (
                 <Button
                   key={wt}
-                  variant={venueType === wt ? "default" : "outline"}
+                  variant={isChosen ? "default" : "outline"}
                   size="sm"
                   className="flex-1 min-h-[44px] capitalize"
                   onClick={() => {
@@ -378,7 +380,8 @@ export default function DiaryNew() {
                 >
                   {wt}
                 </Button>
-              ))}
+                );
+              })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {venueTypeManual
