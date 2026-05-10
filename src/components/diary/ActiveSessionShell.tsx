@@ -21,6 +21,7 @@ import AskGhillieOverlay from "./AskGhillieOverlay";
 import VenuePickerOverlay from "./VenuePickerOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
+import { acquireWakeLock, releaseWakeLock } from "@/lib/wakeLock";
 import {
   endSession,
   pollSessionWeather,
@@ -70,6 +71,13 @@ export default function ActiveSessionShell({
   useEffect(() => {
     logEvent("session.phase_enter", { phase, sessionId }, sessionId);
   }, [phase, sessionId]);
+
+  useEffect(() => {
+    void acquireWakeLock();
+    return () => {
+      void releaseWakeLock();
+    };
+  }, []);
 
   function repollWeather() {
     if (!sessionId) return;
