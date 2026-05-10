@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { callAnthropic } from "../_shared/anthropic.ts";
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 interface AskBody {
