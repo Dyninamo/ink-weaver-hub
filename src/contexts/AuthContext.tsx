@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -64,120 +64,144 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const { toast } = useToast();
 
-  // Fetch user profile
-  const fetchProfile = async (userId: string) => {
-    setIsProfileLoading(true);
+  const isMountedRef = useRef(true);
+  const currentUserIdRef = useRef<string | null>(null);
+
+  const refreshProfile = async () => {
+    const uid = currentUserIdRef.current;
+    if (!uid) return;
     try {
       const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .eq("id", userId)
-        .single();
-
+        .eq("id", uid)
+        .maybeSingle();
       if (error) {
-        if (error.code === "PGRST116") {
-          // Profile doesn't exist, create it
-          console.log("Profile not found, creating...");
-          const { data: newProfile, error: createError } = await supabase
-            .from("user_profiles")
-            .insert({ id: userId })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error("Error creating profile:", createError);
-          } else {
-            setProfile(newProfile);
-          }
-        } else {
-          console.error("Error fetching profile:", error);
-        }
-      } else {
-        setProfile(data);
+        console.error("refreshProfile error:", error);
+        return;
       }
-    } catch (error) {
-      console.error("Unexpected error fetching profile:", error);
-    } finally {
-      setIsProfileLoading(false);
-    }
-  };
-
-  const refreshProfile = async () => {
-    if (user?.id) {
-      await fetchProfile(user.id);
+      if (currentUserIdRef.current !== uid) return; // user switched mid-flight
+      if (!isMountedRef.current) return;
+      setProfile((data ?? null) as UserProfile | null);
+    } catch (err) {
+      console.error("refreshProfile failed:", err);
     }
   };
 
   useEffect(() => {
-    // Get initial session
+    isMountedRef.current = true;
+
+    const safeSetSession = (s: Session | null) => {
+      if (!isMountedRef.current) return;
+      setSession(s);
+    };
+    const safeSetUser = (u: User | null) => {
+      if (!isMountedRef.current) return;
+      currentUserIdRef.current = u?.id ?? null;
+      setUser(u);
+    };
+    const safeSetProfile = (p: UserProfile | null, forUserId: string | null) => {
+      if (!isMountedRef.current) return;
+      // Drop writes for user IDs that aren't the current one (sign-out / switch in flight).
+      if (forUserId !== null && forUserId !== currentUserIdRef.current) return;
+      setProfile(p);
+    };
+
+    const loadProfileFor = async (uid: string) => {
+      if (isMountedRef.current) setIsProfileLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("id", uid)
+          .maybeSingle();
+        if (error && (error as any).code !== "PGRST116") {
+          console.error("Profile fetch error:", error);
+          safeSetProfile(null, uid);
+          return;
+        }
+        if (!data) {
+          // Profile doesn't exist — create it.
+          const { data: newProfile, error: createError } = await supabase
+            .from("user_profiles")
+            .insert({ id: uid })
+            .select()
+            .single();
+          if (createError) {
+            console.error("Error creating profile:", createError);
+            safeSetProfile(null, uid);
+          } else {
+            safeSetProfile(newProfile as UserProfile, uid);
+          }
+        } else {
+          safeSetProfile(data as UserProfile, uid);
+        }
+      } catch (err) {
+        console.error("Unexpected profile fetch error:", err);
+        safeSetProfile(null, uid);
+      } finally {
+        if (isMountedRef.current) setIsProfileLoading(false);
+      }
+    };
+
+    // Initial session
     const initializeAuth = async () => {
       try {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
         if (error) {
           console.error("Error getting session:", error);
-          setSession(null);
-          setUser(null);
+          safeSetSession(null);
+          safeSetUser(null);
         } else {
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
-          
-          // Fetch profile if user exists
+          safeSetSession(currentSession);
+          safeSetUser(currentSession?.user ?? null);
           if (currentSession?.user) {
-            await fetchProfile(currentSession.user.id);
+            await loadProfileFor(currentSession.user.id);
           }
         }
       } catch (error) {
         console.error("Unexpected error during auth initialization:", error);
-        setSession(null);
-        setUser(null);
+        safeSetSession(null);
+        safeSetUser(null);
       } finally {
-        setIsLoading(false);
+        if (isMountedRef.current) setIsLoading(false);
       }
     };
 
-    initializeAuth();
+    void initializeAuth();
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
         console.log("Auth state changed:", event);
 
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+        safeSetSession(currentSession);
+        safeSetUser(currentSession?.user ?? null);
 
-        // Fetch profile when user signs in or token refreshes
         if (currentSession?.user && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
-          fetchProfile(currentSession.user.id);
+          void loadProfileFor(currentSession.user.id);
         }
 
-        // Handle different auth events
         switch (event) {
           case "SIGNED_IN":
             console.log("User signed in");
             break;
-          
           case "SIGNED_OUT":
             console.log("User signed out");
-            setSession(null);
-            setUser(null);
-            setProfile(null);
+            safeSetSession(null);
+            safeSetUser(null);
+            safeSetProfile(null, null);
             break;
-          
           case "TOKEN_REFRESHED":
             console.log("Token refreshed successfully");
             break;
-          
           case "USER_UPDATED":
             console.log("User updated");
             break;
-          
           case "PASSWORD_RECOVERY":
             console.log("Password recovery initiated");
             break;
         }
 
-        // Handle session expiration
         if (event === "SIGNED_OUT" && !currentSession) {
           toast({
             title: "Session expired",
@@ -189,6 +213,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     );
 
     return () => {
+      isMountedRef.current = false;
       subscription.unsubscribe();
     };
   }, [toast]);
@@ -196,7 +221,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      
       if (error) {
         console.error("Sign out error:", error);
         toast({
@@ -205,6 +229,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           variant: "destructive",
         });
       } else {
+        currentUserIdRef.current = null;
         setSession(null);
         setUser(null);
         setProfile(null);
@@ -215,7 +240,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     } catch (error) {
       console.error("Unexpected sign out error:", error);
-      // Clear local state even on error
+      currentUserIdRef.current = null;
       setSession(null);
       setUser(null);
       setProfile(null);
