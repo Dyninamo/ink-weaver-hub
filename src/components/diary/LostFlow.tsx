@@ -6,13 +6,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { logEvent } from "@/services/eventLogger";
 
+// RN canonical 3 stages (per prompt 149 §1). Causes (throwing_hook / bite_off /
+// snag) are captured as free-text notes. Historic rows with the old vocabulary
+// stay as-is; this change is forward-only.
 const STAGES = [
-  { value: "on_strike", label: "On strike" },
-  { value: "playing", label: "Playing" },
+  { value: "on_take", label: "On the take" },
+  { value: "during_fight", label: "During the fight" },
   { value: "at_net", label: "At the net" },
-  { value: "throwing_hook", label: "Threw the hook" },
-  { value: "bite_off", label: "Bite-off" },
-  { value: "snag", label: "Snag" },
 ] as const;
 
 interface Props {
