@@ -33,6 +33,7 @@ import {
   type FishingSession,
   type SessionEvent,
   type CurrentSetup,
+  type WeatherSnapshot,
 } from "@/services/diaryService";
 
 type ViewTab = "timeline" | "fish" | "stats";
