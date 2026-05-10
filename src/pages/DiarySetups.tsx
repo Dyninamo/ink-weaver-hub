@@ -87,6 +87,7 @@ export default function DiarySetups() {
   }
 
   async function handleSave() {
+    if (!user) return;
     if (!form.name.trim()) {
       toast.error('Setup name is required');
       return;
