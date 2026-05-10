@@ -82,7 +82,7 @@ export default function Diary() {
       const { data } = await supabase
         .from("fishing_sessions")
         .select("venue_name")
-        .eq("user_id", user!.id);
+        .eq("user_id", user.id);
       if (data) {
         const unique = [...new Set(data.map((r: any) => r.venue_name))].sort();
         setVenues(unique);
