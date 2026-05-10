@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -10,8 +11,8 @@ Deno.serve(async (req) => {
 
   try {
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_SERVICE_ROLE_KEY')
     )
 
     const { user_id, fish_id } = await req.json()
@@ -98,6 +99,8 @@ Deno.serve(async (req) => {
     }), { headers })
 
   } catch (err) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     console.error('witness-notable-fish error:', err)
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }

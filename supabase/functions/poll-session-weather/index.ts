@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,8 +33,8 @@ serve(async (req) => {
     }
 
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      requireEnv("SUPABASE_URL"),
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY")
     );
 
     // ── Fetch session ──────────────────────────────────────────
@@ -164,6 +165,8 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     console.error("poll-session-weather error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),

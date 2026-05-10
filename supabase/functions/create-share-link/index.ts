@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,8 +25,8 @@ Deno.serve(async (req) => {
 
   try {
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_SERVICE_ROLE_KEY')
     );
 
     // Verify auth
@@ -179,6 +180,8 @@ Deno.serve(async (req) => {
     );
 
   } catch (err) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     console.error('Unexpected error in create-share-link:', err);
     return new Response(
       JSON.stringify({ error: 'Internal error' }),

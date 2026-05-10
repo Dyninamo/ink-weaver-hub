@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 function getConflictKey(table: string): string {
   switch (table) {
@@ -19,8 +20,8 @@ Deno.serve(async (req) => {
 
   try {
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_SERVICE_ROLE_KEY')
     )
 
     const { table, data } = await req.json()

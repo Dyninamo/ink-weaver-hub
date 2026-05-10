@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -137,8 +138,8 @@ serve(async (req) => {
     }
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = requireEnv('SUPABASE_URL');
+    const supabaseKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get authenticated user
@@ -317,6 +318,8 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    const envResp = envErrorResponse(error, corsHeaders);
+    if (envResp) return envResp;
     console.error('Unexpected error in share-via-email function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(

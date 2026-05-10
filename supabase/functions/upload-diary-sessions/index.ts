@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -8,8 +9,8 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      requireEnv("SUPABASE_URL"),
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
@@ -49,6 +50,8 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     console.error("Unexpected error:", err);
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,

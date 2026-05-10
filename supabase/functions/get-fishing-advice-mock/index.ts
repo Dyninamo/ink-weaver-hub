@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,8 +52,8 @@ serve(async (req) => {
     const locations = generateLocations(venue);
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = requireEnv('SUPABASE_URL');
+    const supabaseKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Save query to database
@@ -87,6 +88,8 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    const envResp = envErrorResponse(error, corsHeaders);
+    if (envResp) return envResp;
     console.error('Error in get-fishing-advice-mock:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
