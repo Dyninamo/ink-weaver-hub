@@ -72,8 +72,7 @@ export default function DiaryNew() {
   const [venueTypeResolved, setVenueTypeResolved] = useState(false);
   const [venueTypeManual, setVenueTypeManual] = useState(false);
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().split("T")[0]);
-  const [arrivalTime, setArrivalTime] = useState("");
-  const [fishingType, setFishingType] = useState<string>("Bank");
+  const [arrivalTime, setArrivalTime] = useState(nowHHMM());
   const [venues, setVenues] = useState<VenueOption[]>([]);
   const [venueFilter, setVenueFilter] = useState("");
   const [showWizard, setShowWizard] = useState(false);
