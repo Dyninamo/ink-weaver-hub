@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import { getPredictionParams, getVenueProfile } from "../_shared/prediction-params.ts";
 import type { PredictionParams } from "../_shared/prediction-params.ts";
+import { callAnthropic } from "../_shared/anthropic.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -417,33 +418,15 @@ Use UK fly fishing terminology. Be conversational but concrete. Don't invent ven
       let archAdvice = "";
       let archAiSuccess = false;
       try {
-        const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-        if (lovableKey) {
-          const aiRes = await fetch(
-            "https://ai.gateway.lovable.dev/v1/chat/completions",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${lovableKey}`,
-              },
-              body: JSON.stringify({
-                model: "google/gemini-2.5-flash",
-                messages: [{ role: "user", content: archPrompt }],
-                max_tokens: 1500,
-              }),
-            }
-          );
-          if (aiRes.ok) {
-            const aiData = await aiRes.json();
-            archAdvice = aiData.choices?.[0]?.message?.content ?? "";
-            if (archAdvice) archAiSuccess = true;
-          } else {
-            console.error("Archetype AI gateway error:", aiRes.status, await aiRes.text());
-          }
-        }
+        const result = await callAnthropic({
+          messages: [{ role: "user", content: archPrompt }],
+          maxTokens: 2048,
+          temperature: 0.4,
+        });
+        archAdvice = result.text ?? "";
+        if (archAdvice) archAiSuccess = true;
       } catch (e) {
-        console.error("Archetype AI call failed:", e);
+        console.error("Archetype Anthropic call failed:", e);
       }
 
       if (!archAdvice) {
@@ -1033,35 +1016,15 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
       adviceText += `[AI generation skipped — test mode]`;
     } else {
       try {
-        const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-        if (lovableKey) {
-          const aiResponse = await fetch(
-            "https://ai.gateway.lovable.dev/v1/chat/completions",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${lovableKey}`,
-              },
-              body: JSON.stringify({
-                model: "google/gemini-2.5-flash",
-                messages: [{ role: "user", content: aiPrompt }],
-                max_tokens: 2000,
-              }),
-            }
-          );
-
-          if (aiResponse.ok) {
-            const aiData = await aiResponse.json();
-            adviceText = aiData.choices?.[0]?.message?.content ?? "";
-            if (adviceText) aiSuccess = true;
-          } else {
-            const errBody = await aiResponse.text();
-            console.error("AI gateway error:", aiResponse.status, errBody);
-          }
-        }
+        const result = await callAnthropic({
+          messages: [{ role: "user", content: aiPrompt }],
+          maxTokens: 2048,
+          temperature: 0.4,
+        });
+        adviceText = result.text ?? "";
+        if (adviceText) aiSuccess = true;
       } catch (aiErr) {
-        console.error("AI call failed:", aiErr);
+        console.error("Anthropic call failed:", aiErr);
       }
 
       // Fallback if AI fails
