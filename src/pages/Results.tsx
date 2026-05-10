@@ -59,7 +59,10 @@ export default function Results() {
   const confidence = v2?.confidence;
   const season = v2?.season ?? v1?.season ?? (state as any).season ?? "";
   const reportCount = v2?.reportCount ?? v1?.reportCount ?? 0;
-
+  const isArchetype =
+    (v2 as any)?.tier === "archetype" ||
+    (v2 as any)?.confidence?.tier === "archetype";
+  const archetypeWaterType = (v2 as any)?.archetype?.water_type ?? null;
 
   async function handleOrderFlies() {
     setLoadingFlies(true);
