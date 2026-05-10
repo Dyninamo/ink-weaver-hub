@@ -62,6 +62,11 @@ Deno.serve(async (req) => {
     let waterTypeId: number | null = null;
     let waterTypeLabel: string | null = null;
 
+    const ARCHETYPE_DEFAULTS: Record<string, { water_type_id: number; label: string }> = {
+      river:      { water_type_id: 4, label: "River - Chalkstream" },
+      stillwater: { water_type_id: 2, label: "Large Reservoir" },
+    };
+
     if (body.venue_id) {
       const { data: vRow } = await adminClient
         .from("venues_new")
@@ -79,6 +84,15 @@ Deno.serve(async (req) => {
         .maybeSingle();
       waterTypeId = (vRow as any)?.water_type_id ?? null;
       waterTypeLabel = (vRow as any)?.water_types?.water_type ?? null;
+    }
+
+    // Home sessions: fall back to archetype default keyed off venue_type
+    if (waterTypeId === null && body.venue_type) {
+      const archetype = ARCHETYPE_DEFAULTS[body.venue_type];
+      if (archetype) {
+        waterTypeId = archetype.water_type_id;
+        waterTypeLabel = `${archetype.label} (archetype)`;
+      }
     }
 
     // ─── Pull top patterns for (water_type, current month) ───────────────
