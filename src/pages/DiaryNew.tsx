@@ -37,7 +37,28 @@ interface VenueOption {
   waterType: "stillwater" | "river" | null;
 }
 
-const FISHING_TYPES = ["Bank", "Boat", "Both"] as const;
+function nowHHMM(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+async function getBrowserGps(timeoutMs = 8000): Promise<{ lat: number; lon: number } | null> {
+  if (typeof navigator === "undefined" || !navigator.geolocation) return null;
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(null), timeoutMs);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(t);
+        resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+      },
+      () => {
+        clearTimeout(t);
+        resolve(null);
+      },
+      { enableHighAccuracy: true, timeout: timeoutMs - 500, maximumAge: 60_000 }
+    );
+  });
+}
 
 export default function DiaryNew() {
   const { user } = useAuth();
