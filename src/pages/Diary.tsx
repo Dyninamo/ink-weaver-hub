@@ -258,8 +258,8 @@ export default function Diary() {
           </div>
         </div>
 
-        {/* Active session banner */}
-        {activeSession && (
+        {/* Active session banner — gated on rod-has-flies + venue */}
+        {activeSession && canResume && (
           <Card className="border-diary-catch/50 bg-diary-catch/5">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -278,6 +278,45 @@ export default function Diary() {
                   onClick={() => navigate(`/diary/${activeSession.id}`)}
                 >
                   <Play className="h-4 w-4 mr-1" /> Resume
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Stale / unfinished session banner */}
+        {activeSession && !canResume && (
+          <Card className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                    Unfinished session — can't resume
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                    {activeSession.venue_name
+                      ? `${activeSession.venue_name} · ${formatDate(activeSession.session_date)}`
+                      : "Setup wasn't completed."}
+                    {" "}No rod or flies were assigned.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 min-h-[40px]"
+                  onClick={discardStaleSession}
+                >
+                  Discard
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 min-h-[40px]"
+                  onClick={() => navigate(`/diary/${activeSession.id}`)}
+                >
+                  Set up rod
                 </Button>
               </div>
             </CardContent>
