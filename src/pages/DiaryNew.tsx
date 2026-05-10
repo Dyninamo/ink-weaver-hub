@@ -12,6 +12,7 @@ import { createSession } from "@/services/diaryService";
 import SetupWizard, { type WizardCommit } from "@/components/diary/setup/SetupWizard";
 import { positionsForFlyCount } from "@/components/diary/setup/vocabulary";
 import { logEvent } from "@/services/eventLogger";
+import DiaryAutocomplete, { type AutocompleteOption } from "@/components/diary/DiaryAutocomplete";
 
 /**
  * Map descriptive water_types.water_type values onto the PWA's binary
@@ -74,7 +75,7 @@ export default function DiaryNew() {
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().split("T")[0]);
   const [arrivalTime, setArrivalTime] = useState(nowHHMM());
   const [venues, setVenues] = useState<VenueOption[]>([]);
-  const [venueFilter, setVenueFilter] = useState("");
+  
   const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
@@ -149,9 +150,16 @@ export default function DiaryNew() {
   const venueWaterType = venueType;
 
   const realVenues = venues.filter((v) => v.name !== "Home");
-  const filteredRealVenues = venueFilter.trim()
-    ? realVenues.filter((v) => v.name.toLowerCase().includes(venueFilter.toLowerCase()))
-    : realVenues;
+
+  const venueOptions: AutocompleteOption[] = [
+    { value: "Home", label: "Home (practice / no real venue)", category: "Practice" },
+    ...realVenues.map((v) => ({
+      value: v.name,
+      label: v.name,
+      category: "Venues",
+      meta: v.waterType ?? undefined,
+    })),
+  ];
 
   const canBuildRig = !!venue.trim() && (venue !== "Home" || venueTypeManual);
 
@@ -333,32 +341,18 @@ export default function DiaryNew() {
           <h1 className="text-xl font-semibold font-diary">Session basics</h1>
         </div>
 
-        <div>
-          <Label>Venue *</Label>
-          <Input
-            type="text"
-            placeholder="Filter venues…"
-            value={venueFilter}
-            onChange={(e) => setVenueFilter(e.target.value)}
-            className="mt-1.5"
-          />
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-2"
-            value={venue}
-            onChange={(e) => {
-              setVenue(e.target.value);
-              setVenueTypeManual(false); // new venue → re-enable auto-detect
-            }}
-          >
-            <option value="">Select venue…</option>
-            <optgroup label="Practice">
-              <option value="Home">Home (practice / no real venue)</option>
-            </optgroup>
-            <optgroup label="Venues">
-              {filteredRealVenues.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
-            </optgroup>
-          </select>
-        </div>
+        <DiaryAutocomplete
+          label="Venue"
+          value={venue || null}
+          options={venueOptions}
+          onChange={(v) => {
+            setVenue(v);
+            setVenueTypeManual(false);
+          }}
+          placeholder="Search venues or pick Home…"
+          required
+          showAllLabel="Show all venues"
+        />
 
         {venue && (
           <div>
