@@ -4,6 +4,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-first root font-size — shrinks Tailwind rem-based utilities on phone
+   while still tracking user font-size preference (87.5% of preference on mobile,
+   100% on desktop). Added 2026-05-10, prompt 159. */
+html {
+  font-size: 87.5%;
+}
+@media (min-width: 768px) {
+  html {
+    font-size: 100%;
+  }
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
