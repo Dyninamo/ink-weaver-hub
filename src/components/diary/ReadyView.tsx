@@ -1,4 +1,4 @@
-import { Fish, Circle, RefreshCw, Clock, ChevronRight } from "lucide-react";
+import { Fish, Circle, RefreshCw, Clock, ChevronRight, Sparkles } from "lucide-react";
 import type { CurrentSetup, FishingSession, SessionEvent } from "@/services/diaryService";
 
 interface ReadyViewProps {
@@ -10,6 +10,7 @@ interface ReadyViewProps {
   onBlank: () => void;
   onChange: () => void;
   onEndSession: () => void;
+  onAskGhillie: () => void;
 }
 
 function elapsed(startIso: string | null | undefined): string {
