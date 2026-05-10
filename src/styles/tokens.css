@@ -129,3 +129,20 @@
   --shadow-pressed: 0 1px 0 rgba(0, 0, 0, 0.35) inset;
   --shadow-float: 0 8px 24px -8px rgba(0, 0, 0, 0.8);
 }
+
+/* Desktop bumps the type scale back to roomy (added 2026-05-10, prompt 159). */
+@media (min-width: 768px) {
+  :root {
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-base: 15px;
+    --font-size-md: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 22px;
+    --font-size-2xl: 26px;
+    --font-size-3xl: 30px;
+    --font-size-4xl: 34px;
+    --font-size-5xl: 38px;
+    --font-size-score: 96px;
+  }
+}
