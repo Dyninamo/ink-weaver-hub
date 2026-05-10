@@ -169,7 +169,7 @@ export default function ShareView() {
       </header>
 
       {/* Content */}
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-5 md:py-8 max-w-4xl">
         <Card>
           <CardHeader className="space-y-4">
             <div className="flex items-start justify-between">
@@ -223,7 +223,7 @@ export default function ShareView() {
             )}
           </CardHeader>
 
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 md:space-y-6">
             {/* Advice Section */}
             <div className="relative">
               <h3 className="text-lg font-semibold mb-3">Fishing Advice</h3>
@@ -306,7 +306,7 @@ export default function ShareView() {
         </Card>
 
         {/* Footer */}
-        <div className="text-center mt-8 text-sm text-muted-foreground">
+        <div className="text-center mt-6 md:mt-8 text-sm text-muted-foreground">
           <p>Powered by Fishing Intelligence Advisor</p>
         </div>
       </main>
