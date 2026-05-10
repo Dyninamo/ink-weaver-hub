@@ -162,6 +162,10 @@ export default function DiaryNew() {
       return;
     }
 
+    // Best-effort GPS capture. Browser prompt fires on first call.
+    const gps = await getBrowserGps();
+    logEvent("diary.gps_capture", { granted: !!gps });
+
     let startTime: string | null = null;
     if (arrivalTime) startTime = new Date(`${sessionDate}T${arrivalTime}:00`).toISOString();
 
@@ -178,7 +182,8 @@ export default function DiaryNew() {
         venue_type: venueType,
         session_date: sessionDate,
         start_time: startTime,
-        fishing_type: fishingType,
+        gps_start_lat: gps?.lat ?? null,
+        gps_start_lon: gps?.lon ?? null,
         plan: commit.plan,
         rods: 1,
         keep_limit: commit.keepLimit,
