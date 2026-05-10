@@ -121,9 +121,14 @@ Deno.serve(async (req) => {
     ctxLines.push(`Month: ${month}`);
 
     const groundedListText = groundedFlies.length > 0
-      ? `\n\nGROUND TRUTH — top patterns for ${waterTypeLabel ?? "this water"} in ${month}, ranked by evidence:\n${
-          groundedFlies.map((f, i) => `${i + 1}. ${f.pattern_name}`).join("\n")
-        }\n\nUse these as your PRIMARY recommendations. The angler wants actionable tactical advice (size, presentation, line, retrieve), not invented fly names.`
+      ? `\n\nGROUND TRUTH — top patterns for ${waterTypeLabel ?? "this water"} in ${month}, ranked by curated importance:\n${
+          groundedFlies.map((f) => {
+            const styleNote = f.fly_style ? ` (${f.fly_style})` : "";
+            const importanceNote = f.importance === "secondary" ? " — secondary" : "";
+            const richNote = f.notes ? `\n   Note: ${f.notes}` : "";
+            return `${f.rank ?? "?"}. ${f.fly_name}${styleNote}${importanceNote}${richNote}`;
+          }).join("\n")
+        }\n\nUse these as your PRIMARY recommendations, especially the top-ranked ones. Lean on the rank-1 pattern unless the angler's question explicitly steers elsewhere. The angler wants actionable tactical advice (size, presentation, line, retrieve), not invented fly names.`
       : "";
 
     const systemPrompt = `You are "the Ghillie" — a calm, plain-spoken UK fly-fishing guide. Reply with two parts only:
