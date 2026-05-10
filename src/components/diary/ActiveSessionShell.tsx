@@ -31,10 +31,11 @@ import {
 
 export type SessionPhase =
   | "ready" | "catch" | "blank" | "lost" | "change" | "rod_change"
+  | "ask_ghillie"
   | "end_confirm" | "end_syncing" | "end_done";
 
 const PHASES_WITH_PILL = new Set<SessionPhase>([
-  "ready", "catch", "blank", "lost", "change", "rod_change",
+  "ready", "catch", "blank", "lost", "change", "rod_change", "ask_ghillie",
 ]);
 
 interface Props {
