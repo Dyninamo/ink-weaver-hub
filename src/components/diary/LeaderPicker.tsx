@@ -31,6 +31,10 @@ const LB_TO_X: Record<number, string> = {
 
 const mToFt = (m: number) => Math.round(m * 3.2808 * 10) / 10;
 const ftToM = (ft: number) => Math.round((ft / 3.2808) * 10) / 10;
+const nearest = (target: number, options: number[]): number =>
+  options.reduce((best, n) =>
+    Math.abs(n - target) < Math.abs(best - target) ? n : best
+  );
 
 interface Props {
   value: LeaderValue;
@@ -102,8 +106,8 @@ export default function LeaderPicker({ value, onChange, prefillUserId }: Props) 
     value.length_ft == null
       ? null
       : lengthUnit === "ft"
-        ? Math.round(value.length_ft)
-        : Math.round(ftToM(value.length_ft));
+        ? nearest(value.length_ft, FT_OPTIONS)
+        : nearest(ftToM(value.length_ft), M_OPTIONS);
 
   const strengthOptions = LB_OPTIONS.map((lb) => ({
     value: lb,
@@ -154,7 +158,9 @@ export default function LeaderPicker({ value, onChange, prefillUserId }: Props) 
           options={lengthOptions}
           value={lengthDialValue}
           onChange={(v) =>
-            update({ length_ft: lengthUnit === "ft" ? v : Math.round(mToFt(v) * 10) / 10 })
+            update({
+              length_ft: lengthUnit === "ft" ? v : nearest(mToFt(v), FT_OPTIONS),
+            })
           }
           ariaLabel="Leader length"
           ariaValueText={(v) => (lengthUnit === "ft" ? `${v} feet` : `${v} metres`)}
