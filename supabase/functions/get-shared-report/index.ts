@@ -173,6 +173,8 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
+    const envResp = envErrorResponse(error, corsHeaders);
+    if (envResp) return envResp;
     console.error('Error in get-shared-report:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),

@@ -61,6 +61,8 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (e: unknown) {
+    const envResp = envErrorResponse(e, corsHeaders);
+    if (envResp) return envResp;
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
