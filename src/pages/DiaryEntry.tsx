@@ -54,58 +54,26 @@ export default function DiaryEntry() {
     flies_on_cast: null, spot: null, depth_zone: null,
   });
 
-  // Carry-forward state for catch modal
+  // Carry-forward state — only the active shell consumes lastSpecies; kept here
+  // because it's derived from completed events too (cheap).
   const [lastSpecies, setLastSpecies] = useState<string | null>(null);
-  const [lastRigPosition, setLastRigPosition] = useState<string | null>(null);
-  const [lastFlySize, setLastFlySize] = useState<number | null>(null);
 
-  // Modal state
-  const [catchOpen, setCatchOpen] = useState(false);
-  const [blankOpen, setBlankOpen] = useState(false);
-  const [lostOpen, setLostOpen] = useState(false);
-  const [changeOpen, setChangeOpen] = useState(false);
-  const [changeFlyOpen, setChangeFlyOpen] = useState(false);
-  const [whatPickerOpen, setWhatPickerOpen] = useState(false);
-  const [lineCascadeOpen, setLineCascadeOpen] = useState(false);
-  const [rodPickerOpen, setRodPickerOpen] = useState(false);
+  // Active-only modal state, online tracking, latestWeather, end-session flow,
+  // outreach state, justEnded — all stripped (prompt 147 §2). Active sessions
+  // bail to ActiveSessionShell before any of that JSX renders.
+
   const [activeRodIndex, setActiveRodIndex] = useState<number>(1);
-  // 3-phase end-session flow: confirm → syncing → ended (null = not in flow)
-  type EndPhase = "confirm" | "syncing" | "ended";
-  const [endPhase, setEndPhase] = useState<EndPhase | null>(null);
-  const [implicitChangePrompt, setImplicitChangePrompt] = useState<{
-    newSetup: CurrentSetup;
-  } | null>(null);
-
-  // Online/offline awareness for the syncing screen
-  const [isOnline, setIsOnline] = useState<boolean>(() =>
-    typeof navigator !== "undefined" ? navigator.onLine : true,
-  );
-  useEffect(() => {
-    const on = () => setIsOnline(true);
-    const off = () => setIsOnline(false);
-    window.addEventListener("online", on);
-    window.addEventListener("offline", off);
-    return () => {
-      window.removeEventListener("online", on);
-      window.removeEventListener("offline", off);
-    };
-  }, []);
+  const [latestWeather, setLatestWeather] = useState<WeatherSnapshot | null>(null);
+  const [isOnline] = useState<boolean>(true);
 
   // Expanded events
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
-  const [latestWeather, setLatestWeather] = useState<WeatherSnapshot | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [notableOpen, setNotableOpen] = useState(false);
   const [notablePrefill, setNotablePrefill] = useState<string | null>(null);
   const [venueId, setVenueId] = useState<string | null>(null);
-  const [outreachOpen, setOutreachOpen] = useState(false);
-  const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
-  const outreachChecked = useRef(false);
 
-  // After ending an active session, show the editorial "wrap" screen.
-  // Distinct from `isActive=false` for older completed sessions loaded directly.
-  const [justEnded, setJustEnded] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
