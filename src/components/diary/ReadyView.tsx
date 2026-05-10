@@ -11,6 +11,7 @@ interface ReadyViewProps {
   onChange: () => void;
   onEndSession: () => void;
   onAskGhillie: () => void;
+  onVenueGreetingTap?: () => void;
 }
 
 function elapsed(startIso: string | null | undefined): string {
@@ -100,6 +101,7 @@ export default function ReadyView({
   onChange,
   onEndSession,
   onAskGhillie,
+  onVenueGreetingTap,
 }: ReadyViewProps) {
   const catchCount = events.filter((e) => e.event_type === "catch").length;
   const lostCount = events.filter((e) => e.event_type === "got_away").length;
@@ -159,7 +161,21 @@ export default function ReadyView({
 
   return (
     <div className="almanack-surface" style={{ paddingBottom: 96 }}>
-      {session.venue_name && <div className="venue-greeting">at {session.venue_name}</div>}
+      {session.venue_name && (
+        onVenueGreetingTap ? (
+          <button
+            type="button"
+            onClick={onVenueGreetingTap}
+            className="venue-greeting inline-flex items-center gap-1 hover:underline"
+            aria-label={`Switch venue (currently ${session.venue_name})`}
+          >
+            at <span className="font-medium">{session.venue_name}</span>
+            <ChevronRight className="h-3 w-3 opacity-60" />
+          </button>
+        ) : (
+          <div className="venue-greeting">at {session.venue_name}</div>
+        )
+      )}
 
       {/* Hero */}
       <div className="ready-hero">
