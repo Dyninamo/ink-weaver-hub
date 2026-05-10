@@ -78,8 +78,11 @@ export default function CatchFlow({
   const [localFlies, setLocalFlies] = useState<FliesOnCast>({});
   // Track corrections for change-event emission on save
   const [flyCorrections, setFlyCorrections] = useState<
-    { position: string; from: FlyOnCast | null; to: FlyOnCast; reason: string }[]
+    { id: string; position: string; from: FlyOnCast | null; to: FlyOnCast; reason: string }[]
   >([]);
+  // Idempotent retry tracking (prompt 166)
+  const [persistedCorrectionIds, setPersistedCorrectionIds] = useState<Set<string>>(new Set());
+  const [rodPersisted, setRodPersisted] = useState(false);
 
   // Form state
   const [position, setPosition] = useState<string>("point");
@@ -190,6 +193,7 @@ export default function CatchFlow({
     setFlyCorrections((arr) => [
       ...arr.filter((c) => c.position !== pos),
       {
+        id: crypto.randomUUID(),
         position: pos,
         from: prev,
         to: newEntry,
@@ -204,30 +208,8 @@ export default function CatchFlow({
     if (!rod || !canSave) return;
     setSaving(true);
     try {
-      // 1. Emit change events for any fly corrections (write each, then update rod row).
-      for (const c of flyCorrections) {
-        await addEvent({
-          session_id: sessionId,
-          event_type: "change",
-          event_time: new Date().toISOString(),
-          change_from: c.from ? { fly: c.from } : { fly: null },
-          change_to: { fly: c.to },
-          change_reason: c.reason,
-          rig_position: c.position,
-          fly_pattern: c.to.pattern,
-          fly_size: c.to.size ?? null,
-        } as any);
-      }
-
-      // 2. Update session_rods.flies_on_cast (only if any corrections happened).
-      if (flyCorrections.length > 0) {
-        await supabase
-          .from("session_rods" as any)
-          .update({ flies_on_cast: localFlies as any })
-          .eq("id", rod.id);
-      }
-
-      // 3. Build weight integers from decimal lb input.
+      // 1. Build weight/length payload first — fail fast on bad input, before
+      //    touching the DB. (prompt 166)
       let weight_lb: number | null = null;
       let weight_oz: number | null = null;
       let length_inches: number | null = null;
@@ -237,7 +219,6 @@ export default function CatchFlow({
         if (!isNaN(f) && f > 0) {
           weight_lb = Math.floor(f);
           weight_oz = Math.round((f - weight_lb) * 16);
-          // 16-oz overflow guard (prompt 149 §4): 2.99 lb → 3 lb 0 oz, not 2 lb 16 oz.
           if (weight_oz >= 16) { weight_lb += 1; weight_oz = 0; }
           weight_display = weight_oz === 0 ? `${weight_lb} lb` : `${weight_lb} lb ${weight_oz} oz`;
         }
@@ -249,7 +230,8 @@ export default function CatchFlow({
         }
       }
 
-      // 4. Write the catch row.
+      // 2. Write the catch row FIRST. If it fails, no journal/rod state has
+      //    drifted — user can retry cleanly.
       await addEvent({
         session_id: sessionId,
         event_type: "catch",
@@ -273,9 +255,48 @@ export default function CatchFlow({
         event_wind_dir: latestWeather?.wind_dir ?? null,
         event_pressure: latestWeather?.pressure ?? null,
         event_conditions: latestWeather?.conditions ?? null,
-        // kept_released is text in the schema (prompt 142 §7)
         kept_released: outcome,
       } as any);
+
+      // 3. Write change events for fly corrections (best-effort, idempotent).
+      const newlyPersisted = new Set<string>(persistedCorrectionIds);
+      for (const c of flyCorrections) {
+        if (newlyPersisted.has(c.id)) continue;
+        try {
+          await addEvent({
+            session_id: sessionId,
+            event_type: "change",
+            event_time: new Date().toISOString(),
+            change_from: c.from ? { fly: c.from } : { fly: null },
+            change_to: { fly: c.to },
+            change_reason: c.reason,
+            rig_position: c.position,
+            fly_pattern: c.to.pattern,
+            fly_size: c.to.size ?? null,
+          } as any);
+          newlyPersisted.add(c.id);
+        } catch (changeErr: any) {
+          logEvent("error", {
+            context: "catch_correction_journal",
+            message: changeErr?.message ?? String(changeErr),
+          }, sessionId);
+        }
+      }
+      setPersistedCorrectionIds(newlyPersisted);
+
+      // 4. Update session_rods.flies_on_cast LAST. Non-blocking on failure.
+      if (flyCorrections.length > 0 && !rodPersisted) {
+        const { error: rodErr } = await supabase
+          .from("session_rods" as any)
+          .update({ flies_on_cast: localFlies as any })
+          .eq("id", rod.id);
+        if (rodErr) {
+          logEvent("error", { context: "catch_rod_update", message: rodErr.message }, sessionId);
+          toast.warning("Catch saved, but rod state didn't update — fix in Change next time.");
+        } else {
+          setRodPersisted(true);
+        }
+      }
 
       logEvent("catch.saved", {
         session_id: sessionId,
@@ -290,6 +311,7 @@ export default function CatchFlow({
         depth_zone: depthZone,
         outcome,
         fly_corrections: flyCorrections.length,
+        persisted_corrections: newlyPersisted.size,
       }, sessionId);
       toast.success("Catch saved");
       onSaved();
