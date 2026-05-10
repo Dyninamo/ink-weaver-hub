@@ -118,7 +118,7 @@ export default function Auth() {
   return (
     <div className="auth-root">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-diary font-semibold tracking-tight text-foreground">
+        <h1 className="text-2xl md:text-3xl font-diary font-semibold tracking-tight text-foreground">
           It's Catching!
         </h1>
         <div

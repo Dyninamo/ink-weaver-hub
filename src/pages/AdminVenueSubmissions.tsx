@@ -120,7 +120,7 @@ export default function AdminVenueSubmissions() {
         <Link to="/admin/upload">
           <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
         </Link>
-        <h1 className="text-2xl font-bold text-foreground">Venue Submissions</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground">Venue Submissions</h1>
       </div>
 
       {/* Admin nav */}
@@ -146,7 +146,7 @@ export default function AdminVenueSubmissions() {
           <Card key={s.label}>
             <CardContent className="p-4 text-center">
               <p className="text-sm text-muted-foreground">{s.label}</p>
-              <p className="text-3xl font-bold text-foreground">{s.value}</p>
+              <p className="text-2xl md:text-3xl font-bold text-foreground">{s.value}</p>
             </CardContent>
           </Card>
         ))}

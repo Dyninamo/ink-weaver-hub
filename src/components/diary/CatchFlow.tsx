@@ -488,7 +488,7 @@ export default function CatchFlow({
                   placeholder="—"
                   value={weightLbDecimal}
                   onChange={(e) => setWeightLbDecimal(e.target.value)}
-                  className="flex-1 h-12 rounded-md border border-input bg-background px-3 text-2xl font-mono text-center"
+                  className="flex-1 h-12 rounded-md border border-input bg-background px-3 text-xl md:text-2xl font-mono text-center"
                 />
                 <span className="text-base text-muted-foreground">lb</span>
               </div>
@@ -502,7 +502,7 @@ export default function CatchFlow({
                   placeholder="—"
                   value={lengthIn}
                   onChange={(e) => setLengthIn(e.target.value)}
-                  className="flex-1 h-12 rounded-md border border-input bg-background px-3 text-2xl font-mono text-center"
+                  className="flex-1 h-12 rounded-md border border-input bg-background px-3 text-xl md:text-2xl font-mono text-center"
                 />
                 <span className="text-base text-muted-foreground">in</span>
               </div>

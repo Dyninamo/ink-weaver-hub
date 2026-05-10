@@ -254,7 +254,7 @@ export default function Results() {
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                 Predicted Rod Average
               </p>
-              <p className="text-4xl font-mono font-bold text-primary">
+              <p className="text-3xl md:text-4xl font-mono font-bold text-primary">
                 {typeof prediction.rod_average.predicted === 'number'
                   ? prediction.rod_average.predicted.toFixed(1)
                   : prediction.rod_average.predicted}

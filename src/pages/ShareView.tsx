@@ -174,7 +174,7 @@ export default function ShareView() {
           <CardHeader className="space-y-4">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <CardTitle className="text-2xl flex items-center gap-2">
+                <CardTitle className="text-xl md:text-2xl flex items-center gap-2">
                   <MapPin className="h-6 w-6 text-primary" />
                   {report.venue}
                 </CardTitle>
