@@ -57,27 +57,18 @@ type TabDef = {
 
 const TABS: TabDef[] = [
   {
-    key: "session",
-    label: "Session",
-    // Branded substitute for "rod" (asset not in /public/icons/ui yet)
-    icon: "fly",
-    to: "/diary/new",
-    isActive: (p) => p === "/diary/new" || /^\/diary\/[^/]+$/.test(p) && p !== "/diary/new",
+    key: "diary",
+    label: "Diary",
+    icon: "clock",
+    to: "/diary",
+    isActive: (p) => p === "/diary" || p === "/diary/new" || /^\/diary(\/|$)/.test(p),
   },
   {
     key: "map",
     label: "Map",
-    // Branded substitute for "location"
     icon: "venue",
     to: "/map",
     isActive: (p) => p === "/map" || p.startsWith("/venue/"),
-  },
-  {
-    key: "timeline",
-    label: "Timeline",
-    icon: "clock",
-    to: "/diary",
-    isActive: (p) => p === "/diary",
   },
   {
     key: "queries",
@@ -86,10 +77,25 @@ const TABS: TabDef[] = [
     to: "/queries",
     isActive: (p) => p === "/queries" || p.startsWith("/queries/"),
   },
+  {
+    key: "settings",
+    label: "Settings",
+    icon: "fly",
+    to: "/settings",
+    isActive: (p) => p === "/settings" || p.startsWith("/settings/"),
+  },
 ];
+
+// Routes (or route patterns) where the persistent tab bar should be hidden.
+// Active-session detail pages (/diary/:id, but not /diary/new) get the EndPill
+// instead — tab-hopping mid-session is intentionally suppressed.
+function shouldHideTabBar(pathname: string): boolean {
+  return /^\/diary\/(?!new$|settings(\/|$))[^/]+$/.test(pathname);
+}
 
 export function AppShellTabBar() {
   const { pathname } = useLocation();
+  if (shouldHideTabBar(pathname)) return null;
   return (
     <nav className="app-shell-tabbar" aria-label="Primary">
       {TABS.map((tab) => {
