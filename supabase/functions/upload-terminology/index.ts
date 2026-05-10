@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 const CONFLICT_COLUMNS: Record<string, string> = {
   flies: 'pattern_name',
@@ -33,8 +34,8 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_SERVICE_ROLE_KEY')
     )
 
     if (clear_first) {
@@ -57,6 +58,8 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err: unknown) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     return new Response(
       JSON.stringify({ success: false, error: err instanceof Error ? err.message : String(err) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

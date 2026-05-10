@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,8 +19,8 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_SERVICE_ROLE_KEY')
     );
 
     const work = async () => {
@@ -30,8 +31,8 @@ serve(async (req) => {
 
       // We'll use the supabase client to query two utility views instead.
       // Since we can't run arbitrary SQL via PostgREST, we fetch from the REST API using raw SQL endpoint.
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabaseUrl = requireEnv('SUPABASE_URL');
+      const serviceKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
 
       // Helper to run raw SQL via Supabase's pg endpoint
       const runSQL = async (sql: string): Promise<any[]> => {
@@ -163,6 +164,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     if (err instanceof Error && err.message === '__TIMEOUT__') {
       return new Response(JSON.stringify({
         tables: [],
