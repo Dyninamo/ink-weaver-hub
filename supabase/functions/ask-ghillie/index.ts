@@ -6,6 +6,7 @@ interface AskBody {
   surface?: "queries_tab" | "pre_session" | "mid_session" | "venue_detail";
   venue_id?: string | null;
   venue_name?: string | null;
+  venue_type?: "stillwater" | "river" | null;
   session_id?: string | null;
   weather_snapshot?: Record<string, unknown> | null;
 }
