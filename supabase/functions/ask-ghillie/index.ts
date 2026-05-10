@@ -206,6 +206,12 @@ Output ONLY this exact JSON shape (no markdown):
         confidence,
         model,
         cached_until: new Date(Date.now() + 1000 * 60 * 60 * 6).toISOString(),
+        grounding: groundedFlies.length > 0 ? {
+          water_type_id: waterTypeId,
+          water_type: waterTypeLabel,
+          month: monthIdx,
+          fly_count: groundedFlies.length,
+        } : null,
       })
       .select()
       .single();
