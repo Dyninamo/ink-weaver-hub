@@ -17,6 +17,7 @@ import EndSessionConfirm from "./EndSessionConfirm";
 import EndSessionSyncing from "./EndSessionSyncing";
 import EndSessionView from "./EndSessionView";
 import VenueOutreachDialog from "./VenueOutreachDialog";
+import AskGhillieOverlay from "./AskGhillieOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import {
