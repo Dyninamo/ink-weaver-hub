@@ -18,6 +18,7 @@ import EndSessionSyncing from "./EndSessionSyncing";
 import EndSessionView from "./EndSessionView";
 import VenueOutreachDialog from "./VenueOutreachDialog";
 import AskGhillieOverlay from "./AskGhillieOverlay";
+import VenuePickerOverlay from "./VenuePickerOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import {
@@ -31,11 +32,11 @@ import {
 
 export type SessionPhase =
   | "ready" | "catch" | "blank" | "lost" | "change" | "rod_change"
-  | "ask_ghillie"
+  | "ask_ghillie" | "venue_switch"
   | "end_confirm" | "end_syncing" | "end_done";
 
 const PHASES_WITH_PILL = new Set<SessionPhase>([
-  "ready", "catch", "blank", "lost", "change", "rod_change", "ask_ghillie",
+  "ready", "catch", "blank", "lost", "change", "rod_change", "ask_ghillie", "venue_switch",
 ]);
 
 interface Props {
@@ -143,8 +144,21 @@ export default function ActiveSessionShell({
           onChange={() => setPhase("change")}
           onEndSession={() => setPhase("end_confirm")}
           onAskGhillie={() => setPhase("ask_ghillie")}
+          onVenueGreetingTap={() => setPhase("venue_switch")}
         />
       </>
+    );
+  } else if (phase === "venue_switch") {
+    body = (
+      <VenuePickerOverlay
+        sessionId={sessionId}
+        currentVenueName={session.venue_name}
+        onClose={() => setPhase("ready")}
+        onSwitched={() => {
+          setPhase("ready");
+          void reloadData();
+        }}
+      />
     );
   } else if (phase === "ask_ghillie") {
     body = (
