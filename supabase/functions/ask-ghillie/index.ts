@@ -49,9 +49,57 @@ Deno.serve(async (req) => {
 
     const surface = body.surface ?? "queries_tab";
 
+    // ─── Resolve venue → water_type_id (prompt 152) ──────────────────────
+    // Use service-role client for the lookup so RLS doesn't block (venues_new
+    // and water_types are public-read but fly_water_type_monthly may be
+    // service-only). Auth has already been validated above.
+    const adminClient = createClient(
+      SUPABASE_URL,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? SUPABASE_ANON_KEY,
+    );
+
+    let waterTypeId: number | null = null;
+    let waterTypeLabel: string | null = null;
+
+    if (body.venue_id) {
+      const { data: vRow } = await adminClient
+        .from("venues_new")
+        .select("water_type_id, water_types(water_type)")
+        .eq("venue_id", body.venue_id)
+        .maybeSingle();
+      waterTypeId = (vRow as any)?.water_type_id ?? null;
+      waterTypeLabel = (vRow as any)?.water_types?.water_type ?? null;
+    } else if (body.venue_name && body.venue_name !== "Home") {
+      const { data: vRow } = await adminClient
+        .from("venues_new")
+        .select("water_type_id, water_types(water_type)")
+        .ilike("name", body.venue_name)
+        .limit(1)
+        .maybeSingle();
+      waterTypeId = (vRow as any)?.water_type_id ?? null;
+      waterTypeLabel = (vRow as any)?.water_types?.water_type ?? null;
+    }
+
+    // ─── Pull top patterns for (water_type, current month) ───────────────
+    const monthIdx = new Date().getMonth() + 1; // 1..12
+    let groundedFlies: { pattern_name: string; suitability: string; evidence_count: number }[] = [];
+
+    if (waterTypeId) {
+      const { data: flies } = await adminClient
+        .from("fly_water_type_monthly")
+        .select("pattern_name, suitability, evidence_count")
+        .eq("water_type_id", waterTypeId)
+        .eq("month", monthIdx)
+        .eq("suitability", "main")
+        .order("evidence_count", { ascending: false })
+        .limit(15);
+      groundedFlies = (flies as any[]) ?? [];
+    }
+
     // Build a compact context block from weather + venue
     const ctxLines: string[] = [];
     if (body.venue_name) ctxLines.push(`Venue: ${body.venue_name}`);
+    if (waterTypeLabel) ctxLines.push(`Water type: ${waterTypeLabel}`);
     if (body.weather_snapshot) {
       const w = body.weather_snapshot as Record<string, unknown>;
       const bits: string[] = [];
@@ -65,13 +113,21 @@ Deno.serve(async (req) => {
     const month = new Date().toLocaleString("en-GB", { month: "long" });
     ctxLines.push(`Month: ${month}`);
 
+    const groundedListText = groundedFlies.length > 0
+      ? `\n\nGROUND TRUTH — top patterns for ${waterTypeLabel ?? "this water"} in ${month}, ranked by evidence:\n${
+          groundedFlies.map((f, i) => `${i + 1}. ${f.pattern_name}`).join("\n")
+        }\n\nUse these as your PRIMARY recommendations. The angler wants actionable tactical advice (size, presentation, line, retrieve), not invented fly names.`
+      : "";
+
     const systemPrompt = `You are "the Ghillie" — a calm, plain-spoken UK fly-fishing guide. Reply with two parts only:
 
 1) NARRATIVE — 2-4 short sentences of practical advice. No fluff, no greetings.
 2) CHIPS — 2-5 actionable chips as a JSON array. Each chip:
    { "category": "swap_in" | "change_line" | "retrieve" | "spot" | "method",
      "label": "<short imperative, max 5 words>",
-     "detail": "<optional one-line reason, <80 chars>" }
+     "detail": "<optional one-line reason, <80 chars>" }${groundedListText}
+
+When recommending flies, draw FROM THE GROUND TRUTH LIST above where possible. If the question is genuinely off-topic from the ground truth (e.g. about presentation, knots, not patterns), you can answer normally without citing flies.
 
 Output ONLY this exact JSON shape (no markdown):
 {"narrative": "...", "chips": [...], "confidence": "high"|"medium"|"low"}`;
