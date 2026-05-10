@@ -1163,6 +1163,8 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     console.error("get-ai-advice-v2 error:", err);
     return new Response(
       JSON.stringify({
