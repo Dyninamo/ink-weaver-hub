@@ -39,6 +39,18 @@ interface SimilarVenue {
 
 const UK_POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
 
+const RESERVED_NAMES = new Set([
+  "home", "practice", "office", "garden", "test", "tbc", "n/a", "none",
+  "private", "unknown", "anywhere", "everywhere",
+]);
+
+function isReservedName(name: string): boolean {
+  const normalised = name.trim().toLowerCase();
+  if (RESERVED_NAMES.has(normalised)) return true;
+  if (normalised.length < 3) return true;
+  return false;
+}
+
 function stringSimilarity(a: string, b: string): boolean {
   const al = a.toLowerCase();
   const bl = b.toLowerCase();
@@ -206,6 +218,13 @@ export default function VenueSubmissionForm({
 
   const handleSubmit = async () => {
     if (!user || !canSubmit || !waterType) return;
+    if (isReservedName(name)) {
+      toast.error(
+        "That name is reserved. Use the Dashboard's built-in Home option for practice " +
+        "sessions, or pick a more specific venue name."
+      );
+      return;
+    }
     setSubmitting(true);
 
     try {

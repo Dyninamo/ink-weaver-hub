@@ -5,9 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -15,30 +12,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  ArrowLeft, Fish, Circle, RefreshCw, Clock, Star, MapPin,
-  Thermometer, Wind, StopCircle, Trash2, Share2, Trophy,
+  ArrowLeft, Fish, Circle, RefreshCw, Star, MapPin,
+  Thermometer, Wind, Trash2, Share2, Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-// Active-session phases now live in ActiveSessionShell (prompt 143). The
-// legacy modal mounts (CatchModal, BlankModal, LostModal, ChangeWhatPicker,
-// ChangeFlyFlow, ChangeSetupModal, LineCascadePrompt, RodPickerSheet,
-// EndSessionConfirm/Syncing/View) are no longer mounted here.
+// Active-session phases now live in ActiveSessionShell (prompt 143). Active-only
+// modal state, handlers, and FAB JSX have been stripped (prompt 147 §2).
 import ActiveSessionShell from "@/components/diary/ActiveSessionShell";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
 import NotableFishDialog from "@/components/social/NotableFishDialog";
 import { supabase } from "@/integrations/supabase/client";
-import EndSessionView from "@/components/diary/EndSessionView";
 import {
   getSession,
   getSessionEvents,
-  endSession,
   deleteSession,
   calculateSessionStats,
-  formatWeight,
   formatFliesOnCast,
   normaliseFliesOnCast,
-  pollSessionWeather,
   type FishingSession,
   type SessionEvent,
   type CurrentSetup,
@@ -64,58 +55,26 @@ export default function DiaryEntry() {
     flies_on_cast: null, spot: null, depth_zone: null,
   });
 
-  // Carry-forward state for catch modal
+  // Carry-forward state — only the active shell consumes lastSpecies; kept here
+  // because it's derived from completed events too (cheap).
   const [lastSpecies, setLastSpecies] = useState<string | null>(null);
-  const [lastRigPosition, setLastRigPosition] = useState<string | null>(null);
-  const [lastFlySize, setLastFlySize] = useState<number | null>(null);
 
-  // Modal state
-  const [catchOpen, setCatchOpen] = useState(false);
-  const [blankOpen, setBlankOpen] = useState(false);
-  const [lostOpen, setLostOpen] = useState(false);
-  const [changeOpen, setChangeOpen] = useState(false);
-  const [changeFlyOpen, setChangeFlyOpen] = useState(false);
-  const [whatPickerOpen, setWhatPickerOpen] = useState(false);
-  const [lineCascadeOpen, setLineCascadeOpen] = useState(false);
-  const [rodPickerOpen, setRodPickerOpen] = useState(false);
+  // Active-only modal state, online tracking, latestWeather, end-session flow,
+  // outreach state, justEnded — all stripped (prompt 147 §2). Active sessions
+  // bail to ActiveSessionShell before any of that JSX renders.
+
   const [activeRodIndex, setActiveRodIndex] = useState<number>(1);
-  // 3-phase end-session flow: confirm → syncing → ended (null = not in flow)
-  type EndPhase = "confirm" | "syncing" | "ended";
-  const [endPhase, setEndPhase] = useState<EndPhase | null>(null);
-  const [implicitChangePrompt, setImplicitChangePrompt] = useState<{
-    newSetup: CurrentSetup;
-  } | null>(null);
-
-  // Online/offline awareness for the syncing screen
-  const [isOnline, setIsOnline] = useState<boolean>(() =>
-    typeof navigator !== "undefined" ? navigator.onLine : true,
-  );
-  useEffect(() => {
-    const on = () => setIsOnline(true);
-    const off = () => setIsOnline(false);
-    window.addEventListener("online", on);
-    window.addEventListener("offline", off);
-    return () => {
-      window.removeEventListener("online", on);
-      window.removeEventListener("offline", off);
-    };
-  }, []);
+  const [latestWeather, setLatestWeather] = useState<WeatherSnapshot | null>(null);
+  const [isOnline] = useState<boolean>(true);
 
   // Expanded events
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
-  const [latestWeather, setLatestWeather] = useState<WeatherSnapshot | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [notableOpen, setNotableOpen] = useState(false);
   const [notablePrefill, setNotablePrefill] = useState<string | null>(null);
   const [venueId, setVenueId] = useState<string | null>(null);
-  const [outreachOpen, setOutreachOpen] = useState(false);
-  const [outreachEmail, setOutreachEmail] = useState<string | null>(null);
-  const outreachChecked = useRef(false);
 
-  // After ending an active session, show the editorial "wrap" screen.
-  // Distinct from `isActive=false` for older completed sessions loaded directly.
-  const [justEnded, setJustEnded] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -161,12 +120,11 @@ export default function DiaryEntry() {
         });
       }
 
-      // Derive carry-forward from most recent catch
+      // Derive carry-forward (lastSpecies only — rig position/fly size were
+      // consumed by removed catch-modal handlers).
       const lastCatch = setupEvents.find((ev) => ev.event_type === "catch");
       if (lastCatch) {
         setLastSpecies(lastCatch.species);
-        setLastRigPosition(lastCatch.rig_position);
-        setLastFlySize(lastCatch.fly_size);
       }
     } catch (err: any) {
       toast.error("Failed to load session");
@@ -197,148 +155,13 @@ export default function DiaryEntry() {
   const stats = calculateSessionStats(events);
   const isActive = session?.is_active === true;
 
-  // Weather polling — every 15 minutes while session is active
-  useEffect(() => {
-    if (!id || !isActive) return;
-    let mounted = true;
+  // Weather polling moved to ActiveSessionShell (prompt 147 §2).
 
-    async function poll() {
-      const snapshot = await pollSessionWeather(id!);
-      if (mounted && snapshot) setLatestWeather(snapshot);
-    }
 
-    poll(); // immediate first poll on mount
-    const interval = setInterval(poll, 15 * 60 * 1000); // then every 15 min
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, [id, isActive]);
-
-  // --- Event handlers ---
-
-  function handleCatchSaved(event: any, setupChanged?: boolean, newSetup?: CurrentSetup) {
-    if (event.species) setLastSpecies(event.species);
-    if (event.rig_position) setLastRigPosition(event.rig_position);
-    if (event.fly_size) setLastFlySize(event.fly_size);
-
-    if (setupChanged && newSetup) {
-      setImplicitChangePrompt({ newSetup });
-    }
-
-    loadData();
-    if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
-  }
-
-  function handleBlankSaved() {
-    loadData();
-    if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
-  }
-
-  function handleChangeSaved(_event: any, newSetup: CurrentSetup) {
-    const lineChanged = currentSetup.line_type !== newSetup.line_type && !!newSetup.line_type;
-    setCurrentSetup(newSetup);
-    loadData();
-    if (id) pollSessionWeather(id).then(s => s && setLatestWeather(s));
-    // After a line change, prompt the leader/flies cascade
-    if (lineChanged) {
-      // Defer so the change modal closes first
-      setTimeout(() => setLineCascadeOpen(true), 200);
-    }
-  }
-
-  async function handleImplicitChangeAccept() {
-    if (!implicitChangePrompt || !id) return;
-    const { addEvent: addEv } = await import("@/services/diaryService");
-    await addEv({
-      session_id: id,
-      event_type: "change",
-      event_time: new Date().toISOString(),
-      sort_order: events.length + 1,
-      change_from: { line_type: currentSetup.line_type },
-      change_to: { line_type: implicitChangePrompt.newSetup.line_type },
-      change_reason: "Implicit — detected from catch entry",
-      style: implicitChangePrompt.newSetup.style || currentSetup.style,
-      rig: implicitChangePrompt.newSetup.rig || currentSetup.rig,
-      line_type: implicitChangePrompt.newSetup.line_type,
-      retrieve: implicitChangePrompt.newSetup.retrieve || currentSetup.retrieve,
-      spot: currentSetup.spot,
-      depth_zone: currentSetup.depth_zone,
-    });
-    setCurrentSetup({ ...currentSetup, ...implicitChangePrompt.newSetup });
-    setImplicitChangePrompt(null);
-    loadData();
-  }
-
-  // Fired from EndSessionConfirm "End session" button.
-  // Awaits the DB write so the SESSION badge is accurate, then advances.
-  async function handleConfirmEnd() {
-    if (!id) return;
-    setEndPhase("syncing");
-    try {
-      await endSession(id, {});
-    } catch (err: any) {
-      console.error("endSession failed:", err);
-      toast.error(err?.message || "Failed to end session");
-    }
-    refreshActiveSession();
-  }
-
-  // Fired from EndSessionSyncing onComplete. Reloads session, runs the
-  // venue-outreach eligibility check, then either opens the outreach
-  // dialog or advances to the EndSessionView.
-  async function handleSyncingComplete() {
-    if (!id) {
-      setEndPhase("ended");
-      return;
-    }
-
-    // Refresh the session row so EndSessionView sees end_time / duration_minutes.
-    await loadData();
-
-    if (venueId && !outreachChecked.current) {
-      outreachChecked.current = true;
-      try {
-        const { data: optedOut } = await supabase
-          .from("venue_outreach")
-          .select("outreach_id")
-          .eq("venue_id", venueId)
-          .eq("status", "opted_out")
-          .limit(1)
-          .maybeSingle();
-
-        if (!optedOut) {
-          const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
-          const { data: recentSend } = await supabase
-            .from("venue_outreach")
-            .select("outreach_id")
-            .eq("venue_id", venueId)
-            .eq("status", "sent")
-            .gte("sent_at", ninetyDaysAgo)
-            .limit(1)
-            .maybeSingle();
-
-          if (!recentSend) {
-            const { data: venueData } = await supabase
-              .from("venues_new")
-              .select("contact_email")
-              .eq("venue_id", venueId)
-              .single();
-
-            setOutreachEmail(venueData?.contact_email || null);
-            setOutreachOpen(true);
-            // Outreach dialog will toast on close — fall through to ended view behind it.
-          }
-        }
-      } catch (err) {
-        console.warn("Outreach check failed (non-critical):", err);
-      }
-    }
-
-    setJustEnded(true);
-    setEndPhase("ended");
-  }
+  // Active-only handlers (catch/blank/change saved, implicit-change, end-session
+  // confirm + syncing complete + outreach check, weather polling) all moved to
+  // ActiveSessionShell. DiaryEntry is now completed-view only after the early
+  // `if (isActive) return <ActiveSessionShell />` bail above. (prompt 147 §2)
 
   function handleDeleteSession() {
     if (!id) return;
@@ -451,13 +274,6 @@ export default function DiaryEntry() {
 
   return (
     <div className={cn("min-h-screen pb-32", bgClass)}>
-      {justEnded && session ? (
-        <EndSessionView
-          session={session}
-          events={events}
-          anglerName={(session as any).angler_name ?? null}
-        />
-      ) : (
       <>
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
         {/* Header */}
@@ -882,50 +698,10 @@ export default function DiaryEntry() {
           </div>
         )}
 
-        {/* End Session button (active only) */}
-        {isActive && (
-          <Button
-            variant="outline"
-            className="w-full min-h-[44px] border-red-500/30 text-red-400 hover:bg-red-500/10"
-            onClick={() => setEndPhase("confirm")}
-          >
-            <StopCircle className="h-4 w-4 mr-2" /> End Session
-          </Button>
-        )}
+        {/* End Session button + FAB removed (active session uses ActiveSessionShell). */}
       </div>
 
-      {/* ============================================================ */}
-      {/* FLOATING ACTION BUTTONS (active session only)                */}
-      {/* ============================================================ */}
-      {isActive && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-50">
-          <Button
-            size="lg"
-            className="rounded-full h-14 px-6 bg-diary-catch hover:bg-diary-catch/90 shadow-lg"
-            onClick={() => setCatchOpen(true)}
-          >
-            <Fish className="h-5 w-5 mr-2" /> Catch
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="rounded-full h-14 px-6 bg-[#162230] border-[#2A4055] text-[#8BA3BB] hover:bg-[#1E3044] shadow-lg"
-            onClick={() => setBlankOpen(true)}
-          >
-            <Circle className="h-5 w-5 mr-2" /> Blank
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="rounded-full h-14 px-5 bg-[#162230] border-diary-change/30 text-diary-change hover:bg-[#1E3044] shadow-lg"
-            onClick={() => setWhatPickerOpen(true)}
-          >
-            <RefreshCw className="h-5 w-5" />
-          </Button>
-        </div>
-      )}
       </>
-      )}
 
       {/* Modals for catch / blank / lost / change / rod / end-session are now
           mounted by ActiveSessionShell (prompt 143). VenueOutreachDialog is

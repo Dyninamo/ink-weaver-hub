@@ -59,7 +59,10 @@ export default function Results() {
   const confidence = v2?.confidence;
   const season = v2?.season ?? v1?.season ?? (state as any).season ?? "";
   const reportCount = v2?.reportCount ?? v1?.reportCount ?? 0;
-
+  const isArchetype =
+    (v2 as any)?.tier === "archetype" ||
+    (v2 as any)?.confidence?.tier === "archetype";
+  const archetypeWaterType = (v2 as any)?.archetype?.water_type ?? null;
 
   async function handleOrderFlies() {
     setLoadingFlies(true);
@@ -210,6 +213,21 @@ export default function Results() {
             </p>
           </div>
         </div>
+
+
+        {/* Archetype-tier (generic guidance) badge */}
+        {isArchetype && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 px-3 py-2">
+            <p className="text-xs font-medium text-amber-900 dark:text-amber-100">
+              Generic guidance
+            </p>
+            <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
+              No data for this venue — recommendations are archetype-level for{" "}
+              <strong>{archetypeWaterType ?? "this water type"}</strong>.
+              Pick a real venue for personalised advice.
+            </p>
+          </div>
+        )}
 
         {/* Weather bar */}
         {weather && (
@@ -533,30 +551,43 @@ export default function Results() {
           </Card>
         )}
 
-        {/* Order Flies */}
-        <div className="text-center space-y-2">
-          <Button
-            onClick={handleOrderFlies}
-            disabled={loadingFlies}
-            className="min-h-[44px] px-8 text-base"
-            size="lg"
-          >
-            {loadingFlies ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading flies...
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="h-4 w-4 mr-2" /> Order Flies
-              </>
-            )}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            {(tactical?.flies?.length ?? 0) > 0 || (prediction?.flies?.length ?? 0) > 0
-              ? "Based on session and report data for this venue"
-              : "Log sessions to unlock personalised fly picks"}
-          </p>
-        </div>
+        {/* Order Flies — hidden for archetype-tier (generic, not actionable) */}
+        {!isArchetype ? (
+          <div className="text-center space-y-2">
+            <Button
+              onClick={handleOrderFlies}
+              disabled={loadingFlies}
+              className="min-h-[44px] px-8 text-base"
+              size="lg"
+            >
+              {loadingFlies ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading flies...
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="h-4 w-4 mr-2" /> Order Flies
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              {(tactical?.flies?.length ?? 0) > 0 || (prediction?.flies?.length ?? 0) > 0
+                ? "Based on session and report data for this venue"
+                : "Log sessions to unlock personalised fly picks"}
+            </p>
+          </div>
+        ) : (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={handleOrderFlies}
+              disabled={loadingFlies}
+              className="text-sm text-primary hover:underline disabled:opacity-50"
+            >
+              {loadingFlies ? "Loading flies…" : "View suggested flies"}
+            </button>
+          </div>
+        )}
 
         {/* Back / New Query button */}
         <Button

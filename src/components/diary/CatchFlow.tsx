@@ -314,7 +314,7 @@ export default function CatchFlow({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background overflow-y-auto pb-32">
+    <div className="pb-32">
       <div className="max-w-[440px] mx-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">

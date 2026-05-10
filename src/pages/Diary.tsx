@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,11 +15,12 @@ import {
 import {
   Plus, Fish, Clock, Star, ArrowRight, Play,
   Calendar, ChevronLeft, ChevronRight, Settings2, Mail, User, Sparkles, Map as MapIcon,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   listSessions,
-  getActiveSession,
   getSessionEvents,
   calculateSessionStats,
   type FishingSession,
@@ -37,8 +39,24 @@ interface SessionCard extends FishingSession {
   };
 }
 
+interface ActiveSessionLite {
+  id: string;
+  venue_name: string | null;
+  session_date: string;
+  start_time: string | null;
+  session_rods: { flies_on_cast: any; rod_index: number }[] | null;
+}
+
+function hasAtLeastOneFly(rod: { flies_on_cast: any } | undefined | null): boolean {
+  if (!rod?.flies_on_cast || typeof rod.flies_on_cast !== "object") return false;
+  return Object.values(rod.flies_on_cast).some(
+    (f: any) => !!f?.pattern || !!f?.name
+  );
+}
+
 export default function Diary() {
   const { user, profile } = useAuth();
+  const { refresh: refreshActiveSession } = useActiveSession();
   const navigate = useNavigate();
 
   const [sessions, setSessions] = useState<SessionCard[]>([]);
@@ -47,7 +65,7 @@ export default function Diary() {
   const [loading, setLoading] = useState(true);
   const [venueFilter, setVenueFilter] = useState<string>("all");
   const [venues, setVenues] = useState<string[]>([]);
-  const [activeSession, setActiveSession] = useState<FishingSession | null>(null);
+  const [activeSession, setActiveSession] = useState<ActiveSessionLite | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
@@ -73,15 +91,44 @@ export default function Diary() {
     loadVenues();
   }, [user]);
 
-  // Check for active session
-  useEffect(() => {
+  // Check for active session — fetch session_rods to gate Resume on flies+venue
+  const refreshActive = useCallback(async () => {
     if (!user) return;
-    async function checkActive() {
-      const active = await getActiveSession(user!.id);
-      setActiveSession(active);
-    }
-    checkActive();
+    const { data } = await supabase
+      .from("fishing_sessions")
+      .select(`
+        id, venue_name, session_date, start_time,
+        session_rods!left ( flies_on_cast, rod_index )
+      `)
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setActiveSession((data as any) ?? null);
   }, [user]);
+
+  useEffect(() => {
+    refreshActive();
+  }, [refreshActive]);
+
+  const activeRod = activeSession?.session_rods?.[0];
+  const canResume = !!activeSession?.venue_name && hasAtLeastOneFly(activeRod);
+
+  async function discardStaleSession() {
+    if (!activeSession?.id) return;
+    const { error } = await supabase
+      .from("fishing_sessions")
+      .update({ is_active: false })
+      .eq("id", activeSession.id);
+    if (error) {
+      toast.error(error.message || "Failed to discard");
+      return;
+    }
+    setActiveSession(null);
+    refreshActiveSession();
+    toast.success("Session discarded");
+  }
 
   // Load sessions
   const loadSessions = useCallback(async () => {
@@ -211,8 +258,8 @@ export default function Diary() {
           </div>
         </div>
 
-        {/* Active session banner */}
-        {activeSession && (
+        {/* Active session banner — gated on rod-has-flies + venue */}
+        {activeSession && canResume && (
           <Card className="border-diary-catch/50 bg-diary-catch/5">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -231,6 +278,45 @@ export default function Diary() {
                   onClick={() => navigate(`/diary/${activeSession.id}`)}
                 >
                   <Play className="h-4 w-4 mr-1" /> Resume
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Stale / unfinished session banner */}
+        {activeSession && !canResume && (
+          <Card className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                    Unfinished session — can't resume
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                    {activeSession.venue_name
+                      ? `${activeSession.venue_name} · ${formatDate(activeSession.session_date)}`
+                      : "Setup wasn't completed."}
+                    {" "}No rod or flies were assigned.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 min-h-[40px]"
+                  onClick={discardStaleSession}
+                >
+                  Discard
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 min-h-[40px]"
+                  onClick={() => navigate(`/diary/${activeSession.id}`)}
+                >
+                  Set up rod
                 </Button>
               </div>
             </CardContent>
