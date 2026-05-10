@@ -91,12 +91,25 @@ export default function LeaderPicker({ value, onChange, prefillUserId }: Props) 
     onChange({ ...next, leader_id: id });
   }
 
-  const lengthDisplay = useMemo(() => {
-    if (value.length_ft == null) return null;
-    return lengthUnit === "ft" ? value.length_ft : ftToM(value.length_ft);
-  }, [value.length_ft, lengthUnit]);
+  // Length dial: canonical value is integer-feet (matches FT_OPTIONS / M_OPTIONS).
+  const lengthOptions = (lengthUnit === "ft" ? FT_OPTIONS : M_OPTIONS).map((n) => ({
+    // Encode m by index offset so option values stay unique integers; we keep
+    // the source array small enough that direct value→ft conversion is fine.
+    value: lengthUnit === "ft" ? n : n,
+    label: lengthUnit === "ft" ? `${n}'` : `${n}m`,
+  }));
+  const lengthDialValue =
+    value.length_ft == null
+      ? null
+      : lengthUnit === "ft"
+        ? Math.round(value.length_ft)
+        : Math.round(ftToM(value.length_ft));
 
-  const lengthOptions = lengthUnit === "ft" ? FT_OPTIONS : M_OPTIONS;
+  const strengthOptions = LB_OPTIONS.map((lb) => ({
+    value: lb,
+    label: strengthUnit === "lb" ? `${lb}lb` : (LB_TO_X[lb] ?? `${lb}lb`),
+  }));
+
   const disabled = !value.material;
 
   return (
@@ -120,7 +133,7 @@ export default function LeaderPicker({ value, onChange, prefillUserId }: Props) 
         </div>
       </div>
 
-      {/* Length */}
+      {/* Length — scroll-snap dial (per prompt 148 §3) */}
       <div className={disabled ? "opacity-40 pointer-events-none" : ""}>
         <div className="flex items-center justify-between">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Length</Label>
@@ -137,28 +150,18 @@ export default function LeaderPicker({ value, onChange, prefillUserId }: Props) 
             ))}
           </div>
         </div>
-        <div className="flex flex-wrap gap-1.5 mt-1.5">
-          {lengthOptions.map((opt) => {
-            const ftVal = lengthUnit === "ft" ? opt : mToFt(opt);
-            const isSelected = lengthDisplay === opt;
-            return (
-              <Button
-                key={opt}
-                type="button"
-                size="sm"
-                variant={isSelected ? "default" : "outline"}
-                onClick={() => update({ length_ft: ftVal })}
-                className="min-h-[36px] min-w-[44px]"
-              >
-                {opt}
-                {lengthUnit === "m" ? "m" : ""}
-              </Button>
-            );
-          })}
-        </div>
+        <Dial
+          options={lengthOptions}
+          value={lengthDialValue}
+          onChange={(v) =>
+            update({ length_ft: lengthUnit === "ft" ? v : Math.round(mToFt(v) * 10) / 10 })
+          }
+          ariaLabel="Leader length"
+          ariaValueText={(v) => (lengthUnit === "ft" ? `${v} feet` : `${v} metres`)}
+        />
       </div>
 
-      {/* Strength */}
+      {/* Breaking strain — scroll-snap dial */}
       <div className={disabled ? "opacity-40 pointer-events-none" : ""}>
         <div className="flex items-center justify-between">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Breaking strain</Label>
@@ -175,24 +178,13 @@ export default function LeaderPicker({ value, onChange, prefillUserId }: Props) 
             ))}
           </div>
         </div>
-        <div className="flex flex-wrap gap-1.5 mt-1.5">
-          {LB_OPTIONS.map((lb) => {
-            const isSelected = value.strength_lb === lb;
-            const label = strengthUnit === "lb" ? `${lb}lb` : LB_TO_X[lb];
-            return (
-              <Button
-                key={lb}
-                type="button"
-                size="sm"
-                variant={isSelected ? "default" : "outline"}
-                onClick={() => update({ strength_lb: lb })}
-                className="min-h-[36px] min-w-[44px]"
-              >
-                {label}
-              </Button>
-            );
-          })}
-        </div>
+        <Dial
+          options={strengthOptions}
+          value={value.strength_lb}
+          onChange={(lb) => update({ strength_lb: lb })}
+          ariaLabel="Breaking strain"
+          ariaValueText={(v) => (strengthUnit === "lb" ? `${v} pound` : `${LB_TO_X[v] ?? v} (${v} pound)`)}
+        />
       </div>
     </div>
   );
