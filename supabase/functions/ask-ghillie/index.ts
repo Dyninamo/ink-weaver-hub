@@ -57,8 +57,8 @@ Deno.serve(async (req) => {
     // and water_types are public-read but fly_water_type_monthly may be
     // service-only). Auth has already been validated above.
     const adminClient = createClient(
-      SUPABASE_URL,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? SUPABASE_ANON_KEY,
+      requireEnv("SUPABASE_URL"),
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
     );
 
     let waterTypeId: number | null = null;
