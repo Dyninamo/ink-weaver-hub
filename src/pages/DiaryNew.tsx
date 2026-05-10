@@ -401,22 +401,7 @@ export default function DiaryNew() {
           </div>
         </div>
 
-        <div>
-          <Label>Fishing type</Label>
-          <div className="flex gap-2 mt-1.5">
-            {FISHING_TYPES.map((ft) => (
-              <Button
-                key={ft}
-                variant={fishingType === ft ? "default" : "outline"}
-                size="sm"
-                className="flex-1 min-h-[44px]"
-                onClick={() => setFishingType(ft)}
-              >
-                {ft}
-              </Button>
-            ))}
-          </div>
-        </div>
+
 
         <Button
           onClick={() => {
