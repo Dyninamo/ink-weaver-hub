@@ -413,7 +413,7 @@ export default function DiaryNew() {
               );
               return;
             }
-            logEvent("diary.build_rig_clicked", { venue, venueType, sessionDate, fishingType });
+            logEvent("diary.build_rig_clicked", { venue, venueType, sessionDate });
             setShowWizard(true);
           }}
           disabled={!canBuildRig}
