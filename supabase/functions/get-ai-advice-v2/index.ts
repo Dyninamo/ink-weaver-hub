@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import { getPredictionParams, getVenueProfile } from "../_shared/prediction-params.ts";
 import type { PredictionParams } from "../_shared/prediction-params.ts";
 import { callAnthropic } from "../_shared/anthropic.ts";
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
