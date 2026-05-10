@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { FishSymbol } from "lucide-react";
 import PasswordField, { PasswordStrengthMeter, scorePassword } from "@/components/auth/PasswordField";
 
 type AuthMode = "sign_in" | "sign_up" | "forgot";
@@ -116,18 +114,34 @@ export default function Auth() {
     : mode === "sign_up" ? "Create Account"
     : "Reset Password";
 
+  const eyebrow = signedUpEmail
+    ? "Check your inbox"
+    : mode === "sign_in" ? "Welcome back"
+    : mode === "sign_up" ? "Create an account"
+    : mode === "forgot" ? "Reset your password"
+    : "";
+
   return (
     <div className="auth-root">
-      <div className="auth-wordmark">it's catching.</div>
-      {mode === "sign_in" && !signedUpEmail && (
-        <div className="auth-tagline">Tight lines. Safely inked.</div>
-      )}
-      {mode !== "sign_in" && !signedUpEmail && (
-        <div className="auth-tagline">Your Pocket Ghillie</div>
-      )}
+      <div className="text-center mb-6">
+        <h1 className="text-3xl font-diary font-semibold tracking-tight text-foreground">
+          It's Catching!
+        </h1>
+        <div
+          className="mt-1 mx-auto w-16 h-px"
+          style={{ background: "var(--gild-500)" }}
+          aria-hidden="true"
+        />
+        <p className="mt-2 text-sm text-muted-foreground italic">Your pocket ghillie</p>
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-1 pb-2">
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+          {eyebrow && (
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">
+              {eyebrow}
+            </p>
+          )}
+          <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
         </CardHeader>
 
         <CardContent className="space-y-4">
