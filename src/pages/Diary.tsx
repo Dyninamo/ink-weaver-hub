@@ -38,8 +38,24 @@ interface SessionCard extends FishingSession {
   };
 }
 
+interface ActiveSessionLite {
+  id: string;
+  venue_name: string | null;
+  session_date: string;
+  start_time: string | null;
+  session_rods: { flies_on_cast: any; rod_index: number }[] | null;
+}
+
+function hasAtLeastOneFly(rod: { flies_on_cast: any } | undefined | null): boolean {
+  if (!rod?.flies_on_cast || typeof rod.flies_on_cast !== "object") return false;
+  return Object.values(rod.flies_on_cast).some(
+    (f: any) => !!f?.pattern || !!f?.name
+  );
+}
+
 export default function Diary() {
   const { user, profile } = useAuth();
+  const { refresh: refreshActiveSession } = useActiveSession();
   const navigate = useNavigate();
 
   const [sessions, setSessions] = useState<SessionCard[]>([]);
@@ -48,7 +64,7 @@ export default function Diary() {
   const [loading, setLoading] = useState(true);
   const [venueFilter, setVenueFilter] = useState<string>("all");
   const [venues, setVenues] = useState<string[]>([]);
-  const [activeSession, setActiveSession] = useState<FishingSession | null>(null);
+  const [activeSession, setActiveSession] = useState<ActiveSessionLite | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
@@ -74,15 +90,44 @@ export default function Diary() {
     loadVenues();
   }, [user]);
 
-  // Check for active session
-  useEffect(() => {
+  // Check for active session — fetch session_rods to gate Resume on flies+venue
+  const refreshActive = useCallback(async () => {
     if (!user) return;
-    async function checkActive() {
-      const active = await getActiveSession(user!.id);
-      setActiveSession(active);
-    }
-    checkActive();
+    const { data } = await supabase
+      .from("fishing_sessions")
+      .select(`
+        id, venue_name, session_date, start_time,
+        session_rods!left ( flies_on_cast, rod_index )
+      `)
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setActiveSession((data as any) ?? null);
   }, [user]);
+
+  useEffect(() => {
+    refreshActive();
+  }, [refreshActive]);
+
+  const activeRod = activeSession?.session_rods?.[0];
+  const canResume = !!activeSession?.venue_name && hasAtLeastOneFly(activeRod);
+
+  async function discardStaleSession() {
+    if (!activeSession?.id) return;
+    const { error } = await supabase
+      .from("fishing_sessions")
+      .update({ is_active: false })
+      .eq("id", activeSession.id);
+    if (error) {
+      toast.error(error.message || "Failed to discard");
+      return;
+    }
+    setActiveSession(null);
+    refreshActiveSession();
+    toast.success("Session discarded");
+  }
 
   // Load sessions
   const loadSessions = useCallback(async () => {
