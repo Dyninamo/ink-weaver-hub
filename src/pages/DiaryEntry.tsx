@@ -5,9 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -15,34 +12,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  ArrowLeft, Fish, Circle, RefreshCw, Clock, Star, MapPin,
-  Thermometer, Wind, StopCircle, Trash2, Share2, Trophy,
+  ArrowLeft, Fish, Circle, RefreshCw, Star, MapPin,
+  Thermometer, Wind, Trash2, Share2, Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-// Active-session phases now live in ActiveSessionShell (prompt 143). The
-// legacy modal mounts (CatchModal, BlankModal, LostModal, ChangeWhatPicker,
-// ChangeFlyFlow, ChangeSetupModal, LineCascadePrompt, RodPickerSheet,
-// EndSessionConfirm/Syncing/View) are no longer mounted here.
+// Active-session phases now live in ActiveSessionShell (prompt 143). Active-only
+// modal state, handlers, and FAB JSX have been stripped (prompt 147 §2).
 import ActiveSessionShell from "@/components/diary/ActiveSessionShell";
 import ShareSessionDialog from "@/components/social/ShareSessionDialog";
 import NotableFishDialog from "@/components/social/NotableFishDialog";
 import { supabase } from "@/integrations/supabase/client";
-import EndSessionView from "@/components/diary/EndSessionView";
 import {
   getSession,
   getSessionEvents,
-  endSession,
   deleteSession,
   calculateSessionStats,
-  formatWeight,
   formatFliesOnCast,
   normaliseFliesOnCast,
-  pollSessionWeather,
   type FishingSession,
   type SessionEvent,
   type CurrentSetup,
-  type WeatherSnapshot,
 } from "@/services/diaryService";
 
 type ViewTab = "timeline" | "fish" | "stats";
