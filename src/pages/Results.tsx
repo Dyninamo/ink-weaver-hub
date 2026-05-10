@@ -214,6 +214,21 @@ export default function Results() {
           </div>
         </div>
 
+
+        {/* Archetype-tier (generic guidance) badge */}
+        {isArchetype && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 px-3 py-2">
+            <p className="text-xs font-medium text-amber-900 dark:text-amber-100">
+              Generic guidance
+            </p>
+            <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
+              No data for this venue — recommendations are archetype-level for{" "}
+              <strong>{archetypeWaterType ?? "this water type"}</strong>.
+              Pick a real venue for personalised advice.
+            </p>
+          </div>
+        )}
+
         {/* Weather bar */}
         {weather && (
           <div className="flex flex-wrap items-center gap-3 text-xs px-3 py-2 rounded-md bg-muted/50">
