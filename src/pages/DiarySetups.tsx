@@ -106,7 +106,7 @@ export default function DiarySetups() {
     } else {
       const { error } = await supabase
         .from('user_rod_setups')
-        .insert({ ...form, user_id: user!.id });
+        .insert({ ...form, user_id: user.id });
       if (error) {
         toast.error('Failed to create setup');
         return;
