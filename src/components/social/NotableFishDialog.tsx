@@ -463,7 +463,7 @@ export default function NotableFishDialog({
         {step === 2 && (
           <div className="space-y-4">
             {!photoPreview ? (
-              <label className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 cursor-pointer hover:border-muted-foreground/50 transition-colors">
+              <label className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/30 rounded-lg p-5 md:p-8 cursor-pointer hover:border-muted-foreground/50 transition-colors">
                 <Camera className="h-10 w-10 text-muted-foreground mb-2" />
                 <span className="text-sm text-muted-foreground">
                   Take photo or choose from gallery
