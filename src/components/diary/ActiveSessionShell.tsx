@@ -142,8 +142,20 @@ export default function ActiveSessionShell({
           onBlank={() => setPhase("blank")}
           onChange={() => setPhase("change")}
           onEndSession={() => setPhase("end_confirm")}
+          onAskGhillie={() => setPhase("ask_ghillie")}
         />
       </>
+    );
+  } else if (phase === "ask_ghillie") {
+    body = (
+      <AskGhillieOverlay
+        session={session}
+        events={events}
+        currentSetup={currentSetup}
+        rodWeight={(session as any).rod_weight ?? null}
+        latestWeather={latestWeather}
+        onClose={() => setPhase("ready")}
+      />
     );
   } else if (phase === "catch") {
     body = (
