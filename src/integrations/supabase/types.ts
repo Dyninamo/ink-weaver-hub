@@ -4791,6 +4791,7 @@ export type Database = {
           cached_until: string | null
           confidence: string | null
           created_at: string
+          grounding: Json | null
           model: string | null
           query_id: string
           question: string
@@ -4809,6 +4810,7 @@ export type Database = {
           cached_until?: string | null
           confidence?: string | null
           created_at?: string
+          grounding?: Json | null
           model?: string | null
           query_id?: string
           question: string
@@ -4827,6 +4829,7 @@ export type Database = {
           cached_until?: string | null
           confidence?: string | null
           created_at?: string
+          grounding?: Json | null
           model?: string | null
           query_id?: string
           question?: string
