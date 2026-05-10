@@ -104,7 +104,7 @@ export default function GroupJoinView() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-sm text-center">
-          <CardContent className="py-8 space-y-3">
+          <CardContent className="py-6 md:py-8 space-y-3">
             <FishSymbol className="h-10 w-10 text-muted-foreground mx-auto" />
             <p className="text-foreground font-medium">Group not found</p>
             <p className="text-sm text-muted-foreground">This invite link may be invalid or expired.</p>
@@ -126,7 +126,7 @@ export default function GroupJoinView() {
         </div>
 
         <Card>
-          <CardContent className="py-8 text-center space-y-4">
+          <CardContent className="py-6 md:py-8 text-center space-y-4">
             <Users className="h-12 w-12 text-primary mx-auto" />
             <div>
               <h2 className="text-lg font-semibold text-foreground">{group.name}</h2>

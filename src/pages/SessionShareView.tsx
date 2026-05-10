@@ -58,7 +58,7 @@ export default function SessionShareView() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-sm text-center">
-          <CardContent className="py-8 space-y-3">
+          <CardContent className="py-6 md:py-8 space-y-3">
             <FishSymbol className="h-10 w-10 text-muted-foreground mx-auto" />
             <p className="text-foreground font-medium">Link not found</p>
             <p className="text-sm text-muted-foreground">This share link may have expired or been removed.</p>
