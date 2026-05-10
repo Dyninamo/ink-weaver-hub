@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 interface EndSessionSyncingProps {
   onComplete: () => void;
   isOnline: boolean;
+  serverDone: boolean;
+  serverError: string | null;
+  onRetry: () => void;
 }
 
 type RowStatus = "done" | "active" | "pending" | "queued";
@@ -53,8 +56,12 @@ function ChecklistRow({ status, label }: { status: RowStatus; label: string }) {
 export default function EndSessionSyncing({
   onComplete,
   isOnline,
+  serverDone,
+  serverError,
+  onRetry,
 }: EndSessionSyncingProps) {
   const [step, setStep] = useState(0);
+  const [animDone, setAnimDone] = useState(false);
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -64,9 +71,32 @@ export default function EndSessionSyncing({
     timers.push(setTimeout(() => setStep(4), 2100));
     timers.push(setTimeout(() => setStep(5), isOnline ? 2800 : 2100));
     timers.push(setTimeout(() => setStep(6), isOnline ? 3200 : 2600));
-    timers.push(setTimeout(() => onComplete(), isOnline ? 3300 : 2700));
+    timers.push(setTimeout(() => setAnimDone(true), isOnline ? 3300 : 2700));
     return () => timers.forEach(clearTimeout);
-  }, [isOnline, onComplete]);
+  }, [isOnline]);
+
+  // Advance only when BOTH the animation has finished AND the server has confirmed.
+  useEffect(() => {
+    if (animDone && serverDone && !serverError) onComplete();
+  }, [animDone, serverDone, serverError, onComplete]);
+
+  if (serverError) {
+    return (
+      <div className="ec-syncing">
+        <div className="ec-syncing-inner">
+          <div className="smallcaps ec-syncing-preline">Couldn't save the session</div>
+          <h2 className="ec-syncing-headline">{serverError}</h2>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-4 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium min-h-[44px]"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ec-syncing">
@@ -77,7 +107,6 @@ export default function EndSessionSyncing({
 
         <div className="ec-checklist">
           {ROWS.map((row, idx) => {
-            // Offline: row 4 (index 3, "Syncing to cloud") is queued, not pending
             let status: RowStatus;
             if (!isOnline && idx === 3) {
               status = "queued";
@@ -96,6 +125,12 @@ export default function EndSessionSyncing({
           <div className="ec-offline-strip">
             Saved locally. Will sync when back online.
           </div>
+        )}
+
+        {animDone && !serverDone && (
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            Still syncing… one moment.
+          </p>
         )}
       </div>
     </div>

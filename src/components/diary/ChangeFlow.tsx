@@ -320,7 +320,9 @@ function readField(s: CurrentSetup, f: ChangeField): any {
     case "leader":   return s.rig;
     case "droppers": {
       const flies = s.flies_on_cast as any;
-      return flies ? Math.max(0, Object.keys(flies).length - 1) : 0;
+      if (!flies || typeof flies !== "object") return 0;
+      const filledCount = Object.keys(flies).filter((k) => flies[k]).length;
+      return Math.max(0, filledCount - 1);
     }
     default: return null;
   }
