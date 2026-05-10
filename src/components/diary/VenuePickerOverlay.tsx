@@ -61,8 +61,13 @@ export default function VenuePickerOverlay({
 
   const filteredVenues = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return venues.slice(0, 200);
-    return venues.filter((v) => v.name.toLowerCase().includes(q)).slice(0, 200);
+    // Home is always visible regardless of search query (prompt 144 promise).
+    const home = venues.find((v) => v.name === "Home");
+    const realVenues = venues.filter((v) => v.name !== "Home");
+    const filtered = q
+      ? realVenues.filter((v) => v.name.toLowerCase().includes(q))
+      : realVenues;
+    return home ? [home, ...filtered.slice(0, 200)] : filtered.slice(0, 200);
   }, [venues, search]);
 
   async function handlePick(venue: VenueOption) {
@@ -70,12 +75,20 @@ export default function VenuePickerOverlay({
     if (venue.name === currentVenueName) return;
     setPicking(true);
     try {
+      const isHome = venue.name === "Home";
+      const updatePayload: Record<string, unknown> = {
+        venue_name: venue.name,
+      };
+      if (isHome) {
+        // Switching to Home: clear FK to the previous real venue, otherwise
+        // downstream joins follow venue_id and pick the wrong row (prompt 165).
+        updatePayload.venue_id = null;
+      } else if (venue.waterType) {
+        updatePayload.venue_type = venue.waterType;
+      }
       const { error } = await supabase
         .from("fishing_sessions")
-        .update({
-          venue_name: venue.name,
-          ...(venue.waterType ? { venue_type: venue.waterType } : {}),
-        })
+        .update(updatePayload)
         .eq("id", sessionId);
       if (error) throw error;
 
