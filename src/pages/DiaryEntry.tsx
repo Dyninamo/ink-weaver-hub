@@ -119,12 +119,11 @@ export default function DiaryEntry() {
         });
       }
 
-      // Derive carry-forward from most recent catch
+      // Derive carry-forward (lastSpecies only — rig position/fly size were
+      // consumed by removed catch-modal handlers).
       const lastCatch = setupEvents.find((ev) => ev.event_type === "catch");
       if (lastCatch) {
         setLastSpecies(lastCatch.species);
-        setLastRigPosition(lastCatch.rig_position);
-        setLastFlySize(lastCatch.fly_size);
       }
     } catch (err: any) {
       toast.error("Failed to load session");
