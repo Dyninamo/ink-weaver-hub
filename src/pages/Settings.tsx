@@ -210,11 +210,12 @@ export default function Settings() {
 
   // Auto-save behaviour toggles after first interaction
   function handleConfirmDeleteToggle(v: boolean) {
+    if (!user) return;
     setConfirmDelete(v);
     void supabase
       .from("user_profiles")
       .update({ confirm_delete_enabled: v })
-      .eq("id", user!.id)
+      .eq("id", user.id)
       .then(() => refreshProfile());
   }
 
