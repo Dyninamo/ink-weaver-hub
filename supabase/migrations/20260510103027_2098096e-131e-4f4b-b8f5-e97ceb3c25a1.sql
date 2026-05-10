@@ -1,0 +1,1 @@
+ALTER TABLE public.user_queries ADD COLUMN IF NOT EXISTS grounding JSONB;
