@@ -12,6 +12,7 @@ import { createSession } from "@/services/diaryService";
 import SetupWizard, { type WizardCommit } from "@/components/diary/setup/SetupWizard";
 import { positionsForFlyCount } from "@/components/diary/setup/vocabulary";
 import { logEvent } from "@/services/eventLogger";
+import DiaryAutocomplete, { type AutocompleteOption } from "@/components/diary/DiaryAutocomplete";
 
 /**
  * Map descriptive water_types.water_type values onto the PWA's binary
