@@ -698,50 +698,10 @@ export default function DiaryEntry() {
           </div>
         )}
 
-        {/* End Session button (active only) */}
-        {isActive && (
-          <Button
-            variant="outline"
-            className="w-full min-h-[44px] border-red-500/30 text-red-400 hover:bg-red-500/10"
-            onClick={() => setEndPhase("confirm")}
-          >
-            <StopCircle className="h-4 w-4 mr-2" /> End Session
-          </Button>
-        )}
+        {/* End Session button + FAB removed (active session uses ActiveSessionShell). */}
       </div>
 
-      {/* ============================================================ */}
-      {/* FLOATING ACTION BUTTONS (active session only)                */}
-      {/* ============================================================ */}
-      {isActive && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-50">
-          <Button
-            size="lg"
-            className="rounded-full h-14 px-6 bg-diary-catch hover:bg-diary-catch/90 shadow-lg"
-            onClick={() => setCatchOpen(true)}
-          >
-            <Fish className="h-5 w-5 mr-2" /> Catch
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="rounded-full h-14 px-6 bg-[#162230] border-[#2A4055] text-[#8BA3BB] hover:bg-[#1E3044] shadow-lg"
-            onClick={() => setBlankOpen(true)}
-          >
-            <Circle className="h-5 w-5 mr-2" /> Blank
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="rounded-full h-14 px-5 bg-[#162230] border-diary-change/30 text-diary-change hover:bg-[#1E3044] shadow-lg"
-            onClick={() => setWhatPickerOpen(true)}
-          >
-            <RefreshCw className="h-5 w-5" />
-          </Button>
-        </div>
-      )}
       </>
-      )}
 
       {/* Modals for catch / blank / lost / change / rod / end-session are now
           mounted by ActiveSessionShell (prompt 143). VenueOutreachDialog is
