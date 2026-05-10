@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import Dial from "@/components/diary/setup/Dial";
 
 export type LeaderMaterial = "nylon" | "copolymer" | "mono" | "fluoro" | "furled";
 
