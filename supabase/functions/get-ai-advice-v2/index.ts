@@ -515,8 +515,8 @@ Use UK fly fishing terminology. Be conversational but concrete. Don't invent ven
     }
 
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      requireEnv("SUPABASE_URL"),
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY")
     );
 
     const season = getSeason(target_date);
