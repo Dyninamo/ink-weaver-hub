@@ -155,24 +155,8 @@ export default function DiaryEntry() {
   const stats = calculateSessionStats(events);
   const isActive = session?.is_active === true;
 
-  // Weather polling — every 15 minutes while session is active
-  useEffect(() => {
-    if (!id || !isActive) return;
-    let mounted = true;
+  // Weather polling moved to ActiveSessionShell (prompt 147 §2).
 
-    async function poll() {
-      const snapshot = await pollSessionWeather(id!);
-      if (mounted && snapshot) setLatestWeather(snapshot);
-    }
-
-    poll(); // immediate first poll on mount
-    const interval = setInterval(poll, 15 * 60 * 1000); // then every 15 min
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, [id, isActive]);
 
   // Active-only handlers (catch/blank/change saved, implicit-change, end-session
   // confirm + syncing complete + outreach check, weather polling) all moved to
