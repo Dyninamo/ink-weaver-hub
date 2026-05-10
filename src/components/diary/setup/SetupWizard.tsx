@@ -360,13 +360,22 @@ export default function SetupWizard({
       {/* Footer */}
       <div className="pt-2">
         {phase === "spot" ? (
-          <Button
-            onClick={handleStart}
-            disabled={!canAdvance || committing}
-            className="w-full min-h-[52px] text-base font-medium"
-          >
-            {committing ? "Starting…" : "Start fishing"}
-          </Button>
+          <>
+            <Button
+              onClick={handleStart}
+              disabled={!canAdvance || committing}
+              className="w-full min-h-[52px] text-base font-medium"
+            >
+              {committing ? "Starting…" : "Start fishing"}
+            </Button>
+            {!canAdvance && !committing && (
+              <p className="text-[11px] text-muted-foreground text-center mt-2">
+                {venueName === "Home"
+                  ? "Pick all rod fields above to start."
+                  : "Add a spot to start (e.g. South bank, Boat 7)."}
+              </p>
+            )}
+          </>
         ) : (
           <div className="flex gap-2">
             {phase === "style" && (
