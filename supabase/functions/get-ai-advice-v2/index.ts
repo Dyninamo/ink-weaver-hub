@@ -273,26 +273,261 @@ serve(async (req) => {
       );
     }
 
-    // ── Sentinel / Home pseudo-venue guard ──────────────────────
-    // Prevents the ilike("name", "%Home%") below from fuzzy-matching real
-    // venues like "Home Fishery" on the Wye when the user picked the Home
-    // pseudo-venue from VenueSearch. Per prompt 146.
+    // ── Sentinel / Home pseudo-venue guard → archetype path ─────
+    // Per prompt 146 §6: when the user picks the Home pseudo-venue from
+    // VenueSearch we never resolve a real venue. Instead we aggregate
+    // top flies/methods across all venues sharing the chosen water-type
+    // archetype (river vs stillwater) over the last 90 days, then ask
+    // the LLM to write generic-but-correct advice.
     const isHomeSentinel =
       venue_name === "__home__" ||
       venue_name.trim().toLowerCase() === "home";
 
     if (isHomeSentinel) {
-      const wt = water_type_override ?? null;
-      return new Response(
-        JSON.stringify({
-          error: "home_pseudo_venue",
-          message: wt
-            ? `Archetype-level ${wt} advice for Home is coming soon. For now, please pick a real venue from search to get tactical advice.`
-            : "We couldn't resolve this venue. Pick a real venue from search, or set Stillwater/River for archetype advice.",
-          water_type_override: wt,
-        }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      const wt = (water_type_override === "river" || water_type_override === "stillwater")
+        ? water_type_override
+        : null;
+
+      if (!wt) {
+        return new Response(
+          JSON.stringify({
+            error: "home_pseudo_venue",
+            message: "We couldn't resolve this venue. Pick a real venue from search, or set Stillwater/River for archetype advice.",
+            water_type_override: null,
+          }),
+          { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const supabaseArch = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
+
+      // river → 3,4,5,6,9 ; stillwater → 1,2,7,8 (water_types table, prompt 146 §6)
+      const wtIds = wt === "river" ? [3, 4, 5, 6, 9] : [1, 2, 7, 8];
+      const seasonArch = getSeason(target_date);
+
+      // Pull venue names matching the archetype, then aggregate flies/methods
+      // from reports_enriched within the last 90 days. Fall back to all-time
+      // if the 90-day window is empty (e.g. winter / sparse data).
+      const { data: archVenues } = await supabaseArch
+        .from("venues_new")
+        .select("name")
+        .in("water_type_id", wtIds)
+        .limit(5000);
+      const archVenueNames = (archVenues ?? [])
+        .map((v: any) => (v?.name ?? "").toLowerCase())
+        .filter(Boolean);
+
+      async function fetchArchReports(daysBack: number | null) {
+        let q = supabaseArch
+          .from("reports_enriched")
+          .select("venue, date, flies, methods, rod_average")
+          .not("flies", "is", null);
+        if (daysBack !== null) {
+          const cutoff = new Date(Date.now() - daysBack * 86400000)
+            .toISOString().slice(0, 10);
+          q = q.gte("date", cutoff);
+        }
+        const { data } = await q.limit(5000);
+        return (data ?? []).filter((r: any) =>
+          r?.venue && archVenueNames.includes(r.venue.toLowerCase())
+        );
+      }
+
+      let archReports = await fetchArchReports(90);
+      let windowUsed: "90d" | "all-time" = "90d";
+      if (archReports.length < 5) {
+        archReports = await fetchArchReports(null);
+        windowUsed = "all-time";
+      }
+
+      const flyCounts: Record<string, number> = {};
+      const methodCounts: Record<string, number> = {};
+      const rodAvgs: number[] = [];
+      for (const r of archReports) {
+        for (const f of (r.flies ?? [])) {
+          if (!f) continue;
+          flyCounts[f] = (flyCounts[f] ?? 0) + 1;
+        }
+        for (const m of (r.methods ?? [])) {
+          if (!m) continue;
+          methodCounts[m] = (methodCounts[m] ?? 0) + 1;
+        }
+        if (typeof r.rod_average === "number") rodAvgs.push(r.rod_average);
+      }
+
+      const topFlies = Object.entries(flyCounts)
+        .sort((a, b) => b[1] - a[1]).slice(0, 10)
+        .map(([name, n]) => ({ name, frequency: n }));
+      const topMethods = Object.entries(methodCounts)
+        .sort((a, b) => b[1] - a[1]).slice(0, 8)
+        .map(([name, n]) => ({ name, frequency: n }));
+
+      const totalCatches = rodAvgs.reduce((a, b) => a + b, 0);
+      const archRodAvg = rodAvgs.length
+        ? Math.round((totalCatches / rodAvgs.length) * 10) / 10
+        : 0;
+
+      // Fetch a quick weather snapshot for context (best-effort, no venue coords)
+      const archForecast: Forecast = {
+        temp: 10, wind_speed_ms: 4, wind_speed_mph: 9,
+        wind_dir: "W", precip_mm_hr: 0, pressure: 1013,
+        humidity: 75, conditions: "no venue-specific forecast (archetype advice)",
+        is_historical: true,
+      };
+
+      const fliesList = topFlies.length
+        ? topFlies.map((f, i) => `${i + 1}. ${f.name} (${f.frequency} mentions)`).join("\n")
+        : "No fly data available yet for this archetype.";
+      const methodsList = topMethods.length
+        ? topMethods.map((m, i) => `${i + 1}. ${m.name} (${m.frequency} mentions)`).join("\n")
+        : "No method data available yet for this archetype.";
+
+      const archPrompt = `You are an expert UK fly fishing advisor. The angler is fishing a generic ${wt === "river" ? "river" : "stillwater"} (no specific venue selected — they picked "Home" / practice mode) on ${target_date} (${seasonArch}).
+
+Write generic-but-tactically-useful guidance for ${wt === "river" ? "river" : "stillwater"} fly fishing in ${seasonArch}, leaning on the data below. Be honest that this is archetype-level advice, not venue-specific.
+
+## Archetype data (${windowUsed} window, ${archReports.length} reports across UK ${wt} venues)
+
+Predicted rod average across the archetype: ${archRodAvg} fish
+
+Top productive flies for this archetype:
+${fliesList}
+
+Top methods:
+${methodsList}
+
+## Instructions
+
+Write three short sections:
+
+**What to Expect** (1 paragraph)
+Generic ${seasonArch} expectations for a ${wt}. Mention typical fish behaviour, water temps, hatches.
+
+**What's Been Working** (2 paragraphs)
+Tactical advice grounded in the top flies and methods above. Suggest sizes, leaders, presentation. Acknowledge this is archetype-level — actual venue conditions matter more.
+
+**For You** (1 short paragraph)
+Encourage the angler to pick a real venue once they're at the bank for tactical, weather-matched advice.
+
+Use UK fly fishing terminology. Be conversational but concrete. Don't invent venue-specific detail.`;
+
+      let archAdvice = "";
+      let archAiSuccess = false;
+      try {
+        const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+        if (lovableKey) {
+          const aiRes = await fetch(
+            "https://ai.gateway.lovable.dev/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${lovableKey}`,
+              },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash",
+                messages: [{ role: "user", content: archPrompt }],
+                max_tokens: 1500,
+              }),
+            }
+          );
+          if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            archAdvice = aiData.choices?.[0]?.message?.content ?? "";
+            if (archAdvice) archAiSuccess = true;
+          } else {
+            console.error("Archetype AI gateway error:", aiRes.status, await aiRes.text());
+          }
+        }
+      } catch (e) {
+        console.error("Archetype AI call failed:", e);
+      }
+
+      if (!archAdvice) {
+        archAdvice =
+          `## What to Expect\nGeneric ${seasonArch} ${wt} guidance based on ${archReports.length} archetype reports.\n\n` +
+          `## What's Been Working\nTop flies: ${topFlies.slice(0, 5).map(f => f.name).join(", ") || "no data yet"}.\n` +
+          `Top methods: ${topMethods.slice(0, 3).map(m => m.name).join(", ") || "no data yet"}.\n\n` +
+          `## For You\nPick a real venue once you're on the bank for tactical, weather-matched advice.`;
+      }
+
+      const archResponse = {
+        advice: archAdvice,
+        ai_generated: archAiSuccess,
+        prediction: {
+          rod_average: {
+            predicted: archRodAvg,
+            range: [0, archRodAvg ? Math.round(archRodAvg * 1.5 * 10) / 10 : 0],
+            confidence: archReports.length >= 30 ? "MEDIUM" : "LOW",
+          },
+          methods: topMethods.map(m => ({ method: m.name, frequency: m.frequency, score: m.frequency })),
+          flies: topFlies.map(f => ({ fly: f.name, frequency: f.frequency, score: f.frequency })),
+          spots: [],
+        },
+        tactical: { session_count: 0, period_count: 0, techniques: [], flies: [], spots: [], catch_by_hour: {} },
+        personal: { has_personal: false, message: "Archetype advice — log sessions for personalised guidance." },
+        tier: "archetype" as const,
+        season: seasonArch,
+        reportCount: archReports.length,
+        matchedReportCount: archReports.length,
+        sessionCount: 0,
+        queryId: null,
+        weather: {
+          temp: archForecast.temp,
+          wind_speed: archForecast.wind_speed_mph,
+          wind_dir: archForecast.wind_dir,
+          conditions: archForecast.conditions,
+          pressure: archForecast.pressure,
+          humidity: archForecast.humidity,
+          is_historical: true,
+        },
+        confidence: {
+          tier: "archetype" as const,
+          water_type: wt,
+          window: windowUsed,
+          report_data: archReports.length >= 30 ? "medium" : archReports.length >= 5 ? "low" : "none",
+          tactical_data: "none" as const,
+          personal_data: "insufficient" as const,
+        },
+        model_info: {
+          params_source: "archetype",
+          data_quality: "archetype",
+          character_notes: `Generic ${wt} archetype advice (no venue resolved).`,
+        },
+        archetype: {
+          water_type: wt,
+          water_type_ids: wtIds,
+          window: windowUsed,
+          venue_pool_size: archVenueNames.length,
+        },
+      };
+
+      // Save query record (best effort) — venue stored as the sentinel so
+      // it's traceable in the queries log without violating any FK.
+      if (user_id) {
+        try {
+          await supabaseArch.from("queries").insert({
+            user_id,
+            venue: `__home__:${wt}`,
+            query_date: target_date,
+            advice_text: archAdvice,
+            weather_data: archResponse.weather,
+          });
+        } catch (qErr) {
+          console.error("Failed to save archetype query:", qErr);
+        }
+      }
+
+      console.log(
+        `Archetype advice generated: wt=${wt}, reports=${archReports.length}, window=${windowUsed}, ai=${archAiSuccess}`
+      );
+
+      return new Response(JSON.stringify(archResponse), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createClient(
