@@ -99,6 +99,7 @@ export default function ReadyView({
   onBlank,
   onChange,
   onEndSession,
+  onAskGhillie,
 }: ReadyViewProps) {
   const catchCount = events.filter((e) => e.event_type === "catch").length;
   const lostCount = events.filter((e) => e.event_type === "got_away").length;
