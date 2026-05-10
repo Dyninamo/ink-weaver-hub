@@ -192,7 +192,10 @@ export default function SetupWizard({
         const positions = positionsForFlyCount(state.flyCount);
         return positions.every((pos) => state.flies[pos]?.name);
       }
-      case "spot": return spotName.trim().length > 0;
+      case "spot":
+        // Spot is optional on Home sessions — there's no real water to anchor it to.
+        if (venueName === "Home") return true;
+        return spotName.trim().length > 0;
     }
   })();
 
