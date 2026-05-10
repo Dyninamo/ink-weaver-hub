@@ -49,11 +49,12 @@ export default function DiarySetups() {
   }, [user]);
 
   async function fetchSetups() {
+    if (!user) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('user_rod_setups')
       .select('*')
-      .eq('user_id', user!.id)
+      .eq('user_id', user.id)
       .order('usage_count', { ascending: false });
     if (error) {
       toast.error('Failed to load setups');
