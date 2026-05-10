@@ -223,6 +223,7 @@ Output ONLY this exact JSON shape (no markdown):
           water_type: waterTypeLabel,
           month: monthIdx,
           fly_count: groundedFlies.length,
+          source: "wt_monthly_fly_advice",
         } : null,
       })
       .select()
