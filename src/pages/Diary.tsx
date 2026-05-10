@@ -24,7 +24,6 @@ import {
   calculateSessionStats,
   type FishingSession,
 } from "@/services/diaryService";
-import { supabase } from "@/integrations/supabase/client";
 
 const PAGE_SIZE = 10;
 
