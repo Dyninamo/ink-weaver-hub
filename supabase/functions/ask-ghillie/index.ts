@@ -82,17 +82,24 @@ Deno.serve(async (req) => {
 
     // ─── Pull top patterns for (water_type, current month) ───────────────
     const monthIdx = new Date().getMonth() + 1; // 1..12
-    let groundedFlies: { pattern_name: string; suitability: string; evidence_count: number }[] = [];
+    interface GroundedFly {
+      fly_name: string;
+      fly_style: string | null;
+      rank: number | null;
+      importance: string | null;
+      notes: string | null;
+    }
+    let groundedFlies: GroundedFly[] = [];
 
     if (waterTypeId) {
       const { data: flies } = await adminClient
-        .from("fly_water_type_monthly")
-        .select("pattern_name, suitability, evidence_count")
+        .from("wt_monthly_fly_advice")
+        .select("fly_name, fly_style, rank, importance, notes")
         .eq("water_type_id", waterTypeId)
         .eq("month", monthIdx)
-        .eq("suitability", "main")
-        .order("evidence_count", { ascending: false })
-        .limit(15);
+        .order("rank", { ascending: true })
+        .order("importance", { ascending: true })
+        .limit(10);
       groundedFlies = (flies as any[]) ?? [];
     }
 
