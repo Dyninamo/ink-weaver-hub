@@ -82,17 +82,24 @@ Deno.serve(async (req) => {
 
     // ─── Pull top patterns for (water_type, current month) ───────────────
     const monthIdx = new Date().getMonth() + 1; // 1..12
-    let groundedFlies: { pattern_name: string; suitability: string; evidence_count: number }[] = [];
+    interface GroundedFly {
+      fly_name: string;
+      fly_style: string | null;
+      rank: number | null;
+      importance: string | null;
+      notes: string | null;
+    }
+    let groundedFlies: GroundedFly[] = [];
 
     if (waterTypeId) {
       const { data: flies } = await adminClient
-        .from("fly_water_type_monthly")
-        .select("pattern_name, suitability, evidence_count")
+        .from("wt_monthly_fly_advice")
+        .select("fly_name, fly_style, rank, importance, notes")
         .eq("water_type_id", waterTypeId)
         .eq("month", monthIdx)
-        .eq("suitability", "main")
-        .order("evidence_count", { ascending: false })
-        .limit(15);
+        .order("rank", { ascending: true })
+        .order("importance", { ascending: true })
+        .limit(10);
       groundedFlies = (flies as any[]) ?? [];
     }
 
@@ -114,9 +121,14 @@ Deno.serve(async (req) => {
     ctxLines.push(`Month: ${month}`);
 
     const groundedListText = groundedFlies.length > 0
-      ? `\n\nGROUND TRUTH — top patterns for ${waterTypeLabel ?? "this water"} in ${month}, ranked by evidence:\n${
-          groundedFlies.map((f, i) => `${i + 1}. ${f.pattern_name}`).join("\n")
-        }\n\nUse these as your PRIMARY recommendations. The angler wants actionable tactical advice (size, presentation, line, retrieve), not invented fly names.`
+      ? `\n\nGROUND TRUTH — top patterns for ${waterTypeLabel ?? "this water"} in ${month}, ranked by curated importance:\n${
+          groundedFlies.map((f) => {
+            const styleNote = f.fly_style ? ` (${f.fly_style})` : "";
+            const importanceNote = f.importance === "secondary" ? " — secondary" : "";
+            const richNote = f.notes ? `\n   Note: ${f.notes}` : "";
+            return `${f.rank ?? "?"}. ${f.fly_name}${styleNote}${importanceNote}${richNote}`;
+          }).join("\n")
+        }\n\nUse these as your PRIMARY recommendations, especially the top-ranked ones. Lean on the rank-1 pattern unless the angler's question explicitly steers elsewhere. The angler wants actionable tactical advice (size, presentation, line, retrieve), not invented fly names.`
       : "";
 
     const systemPrompt = `You are "the Ghillie" — a calm, plain-spoken UK fly-fishing guide. Reply with two parts only:
@@ -211,6 +223,7 @@ Output ONLY this exact JSON shape (no markdown):
           water_type: waterTypeLabel,
           month: monthIdx,
           fly_count: groundedFlies.length,
+          source: "wt_monthly_fly_advice",
         } : null,
       })
       .select()
