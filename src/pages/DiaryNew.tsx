@@ -382,6 +382,7 @@ export default function DiaryNew() {
                 </Button>
                 );
               })}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
               {venueTypeManual
                 ? "Manual override active"
