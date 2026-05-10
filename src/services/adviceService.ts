@@ -32,6 +32,30 @@ export class AdviceServiceError extends Error {
   }
 }
 
+export class ServiceMisconfiguredError extends AdviceServiceError {
+  constructor(message?: string) {
+    super(message ?? 'Backend is temporarily misconfigured. Please contact support.', 'SERVICE_MISCONFIGURED')
+    this.name = 'ServiceMisconfiguredError'
+  }
+}
+
+// Reads a Supabase functions.invoke error and returns the parsed response body, or null.
+async function readFunctionErrorBody(err: unknown): Promise<{ error?: string; message?: string } | null> {
+  try {
+    const ctx = (err as any)?.context
+    if (!ctx) return null
+    if (typeof ctx.json === 'function') {
+      const body = await ctx.json()
+      return body ?? null
+    }
+    if (typeof ctx.text === 'function') {
+      const raw = await ctx.text()
+      try { return JSON.parse(raw) } catch { return null }
+    }
+  } catch { /* swallow */ }
+  return null
+}
+
 export interface ModelInfo {
   params_source: 'tuned' | 'global_default' | 'hardcoded_fallback'
   data_quality: 'full' | 'limited' | 'insufficient'
@@ -140,7 +164,13 @@ export async function getAdviceV2(
     }
   })
 
-  if (error) throw new AdviceServiceError(error.message || 'Failed to get advice v2')
+  if (error) {
+    const body = await readFunctionErrorBody(error)
+    if (body?.error === 'service_misconfigured') {
+      throw new ServiceMisconfiguredError(body.message)
+    }
+    throw new AdviceServiceError(error.message || 'Failed to get advice v2')
+  }
   return data as AdviceV2Response
 }
 
@@ -156,7 +186,13 @@ export async function getBasicAdvice(
     body: { venue, date, userId: user?.id, weatherData, waterTypeOverride: waterTypeOverride ?? null }
   })
   
-  if (error) throw new Error(error.message || 'Failed to get advice')
+  if (error) {
+    const body = await readFunctionErrorBody(error)
+    if (body?.error === 'service_misconfigured') {
+      throw new ServiceMisconfiguredError(body.message)
+    }
+    throw new Error(error.message || 'Failed to get advice')
+  }
   return data as FishingAdviceResponse
 }
 
@@ -183,6 +219,11 @@ export async function getFishingAdvice(
     })
     return result
   } catch (err) {
+    if (err instanceof ServiceMisconfiguredError) {
+      // v1 (get-fishing-advice) shares the same service-role secret — no point in falling back.
+      logEvent('advice.service_misconfigured', { venue, date })
+      throw err
+    }
     logEvent('advice.fallback_v1', { venue, date, error: (err as Error).message })
     console.error('v2 advice failed, falling back to legacy:', err)
     const result = await getBasicAdvice(venue, date, _weatherData, waterTypeOverride)

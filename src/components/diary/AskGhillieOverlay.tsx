@@ -108,7 +108,17 @@ export default function AskGhillieOverlay({
       );
     } catch (err: any) {
       console.error("ask-ghillie failed", err);
-      setError(err?.message || "Couldn't reach the ghillie. Try again in a moment.");
+      let isMisconfigured = false;
+      try {
+        const ctx = err?.context;
+        const body = ctx && typeof ctx.json === "function" ? await ctx.json() : null;
+        if (body?.error === "service_misconfigured") isMisconfigured = true;
+      } catch { /* swallow */ }
+      setError(
+        isMisconfigured
+          ? "The ghillie is offline for maintenance. Please try again later, or contact support if the problem persists."
+          : err?.message || "Couldn't reach the ghillie. Try again in a moment."
+      );
     } finally {
       setLoading(false);
     }
