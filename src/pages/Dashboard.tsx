@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import DebugPanel from "@/components/DebugPanel";
 
 import VenueSearch from "@/components/VenueSearch";
-import { getFishingAdvice, AdviceServiceError, type FishingAdviceResponse } from "@/services/adviceService";
+import { getFishingAdvice, AdviceServiceError, ServiceMisconfiguredError, type FishingAdviceResponse } from "@/services/adviceService";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getRecentQueries, getQueryById, QueryServiceError } from "@/services/queryService";
@@ -127,7 +127,14 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error getting fishing advice:", err);
 
-      if (err instanceof AdviceServiceError) {
+      if (err instanceof ServiceMisconfiguredError) {
+        setError(err.message);
+        toast({
+          variant: "destructive",
+          title: "Service Unavailable",
+          description: "Backend is temporarily misconfigured. Please contact support.",
+        });
+      } else if (err instanceof AdviceServiceError) {
         if (err.code === "NOT_AUTHENTICATED") {
           setError("You need to be logged in to get fishing advice.");
           toast({
