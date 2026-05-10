@@ -1016,35 +1016,15 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
       adviceText += `[AI generation skipped — test mode]`;
     } else {
       try {
-        const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-        if (lovableKey) {
-          const aiResponse = await fetch(
-            "https://ai.gateway.lovable.dev/v1/chat/completions",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${lovableKey}`,
-              },
-              body: JSON.stringify({
-                model: "google/gemini-2.5-flash",
-                messages: [{ role: "user", content: aiPrompt }],
-                max_tokens: 2000,
-              }),
-            }
-          );
-
-          if (aiResponse.ok) {
-            const aiData = await aiResponse.json();
-            adviceText = aiData.choices?.[0]?.message?.content ?? "";
-            if (adviceText) aiSuccess = true;
-          } else {
-            const errBody = await aiResponse.text();
-            console.error("AI gateway error:", aiResponse.status, errBody);
-          }
-        }
+        const result = await callAnthropic({
+          messages: [{ role: "user", content: aiPrompt }],
+          maxTokens: 2048,
+          temperature: 0.4,
+        });
+        adviceText = result.text ?? "";
+        if (adviceText) aiSuccess = true;
       } catch (aiErr) {
-        console.error("AI call failed:", aiErr);
+        console.error("Anthropic call failed:", aiErr);
       }
 
       // Fallback if AI fails
