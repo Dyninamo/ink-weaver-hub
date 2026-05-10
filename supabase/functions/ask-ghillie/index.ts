@@ -239,6 +239,7 @@ Output ONLY this exact JSON shape (no markdown):
           month: monthIdx,
           fly_count: groundedFlies.length,
           source: "wt_monthly_fly_advice",
+          archetype: !body.venue_id && (body.venue_name === "Home" || !body.venue_name),
         } : null,
       })
       .select()
