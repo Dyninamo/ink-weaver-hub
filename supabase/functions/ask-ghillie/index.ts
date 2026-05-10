@@ -164,10 +164,14 @@ Output ONLY this exact JSON shape (no markdown):
             const parsed = JSON.parse(cleaned);
             if (typeof parsed.narrative === "string") narrative = parsed.narrative;
             if (Array.isArray(parsed.chips)) chips = parsed.chips.slice(0, 5);
-            if (parsed.confidence === "high" || parsed.confidence === "medium" || parsed.confidence === "low") {
-              confidence = parsed.confidence;
+            // Grounded → bias toward "high"; ungrounded → cap at "medium".
+            const grounded = groundedFlies.length > 0;
+            if (parsed.confidence === "low") {
+              confidence = "low";
+            } else if (grounded) {
+              confidence = "high";
             } else {
-              confidence = "medium";
+              confidence = parsed.confidence === "high" ? "medium" : "medium";
             }
             model = "google/gemini-2.5-flash";
           } catch {
