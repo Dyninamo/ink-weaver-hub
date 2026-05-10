@@ -274,13 +274,6 @@ export default function DiaryEntry() {
 
   return (
     <div className={cn("min-h-screen pb-32", bgClass)}>
-      {justEnded && session ? (
-        <EndSessionView
-          session={session}
-          events={events}
-          anglerName={(session as any).angler_name ?? null}
-        />
-      ) : (
       <>
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
         {/* Header */}
