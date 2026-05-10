@@ -208,7 +208,7 @@ export default function Diary() {
         {/* Header — title + small-caps stats + profile icon */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-3xl font-semibold tracking-tight font-diary leading-tight">
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight font-diary leading-tight">
               Timeline
             </h1>
             {totalCount > 0 && (

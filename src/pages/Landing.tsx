@@ -21,7 +21,7 @@ const Landing = () => {
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
+          <h1 className="text-3xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
             AI-Powered Fishing Advice
           </h1>
           <p className="text-lg md:text-xl text-white/95 mb-8 drop-shadow-md max-w-2xl mx-auto">
@@ -51,7 +51,7 @@ const Landing = () => {
       {/* Features Section */}
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-foreground">
+          <h2 className="text-2xl md:text-4xl font-bold text-center mb-12 text-foreground">
             Everything You Need for a Successful Catch
           </h2>
 
@@ -102,7 +102,7 @@ const Landing = () => {
       {/* Venues Section */}
       <section className="py-20 px-4 bg-muted/30">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">Featured Venues</h2>
+          <h2 className="text-2xl md:text-4xl font-bold mb-6 text-foreground">Featured Venues</h2>
           <p className="text-lg text-muted-foreground mb-8">
             Get expert advice for these premier UK fishing destinations
           </p>
@@ -126,7 +126,7 @@ const Landing = () => {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">
+          <h2 className="text-2xl md:text-4xl font-bold mb-6 text-foreground">
             Ready to Improve Your Catch?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
