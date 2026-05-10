@@ -166,55 +166,35 @@ Output ONLY this exact JSON shape (no markdown):
     let confidence: "high" | "medium" | "low" = "low";
     let model = "fallback";
 
-    if (LOVABLE_API_KEY) {
+    try {
+      const result = await callAnthropic({
+        systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+        maxTokens: 1024,
+        temperature: 0.4,
+      });
+      const cleaned = result.text.replace(/```json\s*|\s*```/g, "").trim();
       try {
-        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-          }),
-        });
-
-        if (aiResp.ok) {
-          const aiJson = await aiResp.json();
-          const content = aiJson.choices?.[0]?.message?.content ?? "";
-          const cleaned = content.replace(/```json\s*|\s*```/g, "").trim();
-          try {
-            const parsed = JSON.parse(cleaned);
-            if (typeof parsed.narrative === "string") narrative = parsed.narrative;
-            if (Array.isArray(parsed.chips)) chips = parsed.chips.slice(0, 5);
-            // Grounded → bias toward "high"; ungrounded → cap at "medium".
-            const grounded = groundedFlies.length > 0;
-            if (parsed.confidence === "low") {
-              confidence = "low";
-            } else if (grounded) {
-              confidence = "high";
-            } else {
-              confidence = parsed.confidence === "high" ? "medium" : "medium";
-            }
-            model = "google/gemini-2.5-flash";
-          } catch {
-            // Couldn't parse strict JSON — fall back to narrative only
-            narrative = cleaned || narrative;
-            confidence = "low";
-            model = "google/gemini-2.5-flash";
-          }
-        } else if (aiResp.status === 429) {
-          narrative = "The guide's busy — try again in a minute.";
-        } else if (aiResp.status === 402) {
-          narrative = "AI credits need topping up — ask an admin.";
+        const parsed = JSON.parse(cleaned);
+        if (typeof parsed.narrative === "string") narrative = parsed.narrative;
+        if (Array.isArray(parsed.chips)) chips = parsed.chips.slice(0, 5);
+        const grounded = groundedFlies.length > 0;
+        if (parsed.confidence === "low") {
+          confidence = "low";
+        } else if (grounded) {
+          confidence = "high";
+        } else {
+          confidence = "medium";
         }
-      } catch (err) {
-        console.error("AI call failed", err);
+        model = result.model;
+      } catch {
+        narrative = cleaned || narrative;
+        confidence = "low";
+        model = result.model;
       }
+    } catch (err) {
+      console.error("Anthropic call failed", err);
+      narrative = "I can't reach the guide right now — try again shortly.";
     }
 
     // Persist
