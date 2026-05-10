@@ -226,7 +226,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground py-6 px-4 shadow-medium">
+      <header className="bg-primary text-primary-foreground py-4 md:py-6 px-4 shadow-medium">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
@@ -289,7 +289,7 @@ const Dashboard = () => {
               Search for a venue and date to receive personalized AI-powered fishing advice
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 md:space-y-6">
             {/* Weather Warning */}
             {weatherWarning && (
               <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900">
@@ -314,7 +314,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Recent Queries */}
-        <div className="mt-8">
+        <div className="mt-6 md:mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-foreground">Recent Queries</h2>
             {recentQueries.length > 0 && (
@@ -333,7 +333,7 @@ const Dashboard = () => {
           {isLoadingQueries ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="p-6">
+                <Card key={i} className="p-4 md:p-6">
                   <div className="animate-pulse">
                     <div className="h-4 bg-muted rounded w-3/4 mb-3"></div>
                     <div className="h-3 bg-muted rounded w-1/2 mb-2"></div>
@@ -343,7 +343,7 @@ const Dashboard = () => {
               ))}
             </div>
           ) : recentQueries.length === 0 ? (
-            <Card className="p-12">
+            <Card className="p-6 md:p-12">
               <div className="text-center text-muted-foreground">
                 <Fish className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p className="text-lg mb-2">No queries yet</p>
@@ -386,7 +386,7 @@ const Dashboard = () => {
                     <Card
                       key={query.id}
                       className={cn(
-                        "p-6 transition-all",
+                        "p-4 md:p-6 transition-all",
                         !isSelectionMode && "hover:shadow-medium cursor-pointer group",
                         isSelectionMode && "cursor-default",
                         isSelected && "ring-2 ring-primary"
