@@ -14,15 +14,17 @@ import {
 import {
   Plus, Fish, Clock, Star, ArrowRight, Play,
   Calendar, ChevronLeft, ChevronRight, Settings2, Mail, User, Sparkles, Map as MapIcon,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   listSessions,
-  getActiveSession,
   getSessionEvents,
   calculateSessionStats,
   type FishingSession,
 } from "@/services/diaryService";
+import { supabase } from "@/integrations/supabase/client";
 
 const PAGE_SIZE = 10;
 
