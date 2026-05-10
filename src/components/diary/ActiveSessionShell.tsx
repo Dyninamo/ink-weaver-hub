@@ -301,7 +301,10 @@ export default function ActiveSessionShell({
     body = (
       <EndSessionSyncing
         isOnline={isOnline}
+        serverDone={endSaveDone}
+        serverError={endSaveError}
         onComplete={() => { void handleSyncingComplete(); }}
+        onRetry={() => { void handleConfirmEnd(); }}
       />
     );
   } else { // end_done
