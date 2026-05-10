@@ -17,6 +17,7 @@ import EndSessionConfirm from "./EndSessionConfirm";
 import EndSessionSyncing from "./EndSessionSyncing";
 import EndSessionView from "./EndSessionView";
 import VenueOutreachDialog from "./VenueOutreachDialog";
+import AskGhillieOverlay from "./AskGhillieOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import {
@@ -30,10 +31,11 @@ import {
 
 export type SessionPhase =
   | "ready" | "catch" | "blank" | "lost" | "change" | "rod_change"
+  | "ask_ghillie"
   | "end_confirm" | "end_syncing" | "end_done";
 
 const PHASES_WITH_PILL = new Set<SessionPhase>([
-  "ready", "catch", "blank", "lost", "change", "rod_change",
+  "ready", "catch", "blank", "lost", "change", "rod_change", "ask_ghillie",
 ]);
 
 interface Props {
@@ -140,8 +142,20 @@ export default function ActiveSessionShell({
           onBlank={() => setPhase("blank")}
           onChange={() => setPhase("change")}
           onEndSession={() => setPhase("end_confirm")}
+          onAskGhillie={() => setPhase("ask_ghillie")}
         />
       </>
+    );
+  } else if (phase === "ask_ghillie") {
+    body = (
+      <AskGhillieOverlay
+        session={session}
+        events={events}
+        currentSetup={currentSetup}
+        rodWeight={(session as any).rod_weight ?? null}
+        latestWeather={latestWeather}
+        onClose={() => setPhase("ready")}
+      />
     );
   } else if (phase === "catch") {
     body = (
