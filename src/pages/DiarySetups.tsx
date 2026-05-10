@@ -49,11 +49,12 @@ export default function DiarySetups() {
   }, [user]);
 
   async function fetchSetups() {
+    if (!user) return;
     setLoading(true);
     const { data, error } = await supabase
       .from('user_rod_setups')
       .select('*')
-      .eq('user_id', user!.id)
+      .eq('user_id', user.id)
       .order('usage_count', { ascending: false });
     if (error) {
       toast.error('Failed to load setups');
@@ -86,6 +87,7 @@ export default function DiarySetups() {
   }
 
   async function handleSave() {
+    if (!user) return;
     if (!form.name.trim()) {
       toast.error('Setup name is required');
       return;
@@ -104,7 +106,7 @@ export default function DiarySetups() {
     } else {
       const { error } = await supabase
         .from('user_rod_setups')
-        .insert({ ...form, user_id: user!.id });
+        .insert({ ...form, user_id: user.id });
       if (error) {
         toast.error('Failed to create setup');
         return;
