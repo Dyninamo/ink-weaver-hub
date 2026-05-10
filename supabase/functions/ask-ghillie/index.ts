@@ -1,5 +1,6 @@
 import { corsHeaders } from "../_shared/cors.ts";
 import { callAnthropic } from "../_shared/anthropic.ts";
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 interface AskBody {
@@ -56,8 +57,8 @@ Deno.serve(async (req) => {
     // and water_types are public-read but fly_water_type_monthly may be
     // service-only). Auth has already been validated above.
     const adminClient = createClient(
-      SUPABASE_URL,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? SUPABASE_ANON_KEY,
+      requireEnv("SUPABASE_URL"),
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
     );
 
     let waterTypeId: number | null = null;
@@ -260,6 +261,8 @@ Output ONLY this exact JSON shape (no markdown):
       created_at: saved.created_at,
     });
   } catch (err) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     console.error("ask-ghillie error", err);
     return jsonResponse({ error: (err as Error).message }, 500);
   }

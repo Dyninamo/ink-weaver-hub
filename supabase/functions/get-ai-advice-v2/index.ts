@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import { getPredictionParams, getVenueProfile } from "../_shared/prediction-params.ts";
 import type { PredictionParams } from "../_shared/prediction-params.ts";
 import { callAnthropic } from "../_shared/anthropic.ts";
+import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -301,8 +302,8 @@ serve(async (req) => {
       }
 
       const supabaseArch = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        requireEnv("SUPABASE_URL"),
+        requireEnv("SUPABASE_SERVICE_ROLE_KEY")
       );
 
       // river → 3,4,5,6,9 ; stillwater → 1,2,7,8 (water_types table, prompt 146 §6)
@@ -514,8 +515,8 @@ Use UK fly fishing terminology. Be conversational but concrete. Don't invent ven
     }
 
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      requireEnv("SUPABASE_URL"),
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY")
     );
 
     const season = getSeason(target_date);
@@ -1162,6 +1163,8 @@ Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     console.error("get-ai-advice-v2 error:", err);
     return new Response(
       JSON.stringify({
