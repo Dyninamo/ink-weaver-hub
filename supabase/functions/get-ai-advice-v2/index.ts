@@ -302,8 +302,8 @@ serve(async (req) => {
       }
 
       const supabaseArch = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        requireEnv("SUPABASE_URL"),
+        requireEnv("SUPABASE_SERVICE_ROLE_KEY")
       );
 
       // river → 3,4,5,6,9 ; stillwater → 1,2,7,8 (water_types table, prompt 146 §6)
