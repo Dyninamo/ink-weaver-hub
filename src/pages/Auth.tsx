@@ -102,13 +102,7 @@ export default function Auth() {
     // Navigation handled by onAuthStateChange above
   };
 
-  const oauthLogin = async (provider: "google" | "apple") => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: window.location.origin + "/auth?redirect=" + redirect },
-    });
-    if (error) toast.error(error.message);
-  };
+  // OAuth removed per prompt 149 §2.1 (RN parity).
 
   const title = mode === "sign_in" ? "Sign In"
     : mode === "sign_up" ? "Create Account"
