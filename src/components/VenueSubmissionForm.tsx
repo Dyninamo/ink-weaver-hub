@@ -218,6 +218,13 @@ export default function VenueSubmissionForm({
 
   const handleSubmit = async () => {
     if (!user || !canSubmit || !waterType) return;
+    if (isReservedName(name)) {
+      toast.error(
+        "That name is reserved. Use the Dashboard's built-in Home option for practice " +
+        "sessions, or pick a more specific venue name."
+      );
+      return;
+    }
     setSubmitting(true);
 
     try {
