@@ -261,6 +261,8 @@ Output ONLY this exact JSON shape (no markdown):
       created_at: saved.created_at,
     });
   } catch (err) {
+    const envResp = envErrorResponse(err, corsHeaders);
+    if (envResp) return envResp;
     console.error("ask-ghillie error", err);
     return jsonResponse({ error: (err as Error).message }, 500);
   }
