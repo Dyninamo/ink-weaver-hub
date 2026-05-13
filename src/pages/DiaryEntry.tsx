@@ -686,16 +686,20 @@ export default function DiaryEntry() {
               </Card>
             )}
 
-            {/* Delete button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive w-full"
-              onClick={handleDeleteSession}
-            >
-              <Trash2 className="h-4 w-4 mr-2" /> Delete Session
-            </Button>
           </div>
+        )}
+
+        {/* Delete button — visible on every tab of a completed session.
+            Active sessions use ActiveSessionShell's End-session flow instead. */}
+        {!isActive && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive w-full mt-4"
+            onClick={handleDeleteSession}
+          >
+            <Trash2 className="h-4 w-4 mr-2" /> Delete Session
+          </Button>
         )}
 
         {/* End Session button + FAB removed (active session uses ActiveSessionShell). */}
