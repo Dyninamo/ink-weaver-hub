@@ -353,9 +353,7 @@ export default function MapPage() {
               >
                 Filter
               </MapControlButton>
-              <MapControlButton onClick={() => { /* placeholder for future search */ }} ariaLabel="Search">
-                <Search className="h-4 w-4" />
-              </MapControlButton>
+              {/* Search reserved for a future build — hide rather than ship a dead button. */}
             </>
           )}
 
