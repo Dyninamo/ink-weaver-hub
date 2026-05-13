@@ -187,6 +187,14 @@ export default function DiaryNew() {
       return;
     }
 
+    // Reject placeholder venue names (prompt 174). Home is a deliberate user choice and is allowed.
+    const trimmed = venue.trim();
+    const PLACEHOLDER_NAMES = new Set(["", "unknown", "n/a", "na", "tbd"]);
+    if (PLACEHOLDER_NAMES.has(trimmed.toLowerCase())) {
+      toast.error("Pick a venue before starting the session");
+      return;
+    }
+
     // Preflight: refuse to start a new session if an active one already exists.
     // (Belt + braces — DB also enforces via uniq_user_active_diary_session.)
     const { data: existingActive } = await supabase
