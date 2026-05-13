@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import { getPredictionParams, getVenueProfile } from "../_shared/prediction-params.ts";
 import type { PredictionParams } from "../_shared/prediction-params.ts";
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
+import { requireUser, forbiddenResponse } from "../_shared/user_auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -98,6 +99,11 @@ serve(async (req) => {
   }
 
   try {
+    // Per prompt 190: require authenticated user
+    const auth = await requireUser(req, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user;
+
     const { venue, date, userId, weatherData } = await req.json();
 
     if (!venue || !date || !userId) {
@@ -105,6 +111,10 @@ serve(async (req) => {
         JSON.stringify({ error: 'Missing required fields: venue, date, userId' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    if (userId !== user.id) {
+      return forbiddenResponse('Forbidden — userId mismatch', corsHeaders);
     }
 
     const supabase = createClient(
