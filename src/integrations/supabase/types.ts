@@ -6548,6 +6548,14 @@ export type Database = {
       current_user_writable_venue_ids: { Args: never; Returns: string[] }
       get_my_group_ids: { Args: never; Returns: string[] }
       get_my_profile_id: { Args: never; Returns: string }
+      increment_notable_fish_witnesses: {
+        Args: { p_fish_id: string }
+        Returns: {
+          confidence_score: number
+          n_witnesses: number
+          verification_tier: number
+        }[]
+      }
       increment_share_view: { Args: { p_token: string }; Returns: undefined }
       is_group_admin: { Args: { target_group_id: string }; Returns: boolean }
     }

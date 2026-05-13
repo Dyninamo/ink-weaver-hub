@@ -139,9 +139,11 @@ Deno.serve(async (req) => {
       plausibilityPass = finalWeightKg >= lowerBound && finalWeightKg <= upperBound
     }
 
-    // 5. EXIF extraction (if photo provided)
+    // 5. EXIF extraction (if photo provided) — per prompt 196 surfaces parse failures.
     let exifData: Record<string, any> = {}
     let photoUrl: string | null = null
+    let exifStatus: 'ok' | 'no_metadata' | 'error' | 'skipped' = 'skipped'
+    let exifErrorReason: string | null = null
 
     if (photo_storage_path) {
       const { data: urlData } = supabase.storage
@@ -163,7 +165,11 @@ Deno.serve(async (req) => {
             pick: ['DateTimeOriginal', 'Make', 'Model', 'Software',
                    'FocalLength', 'SubjectDistance',
                    'latitude', 'longitude']
-          }).catch(() => null)
+          }).catch((e: any) => {
+            exifStatus = 'error'
+            exifErrorReason = e?.message ?? 'exifr parse threw'
+            return null
+          })
 
           if (parsed) {
             exifData = {
@@ -174,11 +180,20 @@ Deno.serve(async (req) => {
               exif_edited: parsed.Software ? !['', undefined].includes(parsed.Software) : false,
               exif_subject_distance_m: parsed.SubjectDistance || null
             }
+            const anyExifValue = Object.values(exifData).some(v => v !== null && v !== false)
+            exifStatus = anyExifValue ? 'ok' : 'no_metadata'
+          } else if (exifStatus !== 'error') {
+            exifStatus = 'no_metadata'
           }
+        } else {
+          exifStatus = 'error'
+          exifErrorReason = 'storage.download returned no data'
         }
-      } catch (e) {
+      } catch (e: any) {
+        exifStatus = 'error'
+        exifErrorReason = e?.message ?? String(e)
         console.error('EXIF extraction error:', e)
-        // Continue without EXIF — photo still counts for scoring
+        // Continue without EXIF — photo still counts for the 15pt photo bonus
       }
     }
 
@@ -430,6 +445,10 @@ Deno.serve(async (req) => {
         edit_clean: checkEditClean,
         plausibility: plausibilityPass,
         measure_in_frame: null
+      },
+      exif: {
+        status: exifStatus,
+        error_reason: exifErrorReason
       }
     }), { headers })
 

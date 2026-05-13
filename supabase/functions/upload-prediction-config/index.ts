@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
+import { requireAdmin } from "../_shared/admin_auth.ts";
 
 function getConflictKey(table: string): string {
   switch (table) {
@@ -16,6 +17,14 @@ const allowedTables = ['prediction_params', 'venue_profiles', 'venue_correlation
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify({ error: auth.error }), {
+      status: auth.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
