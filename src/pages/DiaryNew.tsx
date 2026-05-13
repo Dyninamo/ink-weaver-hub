@@ -330,13 +330,7 @@ export default function DiaryNew() {
         if (presetErr) throw presetErr;
       }
 
-      // Resolve venue_id (non-critical)
-      const { data: matchedVenue } = await supabase
-        .from("venues_new")
-        .select("venue_id, contact_email")
-        .ilike("name", venue)
-        .limit(1)
-        .maybeSingle();
+      // Side-effect calls — reuse matchedVenue resolved before insert (prompt 174).
       if (matchedVenue?.venue_id) {
         supabase.functions.invoke("on-session-logged", {
           body: { user_id: user.id, venue_id: matchedVenue.venue_id, session_date: sessionDate },
