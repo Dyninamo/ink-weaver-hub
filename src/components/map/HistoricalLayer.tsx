@@ -81,8 +81,8 @@ export default function HistoricalLayer({ map, sessions }: Props) {
         });
         layerIdsRef.current.push(id);
 
-        // Catch pins along the trail (use endpoints as approximation if no per-event data)
-        s.trail.forEach((pt) => {
+        // Catch pins only — not every event in the trail.
+        s.catchPoints.forEach((pt) => {
           const el = document.createElement('div');
           el.className = 'event-pin catch';
           el.style.opacity = '0.8';
