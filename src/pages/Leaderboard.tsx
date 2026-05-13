@@ -46,9 +46,9 @@ const tierLabels: Record<number, string> = {
 };
 
 const rankColors: Record<number, string> = {
-  1: "text-[#F59E0B]",
+  1: "text-diary-notable",
   2: "text-[#9CA3AF]",
-  3: "text-[#D97706]",
+  3: "text-amber-600",
 };
 
 interface FishEntry {
@@ -329,7 +329,7 @@ export default function Leaderboard() {
             key={s}
             className={cn(
               "h-4 w-4",
-              s <= tier ? "text-[#F59E0B] fill-[#F59E0B]" : "text-muted"
+              s <= tier ? "text-diary-notable fill-diary-notable" : "text-muted"
             )}
           />
         ))}
@@ -459,7 +459,7 @@ export default function Leaderboard() {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <Trophy className="h-5 w-5 text-[#F59E0B]" />
+        <Trophy className="h-5 w-5 text-diary-notable" />
         <h1 className="text-xl font-semibold">Leaderboard</h1>
       </div>
 

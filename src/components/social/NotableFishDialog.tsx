@@ -300,7 +300,7 @@ export default function NotableFishDialog({
       <DialogContent className="max-w-[400px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-[#F59E0B]" />
+            <Trophy className="h-5 w-5 text-diary-notable" />
             {step === 1 && "Submit Notable Fish"}
             {step === 2 && "Add a Photo"}
             {step === 3 && "Fish Submitted!"}
@@ -560,7 +560,7 @@ export default function NotableFishDialog({
                     className={cn(
                       "h-6 w-6",
                       s <= result.verification_tier
-                        ? "text-[#F59E0B] fill-[#F59E0B]"
+                        ? "text-diary-notable fill-diary-notable"
                         : "text-muted"
                     )}
                   />
@@ -629,7 +629,7 @@ export default function NotableFishDialog({
                 </p>
               )}
               {result.is_personal_best && (
-                <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-[#F59E0B]">
+                <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-diary-notable">
                   <Trophy className="h-4 w-4" /> Personal best!
                 </div>
               )}
@@ -639,8 +639,8 @@ export default function NotableFishDialog({
                 </div>
               )}
               {result.is_venue_alltime_record && (
-                <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-[#F59E0B]">
-                  <Trophy className="h-4 w-4 fill-[#F59E0B]" /> All-time venue
+                <div className="flex items-center justify-center gap-1.5 text-sm font-medium text-diary-notable">
+                  <Trophy className="h-4 w-4 fill-diary-notable" /> All-time venue
                   record!
                 </div>
               )}
