@@ -68,7 +68,17 @@ export default {
           catch: 'hsl(var(--diary-catch))',
           blank: 'hsl(var(--diary-blank))',
           change: 'hsl(var(--diary-change))',
-          gotaway: 'hsl(var(--diary-got-away))',
+          lost: 'hsl(var(--diary-lost))',
+          gotaway: 'hsl(var(--diary-lost))', // legacy alias → unified to lost
+          notable: 'hsl(var(--diary-notable))',
+        },
+        shell: {
+          'active-bg': 'hsl(var(--shell-active-bg))',
+          'active-surface': 'hsl(var(--shell-active-surface))',
+          'active-surface-hover': 'hsl(var(--shell-active-surface-hover))',
+          'active-border': 'hsl(var(--shell-active-border))',
+          'active-fg': 'hsl(var(--shell-active-fg))',
+          'active-muted-fg': 'hsl(var(--shell-active-muted-fg))',
         },
       },
       fontFamily: {

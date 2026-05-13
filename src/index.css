@@ -72,12 +72,24 @@ All colors MUST be HSL.
     --shadow-soft: 0 4px 12px hsl(199 89% 48% / 0.1);
     --shadow-medium: 0 8px 24px hsl(199 89% 48% / 0.15);
     
-    /* Diary design tokens */
+    /* Diary design tokens — canonical event palette. Used by both input flows
+       (.event-chip / .event-cta with data-tone) and display chips (Timeline). */
     --diary-during-bg: 210 28% 8%;
     --diary-catch: 142 71% 45%;
     --diary-blank: 220 9% 46%;
     --diary-change: 217 91% 60%;
-    --diary-got-away: 45 93% 47%;
+    --diary-lost: 24 75% 50%;
+    --diary-notable: 38 92% 50%;
+    /* Legacy alias kept for any straggling references */
+    --diary-got-away: var(--diary-lost);
+
+    /* Dark active-session shell tokens (replace hex literals in DiaryEntry) */
+    --shell-active-bg: 210 28% 8%;
+    --shell-active-surface: 210 36% 14%;
+    --shell-active-surface-hover: 210 36% 19%;
+    --shell-active-border: 210 30% 28%;
+    --shell-active-fg: 210 30% 94%;
+    --shell-active-muted-fg: 210 28% 64%;
 
     --sidebar-background: 210 20% 98%;
     --sidebar-foreground: 215 25% 27%;
@@ -390,9 +402,10 @@ All colors MUST be HSL.
   transition: background var(--motion-fast) var(--ease-standard);
 }
 .event-cta[data-active="true"] { cursor: pointer; color: var(--paper-50); box-shadow: var(--shadow-ink); }
-.event-cta[data-tone="catch"][data-active="true"]  { background: var(--event-catch); border-color: var(--event-catch-dark); }
-.event-cta[data-tone="blank"][data-active="true"]  { background: var(--event-blank); border-color: #414756; }
-.event-cta[data-tone="lost"][data-active="true"]   { background: var(--event-lost);  border-color: #8E3B1E; }
+.event-cta[data-tone="catch"][data-active="true"]  { background: hsl(var(--diary-catch));   border-color: hsl(var(--diary-catch) / 0.7); }
+.event-cta[data-tone="blank"][data-active="true"]  { background: hsl(var(--diary-blank));   border-color: hsl(var(--diary-blank) / 0.7); }
+.event-cta[data-tone="lost"][data-active="true"]   { background: hsl(var(--diary-lost));    border-color: hsl(var(--diary-lost)  / 0.7); }
+.event-cta[data-tone="change"][data-active="true"] { background: hsl(var(--diary-change));  border-color: hsl(var(--diary-change) / 0.7); }
 
 .event-chip {
   min-height: 48px;
@@ -407,9 +420,10 @@ All colors MUST be HSL.
   cursor: pointer;
   transition: all var(--motion-fast);
 }
-.event-chip[data-active="true"][data-tone="catch"] { background: var(--event-catch); border-color: var(--event-catch-dark); color: var(--paper-50); }
-.event-chip[data-active="true"][data-tone="blank"] { background: var(--event-blank); border-color: #414756; color: var(--paper-50); }
-.event-chip[data-active="true"][data-tone="lost"]  { background: var(--event-lost);  border-color: #8E3B1E; color: var(--paper-50); }
+.event-chip[data-active="true"][data-tone="catch"]  { background: hsl(var(--diary-catch));   border-color: hsl(var(--diary-catch) / 0.7); color: var(--paper-50); }
+.event-chip[data-active="true"][data-tone="blank"]  { background: hsl(var(--diary-blank));   border-color: hsl(var(--diary-blank) / 0.7); color: var(--paper-50); }
+.event-chip[data-active="true"][data-tone="lost"]   { background: hsl(var(--diary-lost));    border-color: hsl(var(--diary-lost)  / 0.7); color: var(--paper-50); }
+.event-chip[data-active="true"][data-tone="change"] { background: hsl(var(--diary-change));  border-color: hsl(var(--diary-change) / 0.7); color: var(--paper-50); }
 
 /* Tabular weight input on Catch (Prompt 81A) */
 .tabular-weight-input {
