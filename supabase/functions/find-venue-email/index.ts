@@ -12,6 +12,42 @@ const SKIP_PREFIXES = ["noreply", "no-reply", "webmaster", "admin", "postmaster"
 const SKIP_EXTENSIONS = /\.(png|jpg|jpeg|gif|svg|css|js|woff|woff2|ico)$/i;
 const EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
 
+// Block fetches against private / link-local / loopback IPs so a hostile
+// or compromised admin write to venues_new.root_url can't point the
+// scraper at internal infra (cloud metadata, RFC1918 hosts, etc.).
+function isPublicHttpUrl(rawUrl: string): { ok: true; url: URL } | { ok: false; reason: string } {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return { ok: false, reason: "invalid URL" };
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return { ok: false, reason: `protocol ${url.protocol} not allowed` };
+  }
+  const host = url.hostname.toLowerCase();
+  const BLOCKED_HOSTNAMES = new Set(["localhost", "metadata.google.internal", "metadata"]);
+  if (BLOCKED_HOSTNAMES.has(host)) {
+    return { ok: false, reason: `hostname ${host} blocked` };
+  }
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4) {
+    const a = Number(ipv4[1]);
+    const b = Number(ipv4[2]);
+    if (a === 10) return { ok: false, reason: "private IPv4 (10/8)" };
+    if (a === 127) return { ok: false, reason: "loopback IPv4" };
+    if (a === 169 && b === 254) return { ok: false, reason: "link-local IPv4" };
+    if (a === 172 && b >= 16 && b <= 31) return { ok: false, reason: "private IPv4 (172.16/12)" };
+    if (a === 192 && b === 168) return { ok: false, reason: "private IPv4 (192.168/16)" };
+    if (a === 0) return { ok: false, reason: "0/8" };
+    if (a >= 224) return { ok: false, reason: "multicast/reserved" };
+  }
+  if (host.includes(":")) {
+    return { ok: false, reason: "IPv6 not allowed" };
+  }
+  return { ok: true, url };
+}
+
 function isGeneric(email: string): boolean {
   const local = email.split("@")[0].toLowerCase();
   return SKIP_PREFIXES.some((p) => local.startsWith(p));
@@ -144,8 +180,25 @@ Deno.serve(async (req) => {
 
     const searchId = search?.search_id;
 
-    // 5-8. Scrape pages
-    const rootUrl = venue.root_url.replace(/\/$/, "");
+    // 5-8. Scrape pages — guard against SSRF via root_url (per prompt 196).
+    const cleanedRoot = venue.root_url.replace(/\/$/, "");
+    const rootCheck = isPublicHttpUrl(cleanedRoot);
+    if (!rootCheck.ok) {
+      if (searchId) {
+        await supabase
+          .from("venue_email_searches")
+          .update({
+            status: "not_found",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("search_id", searchId);
+      }
+      return new Response(
+        JSON.stringify({ status: "not_found", error: `root_url blocked: ${rootCheck.reason}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const rootUrl = cleanedRoot;
     const urls = [rootUrl, ...CONTACT_PATHS.map((p) => rootUrl + p)];
     const allEmails: string[] = [];
 
