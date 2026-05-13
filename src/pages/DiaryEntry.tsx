@@ -70,7 +70,7 @@ export default function DiaryEntry() {
   // Expanded events
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const [profileId, setProfileId] = useState<string | null>(null);
+  const profileId = (profile as any)?.profile_id ?? null;
   const [notableOpen, setNotableOpen] = useState(false);
   const [notablePrefill, setNotablePrefill] = useState<string | null>(null);
   const [venueId, setVenueId] = useState<string | null>(null);
