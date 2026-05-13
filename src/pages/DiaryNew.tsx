@@ -348,6 +348,12 @@ export default function DiaryNew() {
       if (createdSessionId) {
         await supabase.from("fishing_sessions").delete().eq("id", createdSessionId);
       }
+      // Race: another tab/device started one between preflight and insert.
+      if (err?.code === "23505" && String(err?.message ?? "").includes("uniq_user_active_diary_session")) {
+        toast.error("Another active session was started elsewhere. Tap 'Resume' on /diary.");
+        navigate("/diary");
+        return;
+      }
       toast.error(err.message || "Failed to start session");
       throw err;
     }
