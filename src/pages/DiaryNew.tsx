@@ -229,12 +229,27 @@ export default function DiaryNew() {
     let createdSessionId: string | null = null;
     let createdRodId: string | null = null;
 
+    // Resolve venue_id from venues_new BEFORE inserting the session row (prompt 174).
+    // Case-insensitive exact match on name; we don't fuzzy-match here.
+    let matchedVenue: { venue_id: string; contact_email: string | null } | null = null;
+    const trimmedVenue = venue.trim();
+    if (trimmedVenue && trimmedVenue.toLowerCase() !== "home") {
+      const { data } = await supabase
+        .from("venues_new")
+        .select("venue_id, contact_email")
+        .ilike("name", trimmedVenue)
+        .limit(1)
+        .maybeSingle();
+      matchedVenue = (data as any) ?? null;
+    }
+
     try {
       // ---- 8a. fishing_sessions ----
       const session = await createSession({
         user_id: user.id,
         source: "diary",
-        venue_name: venue,
+        venue_name: trimmedVenue,
+        venue_id: matchedVenue?.venue_id ?? null,
         venue_type: venueType,
         session_date: sessionDate,
         start_time: startTime,
