@@ -373,7 +373,7 @@ export default function CatchFlow({
                         if (missing) setPickerForPos(pos);
                       }}
                       className={cn(
-                        "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors min-h-[56px]",
+                        "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors min-h-[48px]",
                         selected ? "bg-primary/5 border-primary" : "bg-card border-border hover:border-primary/40",
                       )}
                     >
@@ -400,7 +400,7 @@ export default function CatchFlow({
               <button
                 type="button"
                 onClick={() => setPickerForPos(position)}
-                className="w-full flex items-center justify-between px-3 py-3 rounded-lg border border-border bg-card hover:border-primary/40 text-left min-h-[56px]"
+                className="w-full flex items-center justify-between px-3 py-3 rounded-lg border border-border bg-card hover:border-primary/40 text-left min-h-[48px]"
               >
                 <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground">{positionLabel(position as FlyPosition)}</span>
@@ -439,7 +439,7 @@ export default function CatchFlow({
                   aria-checked={!showOther && species === s}
                   onClick={() => { setSpecies(s); setShowOther(false); }}
                   className={cn(
-                    "px-3 py-2 rounded-full text-sm border min-h-[40px]",
+                    "px-3 py-2 rounded-full text-sm border min-h-[44px]",
                     !showOther && species === s
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card border-border hover:border-primary/40",
@@ -454,7 +454,7 @@ export default function CatchFlow({
                 aria-checked={showOther}
                 onClick={() => { setShowOther(true); }}
                 className={cn(
-                  "px-3 py-2 rounded-full text-sm border min-h-[40px]",
+                  "px-3 py-2 rounded-full text-sm border min-h-[44px]",
                   showOther
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-card border-border hover:border-primary/40",
@@ -492,7 +492,7 @@ export default function CatchFlow({
                     else setWeightLbDecimal("");
                   }}
                   className={cn(
-                    "flex-1 px-3 py-2 capitalize transition-colors min-h-[40px]",
+                    "flex-1 px-3 py-2 capitalize transition-colors min-h-[44px]",
                     measureMode === m ? "bg-primary text-primary-foreground" : "bg-card",
                   )}
                 >
@@ -542,7 +542,7 @@ export default function CatchFlow({
                     type="button"
                     onClick={() => setRetrieve(r)}
                     className={cn(
-                      "px-3 py-2 rounded-full text-sm border min-h-[40px]",
+                      "px-3 py-2 rounded-full text-sm border min-h-[44px]",
                       retrieve === r
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card border-border hover:border-primary/40",
@@ -566,7 +566,7 @@ export default function CatchFlow({
                     type="button"
                     onClick={() => setDepthZone(d)}
                     className={cn(
-                      "px-3 py-2 rounded-full text-sm border min-h-[40px]",
+                      "px-3 py-2 rounded-full text-sm border min-h-[44px]",
                       depthZone === d
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card border-border hover:border-primary/40",

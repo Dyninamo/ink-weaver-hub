@@ -17,6 +17,7 @@ interface ChipAction {
   category: "swap_in" | "change_line" | "retrieve" | "spot" | "method";
   label: string;
   detail?: string;
+  fly_name?: string;  // Canonical fly name; required when category="swap_in" (per prompt 187).
 }
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -160,7 +161,9 @@ Deno.serve(async (req) => {
 2) CHIPS — 2-5 actionable chips as a JSON array. Each chip:
    { "category": "swap_in" | "change_line" | "retrieve" | "spot" | "method",
      "label": "<short imperative, max 5 words>",
-     "detail": "<optional one-line reason, <80 chars>" }${groundedListText}${groundingInstruction}
+     "detail": "<optional one-line reason, <80 chars>" }
+
+For category "swap_in", you MUST also include a "fly_name" field naming the canonical fly pattern (use the exact name from the GROUND TRUTH list above where one matches — e.g. "Mayfly", "Pheasant Tail", "Klinkhammer", not a free-text label). Skip the swap_in chip if the recommendation doesn't map to a single named pattern.${groundedListText}${groundingInstruction}
 
 Output ONLY this exact JSON shape (no markdown):
 {"narrative": "...", "chips": [...], "confidence": "high"|"medium"|"low"}`;
@@ -183,7 +186,19 @@ Output ONLY this exact JSON shape (no markdown):
       try {
         const parsed = JSON.parse(cleaned);
         if (typeof parsed.narrative === "string") narrative = parsed.narrative;
-        if (Array.isArray(parsed.chips)) chips = parsed.chips.slice(0, 5);
+        if (Array.isArray(parsed.chips)) {
+          chips = parsed.chips
+            .filter((c: any) => c && typeof c.category === "string" && typeof c.label === "string")
+            .map((c: any) => ({
+              category: c.category,
+              label: c.label,
+              detail: typeof c.detail === "string" ? c.detail : undefined,
+              fly_name: c.category === "swap_in" && typeof c.fly_name === "string"
+                ? c.fly_name.trim()
+                : undefined,
+            }))
+            .slice(0, 5);
+        }
         if (parsed.confidence === "low") {
           confidence = "low";
         } else if (grounded) {

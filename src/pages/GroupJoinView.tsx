@@ -87,7 +87,7 @@ export default function GroupJoinView() {
       }
     } else {
       toast({ title: "Joined!", description: `You're now a member of ${group.name}` });
-      navigate("/social");
+      navigate("/diary");
     }
     setJoining(false);
   };
@@ -151,7 +151,7 @@ export default function GroupJoinView() {
                   <Check className="h-5 w-5" />
                   <span className="text-sm font-medium">You're already in this group</span>
                 </div>
-                <Button variant="outline" onClick={() => navigate("/social")}>
+                <Button variant="outline" onClick={() => navigate("/diary")}>
                   Go to Social Feed
                 </Button>
               </div>
