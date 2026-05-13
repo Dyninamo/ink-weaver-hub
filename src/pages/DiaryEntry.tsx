@@ -77,6 +77,7 @@ export default function DiaryEntry() {
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loadError, setLoadError] = useState<"not_found" | "bad_id" | "other" | null>(null);
 
   // Load session + events
   const loadData = useCallback(async () => {
@@ -127,8 +128,16 @@ export default function DiaryEntry() {
         setLastSpecies(lastCatch.species);
       }
     } catch (err: any) {
-      toast.error("Failed to load session");
-      console.error(err);
+      const msg = String(err?.message || err);
+      if (err?.code === "PGRST116" || /406|no rows|not found/i.test(msg)) {
+        setLoadError("not_found");
+      } else if (/invalid input syntax for type uuid/i.test(msg) || err?.code === "22P02") {
+        setLoadError("bad_id");
+      } else {
+        setLoadError("other");
+        console.error(err);
+        toast.error("Failed to load session");
+      }
     } finally {
       setLoading(false);
     }
@@ -230,10 +239,29 @@ export default function DiaryEntry() {
     return `${h}h ${m > 0 ? `${m}m` : ""}`.trim();
   }
 
-  if (loading || !session) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Loading session...</p>
+      </div>
+    );
+  }
+  if (!session) {
+    const headline =
+      loadError === "not_found" ? "Session not found" :
+      loadError === "bad_id"    ? "Invalid session link" :
+                                  "Couldn't load session";
+    const body =
+      loadError === "not_found" ? "This session doesn't exist or has been deleted." :
+      loadError === "bad_id"    ? "The link doesn't look right." :
+                                  "Please try again — if it keeps failing, check your connection.";
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-sm text-center space-y-3">
+          <h1 className="text-xl font-medium">{headline}</h1>
+          <p className="text-sm text-muted-foreground">{body}</p>
+          <Button onClick={() => navigate("/diary")}>Back to diary</Button>
+        </div>
       </div>
     );
   }
@@ -283,6 +311,7 @@ export default function DiaryEntry() {
             size="icon"
             onClick={() => navigate("/diary")}
             className={isActive ? "text-[#8BA3BB] hover:text-[#E8EFF5]" : ""}
+            aria-label="Back to diary"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -311,6 +340,7 @@ export default function DiaryEntry() {
                 }}
                 className="shrink-0 text-[#F59E0B]"
                 title="Submit Notable Fish"
+                aria-label="Submit notable fish"
               >
                 <Trophy className="h-5 w-5" />
               </Button>
@@ -320,6 +350,7 @@ export default function DiaryEntry() {
                 onClick={() => setShareOpen(true)}
                 className="shrink-0"
                 title="Share to group"
+                aria-label="Share session"
               >
                 <Share2 className="h-5 w-5" />
               </Button>
@@ -686,16 +717,20 @@ export default function DiaryEntry() {
               </Card>
             )}
 
-            {/* Delete button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive w-full"
-              onClick={handleDeleteSession}
-            >
-              <Trash2 className="h-4 w-4 mr-2" /> Delete Session
-            </Button>
           </div>
+        )}
+
+        {/* Delete button — visible on every tab of a completed session.
+            Active sessions use ActiveSessionShell's End-session flow instead. */}
+        {!isActive && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive w-full mt-4"
+            onClick={handleDeleteSession}
+          >
+            <Trash2 className="h-4 w-4 mr-2" /> Delete Session
+          </Button>
         )}
 
         {/* End Session button + FAB removed (active session uses ActiveSessionShell). */}

@@ -69,7 +69,15 @@ export default function ShareView() {
       setCreator(data.shareInfo.created_by);
     } catch (err: any) {
       console.error('Error fetching shared report:', err);
-      setError(err.message || 'Failed to load shared report');
+      const status = err?.context?.response?.status ?? err?.status;
+      const msg = String(err?.message || '');
+      if (status === 404 || /not.found|expired|invalid.token/i.test(msg)) {
+        setError("This share link has expired or was never valid.");
+      } else if (status === 401 || status === 403) {
+        setError("You don't have access to this report. Sign in if you have an invite.");
+      } else {
+        setError("Couldn't load this report. Try again in a moment.");
+      }
     } finally {
       setLoading(false);
     }

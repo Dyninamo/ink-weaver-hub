@@ -438,7 +438,7 @@ export default function DiaryNew() {
     <div className="min-h-screen bg-background">
       <div className="max-w-[420px] mx-auto p-4 space-y-5">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/diary")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/diary")} aria-label="Back">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-semibold font-diary">Session basics</h1>

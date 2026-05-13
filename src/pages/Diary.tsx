@@ -226,6 +226,7 @@ export default function Diary() {
               size="icon"
               onClick={() => navigate("/map")}
               title="Discover waters"
+              aria-label="Open map"
             >
               <MapIcon className="h-5 w-5" />
             </Button>
@@ -234,6 +235,7 @@ export default function Diary() {
               size="icon"
               onClick={() => navigate("/queries")}
               title="Ask the Ghillie"
+              aria-label="Ask the Ghillie"
             >
               <Sparkles className="h-5 w-5" />
             </Button>
@@ -242,6 +244,7 @@ export default function Diary() {
               size="icon"
               onClick={() => navigate("/diary/settings/setups")}
               title="Rod setups"
+              aria-label="Saved rod setups"
             >
               <Settings2 className="h-5 w-5" />
             </Button>
@@ -537,6 +540,7 @@ export default function Diary() {
               size="sm"
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
+              aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -548,6 +552,7 @@ export default function Diary() {
               size="sm"
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
+              aria-label="Next page"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
