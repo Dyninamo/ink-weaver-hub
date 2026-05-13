@@ -27,8 +27,7 @@ interface ReportData {
 }
 
 function buildEmailHtml(reports: ReportData[], customMessage?: string): string {
-  const baseUrl = Deno.env.get('VITE_SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 
-                  `https://${Deno.env.get('VITE_SUPABASE_PROJECT_ID')}.lovableproject.com`;
+  const baseUrl = Deno.env.get('PUBLIC_SITE_URL') ?? 'https://app.itscatching.uk';
 
   const reportCards = reports.map(report => `
     <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 15px 0; background: white;">
