@@ -14,7 +14,7 @@ import { logEvent } from "@/services/eventLogger";
 import FlyPicker from "./FlyPicker";
 import LeaderPicker, { type LeaderValue, EMPTY_LEADER } from "./LeaderPicker";
 import SpotPicker from "./SpotPicker";
-import { STYLE_OPTIONS, ALL_LINES, linesForWeight } from "./setup/vocabulary";
+import { STYLE_OPTIONS, ALL_LINES, linesForWeight, positionsForFlyCount } from "./setup/vocabulary";
 import { retrievesForStyle, depthsForStyle } from "@/services/styleRules";
 
 export type ChangeField =
@@ -53,6 +53,7 @@ export default function ChangeFlow({
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const lastAutoSavedRef = useRef<string | null>(null);
 
   // Per-field draft state
   const [newValue, setNewValue] = useState<any>(null);
