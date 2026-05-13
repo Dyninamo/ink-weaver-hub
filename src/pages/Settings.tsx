@@ -314,7 +314,7 @@ export default function Settings() {
             <div className="settings-row-help">Confirm dialog on event + session deletes.</div>
           </div>
           <div className="settings-row-control">
-            <Switch checked={confirmDelete} onCheckedChange={handleConfirmDeleteToggle} />
+            <Switch checked={confirmDelete} onCheckedChange={handleConfirmDeleteToggle} aria-label="Ask before deleting sessions" />
           </div>
         </div>
 
