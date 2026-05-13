@@ -463,7 +463,6 @@ async function computeVenueStatsInline(supabase: any, venueId: string) {
 async function computeOneSession(
   supabase: any,
   sessionId: string,
-  venues: any[]
 ): Promise<{ totalFish: number, venueId: string, userId: string }> {
   const { data: session, error: sessErr } = await supabase
     .from('fishing_sessions')
@@ -480,13 +479,43 @@ async function computeOneSession(
     .order('event_time', { ascending: true })
     .order('sort_order', { ascending: true })
 
-  const venueName = (session.venue_name || '').toLowerCase()
-  const venue = venues.find((v: any) => {
-    const vmName = (v.name || '').toLowerCase()
-    return venueName.includes(vmName) || vmName.includes(venueName)
-  })
+  // ── Venue resolution (per prompt 191): mirror compute-session-summary ──
+  // 1) session_venue_map cached canonical id
+  const { data: venueMap } = await supabase
+    .from('session_venue_map')
+    .select('venue_id')
+    .eq('session_venue_name', session.venue_name)
+    .maybeSingle()
 
-  if (!venue) throw new Error(`No venue match for "${session.venue_name}"`)
+  let venueId: string | null = venueMap?.venue_id ?? null
+
+  // 2) exact case-insensitive name match in venues_new
+  if (!venueId && session.venue_name) {
+    const { data: venueRow } = await supabase
+      .from('venues_new')
+      .select('venue_id')
+      .ilike('name', session.venue_name)
+      .maybeSingle()
+    venueId = venueRow?.venue_id ?? null
+  }
+
+  // 3) home_venue_id fallback (handles venue_name = "Home")
+  if (!venueId && session.user_id) {
+    const { data: profileRow } = await supabase
+      .from('user_profiles')
+      .select('home_venue_id')
+      .eq('id', session.user_id)
+      .maybeSingle()
+    venueId = profileRow?.home_venue_id ?? null
+  }
+
+  if (!venueId) {
+    console.log(`[batch-recompute] No venue match for session ${sessionId}, skipping`)
+    return { totalFish: 0, venueId: '', userId: session.user_id }
+  }
+
+  const venue = { id: venueId }
+
 
   const weatherLog: WeatherSnapshot[] = session.weather_log || []
   const { periods: periodBoundaries, offset } = segmentWeatherPeriods(
@@ -620,25 +649,25 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Fetch venues once
-    const { data: venues } = await supabase.from('venue_metadata').select('id, name')
-    if (!venues || venues.length === 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'No venue_metadata found' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // Per prompt 191: venue resolution moved into computeOneSession
+    // (mirrors compute-session-summary: session_venue_map → venues_new ilike → home_venue_id).
+    // No upfront venues fetch needed; sessions with unresolvable venues are soft-skipped.
 
     // Process batch
     const batch = needCompute.slice(0, batchSize)
     const errors: { session_id: string, error_message: string }[] = []
     let totalFishAll = 0
+    let skippedNoVenue = 0
     const affectedPairs = new Set<string>()
     const affectedVenues = new Set<string>()
 
     for (const sess of batch) {
       try {
-        const result = await computeOneSession(supabase, sess.id, venues)
+        const result = await computeOneSession(supabase, sess.id)
+        if (!result.venueId) {
+          skippedNoVenue++
+          continue
+        }
         totalFishAll += result.totalFish
         affectedPairs.add(`${result.userId}|${result.venueId}`)
         affectedVenues.add(result.venueId)
