@@ -101,8 +101,15 @@ export default function MapPage() {
     const first = activeEvents.find((e) => e.latitude != null && e.longitude != null);
     if (first?.latitude != null && first?.longitude != null) return [first.longitude, first.latitude];
     if (activeSession) {
-      // Try to find venue coords by venue_name
-      const v = venues.find((v) => v.full_name === activeSession.venue_name || v.name === activeSession.venue_name);
+      // Prefer venue_id (set at session creation by prompt 174). Fall back to
+      // legacy name match for sessions logged before 174 landed.
+      const byId = activeSession.venue_id
+        ? venues.find((v) => v.venue_id === activeSession.venue_id)
+        : null;
+      const byName = byId
+        ? null
+        : venues.find((v) => v.full_name === activeSession.venue_name || v.name === activeSession.venue_name);
+      const v = byId ?? byName;
       if (v) return [v.longitude, v.latitude];
     }
     return null;
