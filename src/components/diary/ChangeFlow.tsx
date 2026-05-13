@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { addEvent, type CurrentSetup, type FliesOnCast, type FlyOnCast } from "@/services/diaryService";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { logEvent } from "@/services/eventLogger";
 import FlyPicker from "./FlyPicker";
@@ -194,6 +195,31 @@ export default function ChangeFlow({
         event_pressure: latestWeather?.pressure ?? null,
         event_conditions: latestWeather?.conditions ?? null,
       } as any);
+
+      // Persist new setup state to session_rods so subsequent CatchFlow reads
+      // see post-change values (not the original setup snapshot). Non-blocking.
+      try {
+        const rodUpdates: Record<string, any> = {};
+        if (field === "style")    rodUpdates.style = next.style;
+        if (field === "line")     rodUpdates.line_profile = next.line_type;
+        if (field === "fly")      rodUpdates.flies_on_cast = next.flies_on_cast;
+        if (field === "droppers" && typeof newValue === "number") {
+          rodUpdates.dropper_count = Math.max(0, newValue);
+        }
+        if (Object.keys(rodUpdates).length > 0) {
+          const { error: rodErr } = await supabase
+            .from("session_rods" as any)
+            .update(rodUpdates)
+            .eq("session_id", sessionId)
+            .eq("is_active", true);
+          if (rodErr) {
+            console.warn("session_rods sync failed (non-fatal):", rodErr.message);
+            logEvent("warning", { context: "rod_sync_after_change", field, message: rodErr.message }, sessionId);
+          }
+        }
+      } catch (rodWriteErr: any) {
+        console.warn("session_rods sync threw (non-fatal):", rodWriteErr?.message);
+      }
 
       logEvent("session.change", { session_id: sessionId, field, has_reason: !!reason }, sessionId);
       toast.success("Change saved");
