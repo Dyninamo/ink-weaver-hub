@@ -151,6 +151,25 @@ export default function LostFlow({
         </div>
       )}
 
+      <div>
+        <button
+          type="button"
+          onClick={() => setNotesOpen((o) => !o)}
+          className="text-sm text-muted-foreground underline"
+        >
+          {notesOpen ? "Hide note" : "Add a note (optional)"}
+        </button>
+        {notesOpen && (
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="What happened? (e.g. hook pulled, bit off, snagged)"
+            className="mt-2"
+            rows={3}
+          />
+        )}
+      </div>
+
       <button
         type="button"
         disabled={!canSave || saving}
