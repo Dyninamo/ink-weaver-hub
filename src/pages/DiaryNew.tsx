@@ -6,9 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogDescription, AlertDialogFooter,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { createSession } from "@/services/diaryService";
+import { formatDistanceToNow } from "date-fns";
+import { createSession, endSession } from "@/services/diaryService";
 import SetupWizard, { type WizardCommit } from "@/components/diary/setup/SetupWizard";
 import { positionsForFlyCount } from "@/components/diary/setup/vocabulary";
 import { logEvent } from "@/services/eventLogger";
