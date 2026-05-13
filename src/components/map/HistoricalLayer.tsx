@@ -5,8 +5,10 @@ export interface HistoricalSession {
   id: string;
   date: string; // ISO
   catches: number;
-  /** Sorted event coords. May be empty. */
+  /** Sorted event coords (line geometry). May be empty. */
   trail: [number, number][];
+  /** Subset of trail points that were catches — used for catch-only pin overlay. */
+  catchPoints: [number, number][];
 }
 
 interface Props {
@@ -79,8 +81,8 @@ export default function HistoricalLayer({ map, sessions }: Props) {
         });
         layerIdsRef.current.push(id);
 
-        // Catch pins along the trail (use endpoints as approximation if no per-event data)
-        s.trail.forEach((pt) => {
+        // Catch pins only — not every event in the trail.
+        s.catchPoints.forEach((pt) => {
           const el = document.createElement('div');
           el.className = 'event-pin catch';
           el.style.opacity = '0.8';

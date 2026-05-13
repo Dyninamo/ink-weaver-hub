@@ -8,6 +8,7 @@ export interface FishingSession {
   id: string;
   user_id: string;
   venue_name: string;
+  venue_id: string | null;
   venue_type: string;
   session_date: string;
   start_time: string | null;

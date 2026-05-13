@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Crosshair, Maximize2, Search } from 'lucide-react';
+import { ArrowLeft, Crosshair, Maximize2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { getActiveSession, getSessionEvents } from '@/services/diaryService';
@@ -36,6 +36,7 @@ export default function MapPage() {
   const [venues, setVenues] = useState<VenuePin[]>([]);
   const [loadingVenues, setLoadingVenues] = useState(true);
   const [selected, setSelected] = useState<VenuePin | null>(null);
+  const handleSelectVenue = useCallback((v: VenuePin) => setSelected(v), []);
   const [filters, setFilters] = useState<MapFilters>(EMPTY_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -101,8 +102,15 @@ export default function MapPage() {
     const first = activeEvents.find((e) => e.latitude != null && e.longitude != null);
     if (first?.latitude != null && first?.longitude != null) return [first.longitude, first.latitude];
     if (activeSession) {
-      // Try to find venue coords by venue_name
-      const v = venues.find((v) => v.full_name === activeSession.venue_name || v.name === activeSession.venue_name);
+      // Prefer venue_id (set at session creation by prompt 174). Fall back to
+      // legacy name match for sessions logged before 174 landed.
+      const byId = activeSession.venue_id
+        ? venues.find((v) => v.venue_id === activeSession.venue_id)
+        : null;
+      const byName = byId
+        ? null
+        : venues.find((v) => v.full_name === activeSession.venue_name || v.name === activeSession.venue_name);
+      const v = byId ?? byName;
       if (v) return [v.longitude, v.latitude];
     }
     return null;
@@ -150,12 +158,18 @@ export default function MapPage() {
       const venueName = activeSession?.venue_name;
       let sessionQuery = supabase
         .from('fishing_sessions')
-        .select('id, session_date, venue_name')
+        .select('id, session_date, venue_name, venue_id')
         .eq('user_id', user.id)
         .eq('is_active', false)
         .order('session_date', { ascending: false })
         .limit(20);
-      if (venueName) sessionQuery = sessionQuery.eq('venue_name', venueName);
+      // Prefer venue_id (immune to name typos / casing / alias drift). Only
+      // fall back to venue_name if the active session itself has no venue_id.
+      if (activeSession?.venue_id) {
+        sessionQuery = sessionQuery.eq('venue_id', activeSession.venue_id);
+      } else if (venueName) {
+        sessionQuery = sessionQuery.eq('venue_name', venueName);
+      }
       const { data: sessions } = await sessionQuery;
       if (cancelled || !sessions || sessions.length === 0) {
         if (!cancelled) setHistory([]);
@@ -186,6 +200,9 @@ export default function MapPage() {
             date: s.session_date,
             catches: pts.filter((p) => p.isCatch).length,
             trail: pts.map((p) => [p.longitude, p.latitude] as [number, number]),
+            catchPoints: pts
+              .filter((p) => p.isCatch)
+              .map((p) => [p.longitude, p.latitude] as [number, number]),
           };
         })
         .filter((h) => h.trail.length >= 2);
@@ -279,7 +296,7 @@ export default function MapPage() {
             map={shellRef.current?.map ?? null}
             venues={filteredVenues}
             selectedId={selected?.venue_id ?? null}
-            onSelect={(v) => setSelected(v)}
+            onSelect={handleSelectVenue}
           />
         )}
 
@@ -337,9 +354,7 @@ export default function MapPage() {
               >
                 Filter
               </MapControlButton>
-              <MapControlButton onClick={() => { /* placeholder for future search */ }} ariaLabel="Search">
-                <Search className="h-4 w-4" />
-              </MapControlButton>
+              {/* Search reserved for a future build — hide rather than ship a dead button. */}
             </>
           )}
 

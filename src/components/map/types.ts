@@ -24,8 +24,12 @@ export interface VenuePin {
   acreage: number | null;
 }
 
-// Stillwater water_type_ids per venues_new convention (1 small SW, 2 large reservoir, 7 loch)
-export const STILLWATER_TYPES = new Set([1, 2, 7]);
+// Stillwater water_type_ids per the water_types table:
+//   1 Small Stillwater, 2 Large Reservoir, 7 Loch/Lough/Llyn
+//   8 "Both - Stillwater" (mixed venue, stillwater-leaning)
+//   10 Universal — treated as stillwater for filter purposes (rod presets default river)
+// Ids 3,4,5,6,9 are rivers and remain excluded.
+export const STILLWATER_TYPES = new Set([1, 2, 7, 8, 10]);
 
 export const REGIONS: { id: number; label: string }[] = [
   { id: 1, label: 'North East' },
@@ -106,11 +110,15 @@ export function filterVenues(venues: VenuePin[], f: MapFilters): VenuePin[] {
       if (!friendly || !f.archetypes.has(friendly)) return false;
     }
     if (f.sizes.size > 0) {
-      const sizeFriendly =
-        v.stillwater_size_class === 'small' ? 'Small' :
-        v.stillwater_size_class === 'medium' ? 'Medium' :
-        v.stillwater_size_class === 'large' ? 'Large' : null;
-      if (!sizeFriendly || !f.sizes.has(sizeFriendly as any)) return false;
+      // Size only applies to stillwaters. Rivers have no size_class — without
+      // this guard, toggling any Size chip silently excludes every river.
+      if (isStill) {
+        const sizeFriendly =
+          v.stillwater_size_class === 'small' ? 'Small' :
+          v.stillwater_size_class === 'medium' ? 'Medium' :
+          v.stillwater_size_class === 'large' ? 'Large' : null;
+        if (!sizeFriendly || !f.sizes.has(sizeFriendly as any)) return false;
+      }
     }
     if (f.access.size > 0) {
       const tags: AccessTag[] = [];

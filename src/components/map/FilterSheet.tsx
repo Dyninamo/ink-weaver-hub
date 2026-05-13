@@ -76,7 +76,7 @@ export default function FilterSheet({ open, onOpenChange, filters, onChange, mat
             ))}
           </FacetGroup>
 
-          <FacetGroup label="Size">
+          <FacetGroup label="Size" disabled={filters.waterType === 'River'}>
             {SIZE_OPTIONS.map((opt) => (
               <Chip
                 key={opt}
@@ -150,9 +150,9 @@ export default function FilterSheet({ open, onOpenChange, filters, onChange, mat
   );
 }
 
-function FacetGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function FacetGroup({ label, disabled, children }: { label: string; disabled?: boolean; children: React.ReactNode }) {
   return (
-    <div>
+    <div style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
       <div className="facet-label">{label}</div>
       <div className="flex flex-wrap gap-1.5">{children}</div>
     </div>
