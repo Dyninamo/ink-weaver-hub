@@ -590,11 +590,20 @@ Deno.serve(async (req) => {
       venueId = venueRow?.venue_id || null
     }
 
+    // Tier 3: fall back to the user's configured home venue (handles venue_name="Home").
     if (!venueId) {
-      return new Response(
-        JSON.stringify({ success: false, error: `No venue match for "${session.venue_name}"` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      const { data: profileRow } = await supabase
+        .from('user_profiles')
+        .select('home_venue_id')
+        .eq('id', session.user_id)
+        .maybeSingle()
+      venueId = profileRow?.home_venue_id || null
+    }
+
+    if (!venueId) {
+      // Genuinely venue-less session — skip venue-relative stats and resolve cleanly.
+      console.log(`[compute-session-summary] No venue match for session ${session_id} (venue_name="${session.venue_name}"); skipping venue-relative stats`)
+      return new Response(null, { status: 204, headers: corsHeaders })
     }
 
     const venue = { id: venueId }
