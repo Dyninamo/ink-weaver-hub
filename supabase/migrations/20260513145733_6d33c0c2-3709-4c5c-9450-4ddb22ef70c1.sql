@@ -1,0 +1,1 @@
+SELECT * FROM public.auto_end_stale_diary_sessions(12);

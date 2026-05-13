@@ -6534,6 +6534,15 @@ export type Database = {
       }
     }
     Functions: {
+      auto_end_stale_diary_sessions: {
+        Args: { p_max_age_hours?: number }
+        Returns: {
+          ended_duration_minutes: number
+          ended_id: string
+          ended_user_id: string
+          ended_venue_name: string
+        }[]
+      }
       clear_table: { Args: { target_table: string }; Returns: undefined }
       current_user_managed_venue_ids: { Args: never; Returns: string[] }
       current_user_writable_venue_ids: { Args: never; Returns: string[] }
