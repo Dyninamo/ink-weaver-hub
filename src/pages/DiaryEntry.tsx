@@ -552,13 +552,7 @@ export default function DiaryEntry() {
                     {event.event_type === "change" && (
                       <>
                         <RefreshCw className="h-4 w-4 text-diary-change shrink-0" />
-                        <span className="truncate">
-                          {event.change_to
-                            ? Object.entries(event.change_to as Record<string, any>)
-                                .map(([, v]) => `${v}`)
-                                .join(" · ")
-                            : "Setup change"}
-                        </span>
+                        <span className="truncate">{formatChangeTo(event.change_to)}</span>
                       </>
                     )}
                   </div>
