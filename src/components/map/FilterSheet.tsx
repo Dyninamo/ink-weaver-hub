@@ -76,7 +76,7 @@ export default function FilterSheet({ open, onOpenChange, filters, onChange, mat
             ))}
           </FacetGroup>
 
-          <FacetGroup label="Size">
+          <FacetGroup label="Size" disabled={filters.waterType === 'River'}>
             {SIZE_OPTIONS.map((opt) => (
               <Chip
                 key={opt}
