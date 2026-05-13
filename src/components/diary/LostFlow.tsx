@@ -66,6 +66,7 @@ export default function LostFlow({
         sort_order: eventCount + 1,
         got_away_stage: stage!,
         fly_pattern: flyPattern,
+        notes: notes.trim() || null,
         // @ts-ignore
         fly_position_unknown: flyUnknown,
         style: currentSetup.style,
