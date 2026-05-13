@@ -40,23 +40,44 @@ export function useShareLink() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        const ctx: any = (error as any).context;
+        if (ctx && typeof ctx.status === 'number') {
+          if (ctx.status === 404) {
+            toast({ variant: 'destructive', title: 'Share failed', description: "That session can't be shared (not found)." });
+            return;
+          }
+          if (ctx.status === 401 || ctx.status === 403) {
+            toast({ variant: 'destructive', title: 'Share failed', description: 'Sign in again to share.' });
+            return;
+          }
+        }
+        throw error;
+      }
       const url = data.url;
 
       if (navigator.share) {
-        await navigator.share({
-          title: `${cardData.displayName} caught ${cardData.nFish} at ${cardData.venueName}`,
-          text: "Check out this fishing session on It's Catching!",
-          url,
-        });
+        try {
+          await navigator.share({
+            title: `${cardData.displayName} caught ${cardData.nFish} at ${cardData.venueName}`,
+            text: "Check out this fishing session on It's Catching!",
+            url,
+          });
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') return;
+          throw shareErr;
+        }
       } else {
-        await navigator.clipboard.writeText(url);
-        toast({ title: 'Link copied', description: 'Share link copied to clipboard' });
+        try {
+          await navigator.clipboard.writeText(url);
+          toast({ title: 'Link copied', description: 'Share link copied to clipboard' });
+        } catch {
+          toast({ title: 'Copy this link', description: url });
+        }
       }
     } catch (err: any) {
-      if (err?.name !== 'AbortError') {
-        toast({ title: 'Share failed', description: err.message, variant: 'destructive' });
-      }
+      if (err?.name === 'AbortError') return;
+      toast({ title: 'Share failed', description: err?.message ?? 'Unknown error', variant: 'destructive' });
     }
   }
 
@@ -66,23 +87,44 @@ export function useShareLink() {
         body: { type: 'group_invite', group_id: groupId },
       });
 
-      if (error) throw error;
+      if (error) {
+        const ctx: any = (error as any).context;
+        if (ctx && typeof ctx.status === 'number') {
+          if (ctx.status === 404) {
+            toast({ variant: 'destructive', title: 'Share failed', description: "That group can't be shared (not found)." });
+            return;
+          }
+          if (ctx.status === 401 || ctx.status === 403) {
+            toast({ variant: 'destructive', title: 'Share failed', description: 'Sign in again to share.' });
+            return;
+          }
+        }
+        throw error;
+      }
       const url = data.url;
 
       if (navigator.share) {
-        await navigator.share({
-          title: `Join ${groupName} on It's Catching!`,
-          text: "You've been invited to a fishing group.",
-          url,
-        });
+        try {
+          await navigator.share({
+            title: `Join ${groupName} on It's Catching!`,
+            text: "You've been invited to a fishing group.",
+            url,
+          });
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') return;
+          throw shareErr;
+        }
       } else {
-        await navigator.clipboard.writeText(url);
-        toast({ title: 'Invite link copied', description: 'Share it with your mates' });
+        try {
+          await navigator.clipboard.writeText(url);
+          toast({ title: 'Invite link copied', description: 'Share it with your mates' });
+        } catch {
+          toast({ title: 'Copy this link', description: url });
+        }
       }
     } catch (err: any) {
-      if (err?.name !== 'AbortError') {
-        toast({ title: 'Share failed', description: err.message, variant: 'destructive' });
-      }
+      if (err?.name === 'AbortError') return;
+      toast({ title: 'Share failed', description: err?.message ?? 'Unknown error', variant: 'destructive' });
     }
   }
 

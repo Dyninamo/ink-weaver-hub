@@ -86,6 +86,18 @@ export default function ActiveSessionShell({
     };
   }, []);
 
+  // Periodic weather repoll — without this, latestWeather is stale between events.
+  // 10 minutes balances freshness vs battery; backgrounded tabs skipped.
+  useEffect(() => {
+    if (!sessionId) return;
+    const interval = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      pollSessionWeather(sessionId).then((s) => s && setLatestWeather(s));
+    }, 10 * 60 * 1000);
+    return () => window.clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
   // Fetch live rod row when about to confirm end-session — so the summary
   // reflects post-change line/rod state, not the original session columns.
   useEffect(() => {

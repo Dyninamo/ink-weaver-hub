@@ -358,12 +358,22 @@ export default function DiaryNew() {
     } catch (err: any) {
       console.error("Failed to start session:", err);
       logEvent("error", { context: "session_start", message: err?.message ?? String(err) }, createdSessionId ?? null);
-      // Rollback
+      // Rollback — each step independent so a failure on one doesn't block the other.
       if (createdRodId) {
-        await supabase.from("session_rods" as any).delete().eq("id", createdRodId);
+        try {
+          await supabase.from("session_rods" as any).delete().eq("id", createdRodId);
+        } catch (rollbackErr) {
+          console.error("Failed to roll back session_rods:", rollbackErr);
+          logEvent("error", { context: "session_start_rollback_rod", message: String(rollbackErr) }, createdSessionId ?? null);
+        }
       }
       if (createdSessionId) {
-        await supabase.from("fishing_sessions").delete().eq("id", createdSessionId);
+        try {
+          await supabase.from("fishing_sessions").delete().eq("id", createdSessionId);
+        } catch (rollbackErr) {
+          console.error("Failed to roll back fishing_session:", rollbackErr);
+          logEvent("error", { context: "session_start_rollback_session", message: String(rollbackErr) }, createdSessionId ?? null);
+        }
       }
       // Race: another tab/device started one between preflight and insert.
       if (err?.code === "23505" && String(err?.message ?? "").includes("uniq_user_active_diary_session")) {

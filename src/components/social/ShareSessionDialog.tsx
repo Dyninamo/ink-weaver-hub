@@ -112,12 +112,12 @@ const ShareSessionDialog = ({
       session_date: sessionDate,
       n_fish: totalFish,
       species_breakdown: speciesBreakdown,
-      top_fly_1: topFlies[0] || null,
-      top_fly_2: topFlies[1] || null,
-      method: method || null,
-      conditions_temp_c: weatherTemp || null,
-      conditions_wind: weatherWind || null,
-      conditions_weather: weatherConditions || null,
+      top_fly_1: topFlies[0] ?? null,
+      top_fly_2: topFlies[1] ?? null,
+      method: method ?? null,
+      conditions_temp_c: weatherTemp ?? null,
+      conditions_wind: weatherWind ?? null,
+      conditions_weather: weatherConditions ?? null,
       personal_note: note.trim() || null,
     };
 
