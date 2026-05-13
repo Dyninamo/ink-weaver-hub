@@ -246,7 +246,7 @@ export default function Queries() {
           <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm overflow-y-auto">
             <div className="max-w-[420px] mx-auto p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" onClick={() => setSelected(null)}>
+                <Button variant="ghost" size="icon" onClick={() => setSelected(null)} aria-label="Close">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <h2 className="text-base font-semibold">Saved question</h2>
