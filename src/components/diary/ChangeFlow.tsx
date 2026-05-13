@@ -69,6 +69,7 @@ export default function ChangeFlow({
     setNewValue(null);
     setFlyPos(null);
     setPendingFly(null);
+    lastAutoSavedRef.current = null;
     setReason("");
     if (f === "leader") setLeader(EMPTY_LEADER);
   }
@@ -78,7 +79,21 @@ export default function ChangeFlow({
     setNewValue(null);
     setFlyPos(null);
     setPendingFly(null);
+    lastAutoSavedRef.current = null;
   }
+
+  // Auto-save when FlyPicker hands us a fully-formed pendingFly (prompt 183 §2).
+  useEffect(() => {
+    if (field !== "fly") return;
+    if (saving) return;
+    if (!pendingFly?.pattern) return;
+    if (!isReady("fly", newValue, pendingFly, leader, flyPos)) return;
+    const fingerprint = `${pendingFly.pattern}|${pendingFly.size ?? ""}|${flyPos ?? ""}`;
+    if (lastAutoSavedRef.current === fingerprint) return;
+    lastAutoSavedRef.current = fingerprint;
+    void handleSave();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingFly, field, flyPos, saving]);
 
   // ---- Field picker landing ----
   if (field === null) {
