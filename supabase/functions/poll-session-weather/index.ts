@@ -57,6 +57,9 @@ serve(async (req) => {
       );
     }
 
+    if ((session as any).user_id && (session as any).user_id !== user.id) {
+      return forbiddenResponse("Forbidden — session not yours", corsHeaders);
+    }
     if (!session.is_active) {
       return new Response(
         JSON.stringify({ error: "Session is not active — weather polling skipped" }),
