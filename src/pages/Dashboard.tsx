@@ -280,10 +280,7 @@ const Dashboard = () => {
             <BookOpen className="w-4 h-4 mr-2" />
             My Diary
           </Button>
-          <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => navigate("/social")}>
-            <Users className="w-4 h-4 mr-2" />
-            Social
-          </Button>
+          {/* Social tab removed — social features not yet finalised (prompt 186). */}
         </div>
       </nav>
 

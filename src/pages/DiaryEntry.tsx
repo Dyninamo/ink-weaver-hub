@@ -331,34 +331,7 @@ export default function DiaryEntry() {
               )}
             </p>
           </div>
-          {/* Notable Fish + Share buttons (completed sessions only) */}
-          {!isActive && profileId && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setNotablePrefill(null);
-                  setNotableOpen(true);
-                }}
-                className="shrink-0 text-diary-notable"
-                title="Submit Notable Fish"
-                aria-label="Submit notable fish"
-              >
-                <Trophy className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShareOpen(true)}
-                className="shrink-0"
-                title="Share to group"
-                aria-label="Share session"
-              >
-                <Share2 className="h-5 w-5" />
-              </Button>
-            </>
-          )}
+          {/* Notable Fish + Share buttons removed — social features not yet finalised (prompt 186). */}
         </div>
 
         {/* Weather bar */}
@@ -641,17 +614,7 @@ export default function DiaryEntry() {
                             {formatTime(event.event_time)}
                           </p>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setNotablePrefill(event.species || null);
-                            setNotableOpen(true);
-                          }}
-                          className="p-1.5 rounded-md hover:bg-muted/50 transition-colors"
-                          title="Submit as notable fish"
-                        >
-                          <Trophy className="h-4 w-4 text-muted-foreground hover:text-diary-notable transition-colors" />
-                        </button>
+                        {/* Per-fish Trophy button removed — social features not yet finalised (prompt 186). */}
                       </div>
                     </CardContent>
                   </Card>

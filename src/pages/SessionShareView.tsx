@@ -161,7 +161,7 @@ export default function SessionShareView() {
 
         {user && (
           <div className="text-center">
-            <Button variant="outline" onClick={() => navigate("/social")}>
+            <Button variant="outline" onClick={() => navigate("/diary")}>
               Go to Social Feed
             </Button>
           </div>
