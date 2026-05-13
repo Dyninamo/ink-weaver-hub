@@ -286,7 +286,7 @@ export default function SetupWizard({
       <RigSoFarCard state={state} />
 
       {/* Phase body */}
-      <div className="min-h-[280px]">
+      <div className="min-h-[220px]">
         {phase === "rod" && rodSubStep === "weight" && (
           <RodWeightStep value={state.rodWeight} onChange={(v) => setState((s) => ({ ...s, rodWeight: v }))} />
         )}
@@ -364,7 +364,7 @@ export default function SetupWizard({
             <Button
               onClick={handleStart}
               disabled={!canAdvance || committing}
-              className="w-full min-h-[52px] text-base font-medium"
+              className="w-full min-h-[48px] text-base font-medium"
             >
               {committing ? "Starting…" : "Start fishing"}
             </Button>
@@ -386,7 +386,7 @@ export default function SetupWizard({
             <Button
               onClick={goNext}
               disabled={!canAdvance}
-              className="flex-1 min-h-[52px] text-base"
+              className="flex-1 min-h-[48px] text-base"
             >
               Next
             </Button>
@@ -480,7 +480,7 @@ function RodWeightStep({ value, onChange }: { value: number | null; onChange: (v
             onClick={() => onChange(w)}
             aria-pressed={value === w}
             className={cn(
-              "min-h-[56px] rounded-lg border text-base font-medium transition-all",
+              "min-h-[48px] rounded-lg border text-base font-medium transition-all",
               value === w
                 ? "bg-primary text-primary-foreground border-primary"
                 : "bg-card border-border hover:border-primary/50"
@@ -551,7 +551,7 @@ function LineStep({ options, value, onChange }: { options: string[]; value: stri
             onClick={() => onChange(line)}
             aria-pressed={value === line}
             className={cn(
-              "w-full min-h-[52px] rounded-lg border text-left px-4 font-medium transition-all flex items-center justify-between",
+              "w-full min-h-[44px] rounded-lg border text-left px-4 font-medium transition-all flex items-center justify-between",
               value === line
                 ? "bg-primary text-primary-foreground border-primary"
                 : "bg-card border-border hover:border-primary/50"
@@ -579,7 +579,7 @@ function StyleStep({ value, onChange }: { value: string | null; onChange: (v: st
             onClick={() => onChange(s)}
             aria-pressed={value === s}
             className={cn(
-              "min-h-[56px] rounded-lg border text-sm font-medium px-2 transition-all",
+              "min-h-[48px] rounded-lg border text-sm font-medium px-2 transition-all",
               value === s
                 ? "bg-primary text-primary-foreground border-primary"
                 : "bg-card border-border hover:border-primary/50"
@@ -633,7 +633,7 @@ function FliesStep({
               key={pos}
               type="button"
               onClick={() => onPick(pos)}
-              className="w-full min-h-[60px] rounded-lg border border-border bg-card px-4 py-3 text-left flex items-center justify-between hover:border-primary/50 transition-colors"
+              className="w-full min-h-[52px] rounded-lg border border-border bg-card px-4 py-3 text-left flex items-center justify-between hover:border-primary/50 transition-colors"
             >
               <div>
                 <div className="text-xs text-muted-foreground">{positionLabel(pos)}</div>
