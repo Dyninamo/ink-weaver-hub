@@ -128,8 +128,16 @@ export default function DiaryEntry() {
         setLastSpecies(lastCatch.species);
       }
     } catch (err: any) {
-      toast.error("Failed to load session");
-      console.error(err);
+      const msg = String(err?.message || err);
+      if (err?.code === "PGRST116" || /406|no rows|not found/i.test(msg)) {
+        setLoadError("not_found");
+      } else if (/invalid input syntax for type uuid/i.test(msg) || err?.code === "22P02") {
+        setLoadError("bad_id");
+      } else {
+        setLoadError("other");
+        console.error(err);
+        toast.error("Failed to load session");
+      }
     } finally {
       setLoading(false);
     }
