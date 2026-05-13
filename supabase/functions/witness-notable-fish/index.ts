@@ -71,35 +71,22 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: witnessError.message }), { status: 500, headers })
     }
 
-    // Update witness count on notable_fish
-    const newCount = fish.n_witnesses + 1
-    let newScore = fish.confidence_score
-    let newTier = fish.verification_tier
+    // Atomic increment via Postgres RPC (per prompt 196).
+    // Returns the post-increment values so we never act on stale reads.
+    const { data: incResult, error: incError } = await supabase
+      .rpc('increment_notable_fish_witnesses', { p_fish_id: fish_id })
+      .single<{ n_witnesses: number; confidence_score: number; verification_tier: number }>()
 
-    // Add witness points on first witness only (max 5 pts)
-    if (newCount === 1) {
-      newScore = Math.min(100, fish.confidence_score + 5)
-
-      await supabase
-        .from('verification_scores')
-        .update({ pts_peer_witness: 5, total_score: newScore })
-        .eq('fish_id', fish_id)
-
-      // Recompute tier
-      if (newScore >= 85) newTier = 4
-      else if (newScore >= 60) newTier = 3
-      else if (newScore >= 35) newTier = 2
-      else newTier = 1
+    if (incError || !incResult) {
+      return new Response(
+        JSON.stringify({ error: incError?.message ?? 'Failed to increment witness count' }),
+        { status: 500, headers }
+      )
     }
 
-    await supabase
-      .from('notable_fish')
-      .update({
-        n_witnesses: newCount,
-        confidence_score: newScore,
-        verification_tier: newTier
-      })
-      .eq('fish_id', fish_id)
+    const newCount = incResult.n_witnesses
+    const newScore = incResult.confidence_score
+    const newTier  = incResult.verification_tier
 
     return new Response(JSON.stringify({
       fish_id,
