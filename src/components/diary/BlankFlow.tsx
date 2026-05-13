@@ -3,6 +3,7 @@
 // a Change first if needed).
 import { useEffect, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { addEvent, type CurrentSetup } from "@/services/diaryService";
 import { toast } from "sonner";
@@ -36,6 +37,8 @@ export default function BlankFlow({
 }: Props) {
   const [confidence, setConfidence] = useState<string | null>(null);
   const [reason, setReason] = useState<string | null>(null);
+  const [notes, setNotes] = useState("");
+  const [notesOpen, setNotesOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -52,6 +55,7 @@ export default function BlankFlow({
         sort_order: eventCount + 1,
         blank_confidence: confidence,
         blank_reason: reason,
+        notes: notes.trim() || null,
         style: currentSetup.style,
         rig: currentSetup.rig,
         line_type: currentSetup.line_type,
@@ -124,6 +128,25 @@ export default function BlankFlow({
             </button>
           ))}
         </div>
+      </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setNotesOpen((o) => !o)}
+          className="text-sm text-muted-foreground underline"
+        >
+          {notesOpen ? "Hide note" : "Add a note (optional)"}
+        </button>
+        {notesOpen && (
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Optional notes…"
+            className="mt-2"
+            rows={3}
+          />
+        )}
       </div>
 
       <button
