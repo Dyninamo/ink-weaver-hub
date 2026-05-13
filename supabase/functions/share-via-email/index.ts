@@ -173,10 +173,11 @@ serve(async (req) => {
       );
     }
 
-    if (!body.recipientEmail || !body.recipientEmail.includes('@')) {
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!body.recipientEmail || !EMAIL_RE.test(body.recipientEmail)) {
       console.error('Invalid email address provided');
       return new Response(
-        JSON.stringify({ error: 'Valid recipientEmail is required' }),
+        JSON.stringify({ error: 'Invalid recipient email' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -188,8 +189,7 @@ serve(async (req) => {
 
     // Fetch report details for all tokens
     const reports: ReportData[] = [];
-    const baseUrl = Deno.env.get('VITE_SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || 
-                    `https://${Deno.env.get('VITE_SUPABASE_PROJECT_ID')}.lovableproject.com`;
+    const baseUrl = Deno.env.get('PUBLIC_SITE_URL') ?? 'https://app.itscatching.uk';
 
     for (const shareToken of body.shareTokens) {
       try {
@@ -279,7 +279,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Fishing Advisor <onboarding@resend.dev>',
+        from: "It's Catching <hello@itscatching.uk>",
         to: body.recipientEmail,
         subject: `Fishing Advice Shared With You (${reports.length} ${reports.length === 1 ? 'Report' : 'Reports'})`,
         html: emailHtml,
