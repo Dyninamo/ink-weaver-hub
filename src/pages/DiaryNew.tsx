@@ -359,6 +359,62 @@ export default function DiaryNew() {
     }
   }
 
+  const conflictModal = pendingActiveConflict ? (
+    <AlertDialog open onOpenChange={(o) => { if (!o) { setPendingActiveConflict(null); setPendingCommit(null); } }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>You already have an active session</AlertDialogTitle>
+          <AlertDialogDescription>
+            {pendingActiveConflict.venue_name ?? "Untitled"} — started{" "}
+            {formatDistanceToNow(
+              new Date(pendingActiveConflict.start_time ?? pendingActiveConflict.created_at),
+              { addSuffix: true }
+            )}.
+            Finish that one first, or resume it to keep logging.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={() => { setPendingActiveConflict(null); setPendingCommit(null); }}>
+            Cancel
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const id = pendingActiveConflict.id;
+              setPendingActiveConflict(null);
+              setPendingCommit(null);
+              navigate(`/diary/${id}`);
+            }}
+          >
+            Resume existing
+          </Button>
+          <Button
+            onClick={async () => {
+              const conflict = pendingActiveConflict;
+              const commit = pendingCommit;
+              setPendingActiveConflict(null);
+              setPendingCommit(null);
+              try {
+                await endSession(conflict.id, {});
+                refreshActiveSession();
+              } catch (e: any) {
+                toast.error(e?.message || "Failed to end existing session");
+                return;
+              }
+              if (commit) {
+                await proceedWithCreate(commit);
+              } else {
+                toast.info("Previous session ended. Tap Build your rig to start a new one.");
+              }
+            }}
+          >
+            End existing &amp; start new
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  ) : null;
+
   // --- Wizard view ---
   if (showWizard && user) {
     return (
@@ -372,6 +428,7 @@ export default function DiaryNew() {
             onComplete={handleCommit}
           />
         </div>
+        {conflictModal}
       </div>
     );
   }
