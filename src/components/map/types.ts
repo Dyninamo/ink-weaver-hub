@@ -110,11 +110,15 @@ export function filterVenues(venues: VenuePin[], f: MapFilters): VenuePin[] {
       if (!friendly || !f.archetypes.has(friendly)) return false;
     }
     if (f.sizes.size > 0) {
-      const sizeFriendly =
-        v.stillwater_size_class === 'small' ? 'Small' :
-        v.stillwater_size_class === 'medium' ? 'Medium' :
-        v.stillwater_size_class === 'large' ? 'Large' : null;
-      if (!sizeFriendly || !f.sizes.has(sizeFriendly as any)) return false;
+      // Size only applies to stillwaters. Rivers have no size_class — without
+      // this guard, toggling any Size chip silently excludes every river.
+      if (isStill) {
+        const sizeFriendly =
+          v.stillwater_size_class === 'small' ? 'Small' :
+          v.stillwater_size_class === 'medium' ? 'Medium' :
+          v.stillwater_size_class === 'large' ? 'Large' : null;
+        if (!sizeFriendly || !f.sizes.has(sizeFriendly as any)) return false;
+      }
     }
     if (f.access.size > 0) {
       const tags: AccessTag[] = [];
