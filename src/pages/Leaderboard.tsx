@@ -456,7 +456,7 @@ export default function Leaderboard() {
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3 flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <Trophy className="h-5 w-5 text-[#F59E0B]" />
