@@ -36,6 +36,7 @@ export default function MapPage() {
   const [venues, setVenues] = useState<VenuePin[]>([]);
   const [loadingVenues, setLoadingVenues] = useState(true);
   const [selected, setSelected] = useState<VenuePin | null>(null);
+  const handleSelectVenue = useCallback((v: VenuePin) => setSelected(v), []);
   const [filters, setFilters] = useState<MapFilters>(EMPTY_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
 
