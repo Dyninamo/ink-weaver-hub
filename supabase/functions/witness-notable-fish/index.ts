@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
+import { requireUser, forbiddenResponse } from "../_shared/user_auth.ts";
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -10,6 +11,11 @@ Deno.serve(async (req) => {
   const headers = { ...corsHeaders, 'Content-Type': 'application/json' }
 
   try {
+    // Per prompt 190: require authenticated user
+    const auth = await requireUser(req, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user;
+
     const supabase = createClient(
       requireEnv('SUPABASE_URL'),
       requireEnv('SUPABASE_SERVICE_ROLE_KEY')
@@ -19,6 +25,10 @@ Deno.serve(async (req) => {
 
     if (!user_id || !fish_id) {
       return new Response(JSON.stringify({ error: 'user_id and fish_id required' }), { status: 400, headers })
+    }
+
+    if (user_id !== user.id) {
+      return forbiddenResponse('Forbidden — user_id mismatch', corsHeaders);
     }
 
     // Resolve profile

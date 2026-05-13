@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
+import { requireUser, forbiddenResponse } from "../_shared/user_auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +25,11 @@ serve(async (req) => {
   }
 
   try {
+    // Per prompt 190: require authenticated user
+    const auth = await requireUser(req, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user;
+
     const { session_id } = await req.json();
     if (!session_id) {
       return new Response(
@@ -40,7 +46,7 @@ serve(async (req) => {
     // ── Fetch session ──────────────────────────────────────────
     const { data: session, error: sessionErr } = await supabase
       .from("fishing_sessions")
-      .select("id, venue_name, weather_log, is_active")
+      .select("id, user_id, venue_name, weather_log, is_active")
       .eq("id", session_id)
       .single();
 
@@ -51,6 +57,9 @@ serve(async (req) => {
       );
     }
 
+    if ((session as any).user_id && (session as any).user_id !== user.id) {
+      return forbiddenResponse("Forbidden — session not yours", corsHeaders);
+    }
     if (!session.is_active) {
       return new Response(
         JSON.stringify({ error: "Session is not active — weather polling skipped" }),

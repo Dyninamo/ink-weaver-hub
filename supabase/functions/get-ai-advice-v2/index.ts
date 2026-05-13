@@ -4,6 +4,7 @@ import { getPredictionParams, getVenueProfile } from "../_shared/prediction-para
 import type { PredictionParams } from "../_shared/prediction-params.ts";
 import { callAnthropic } from "../_shared/anthropic.ts";
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
+import { requireUser, forbiddenResponse } from "../_shared/user_auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -266,6 +267,11 @@ serve(async (req) => {
   }
 
   try {
+    // Per prompt 190: require authenticated user before any work
+    const auth = await requireUser(req, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user;
+
     const { venue_name, target_date, user_id, debug, forecast_override, skip_ai, water_type_override } = await req.json();
 
     if (!venue_name || !target_date) {
@@ -273,6 +279,10 @@ serve(async (req) => {
         JSON.stringify({ error: "Missing venue_name and target_date" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    if (user_id && user_id !== user.id) {
+      return forbiddenResponse("Forbidden — user_id mismatch", corsHeaders);
     }
 
     // ── Sentinel / Home pseudo-venue guard → archetype path ─────
@@ -522,17 +532,23 @@ Use UK fly fishing terminology. Be conversational but concrete. Don't invent ven
     const season = getSeason(target_date);
     const targetWeek = getISOWeek(target_date);
 
-    // ── Venue lookup ───────────────────────────────────────────
+    // ── Venue lookup (canonical venues_new, per prompt 189) ─────
+    // venue_metadata is a 229-row legacy snapshot; venues_new (918 rows)
+    // is what the picker reads. Using it eliminates the silent
+    // degradation for ~75% of pickable venues.
     const { data: venue } = await supabase
-      .from("venue_metadata")
-      .select("id, name, latitude, longitude")
-      .ilike("name", `%${venue_name}%`)
+      .from("venues_new")
+      .select("venue_id, name, latitude, longitude, water_type_id, level, river_name")
+      .ilike("name", venue_name)
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    const venueId = venue?.id ?? null;
-    const lat = venue?.latitude;
-    const lon = venue?.longitude;
+    const venueId = (venue as any)?.venue_id ?? null;
+    const lat = (venue as any)?.latitude ?? null;
+    const lon = (venue as any)?.longitude ?? null;
+    const venueWaterTypeId = (venue as any)?.water_type_id ?? null;
+    const venueLevel = (venue as any)?.level ?? null;
+    const venueRiverName = (venue as any)?.river_name ?? null;
 
     // ── Prediction params + venue profile ──────────────────────
     const [rodParams, fliesParams, methodsParams, spotsParams, venueProfile] =
@@ -950,7 +966,17 @@ Provide personalised recommendations based on this angler's strengths and areas 
       ? `\nVenue character: ${venueProfile.character_notes}`
       : "";
 
-    const aiPrompt = `You are an expert UK stillwater fly fishing advisor. Generate practical advice for fishing at ${venue_name} on ${dayOfWeek} ${target_date} (${season}).
+    // Per prompt 189 §2: branch terminology by river vs stillwater
+    const isRiver = venueLevel === "river" || venueLevel === "beat" || venueLevel === "section"
+      || (venueWaterTypeId !== null && [3, 4, 5, 6, 9].includes(venueWaterTypeId));
+    const venueDescriptor = isRiver
+      ? `UK river fly fishing${venueRiverName ? " (River " + venueRiverName + ")" : ""}`
+      : `UK stillwater fly fishing`;
+    const terminologyHint = isRiver
+      ? `Use river fly fishing terminology: upstream nymph, French leader, duo / dry-dropper, Klink-and-dink, mend, swing, take, drift. Avoid stillwater-specific terms like buzzer, blob, washing line.`
+      : `Use UK stillwater fly fishing terminology: buzzer, blob, washing line, figure-of-eight, midge tip, top-and-tail, hang, point fly.`;
+
+    const aiPrompt = `You are an expert ${venueDescriptor} advisor. Generate practical advice for fishing at ${venue_name} on ${dayOfWeek} ${target_date} (${season}).
 
 ## Weather Forecast${forecast.is_historical ? " (historical average — no live forecast available)" : ""}
 Temperature: ${forecast.temp}°C
@@ -1003,7 +1029,7 @@ Tactical advice from diary data. Specific fly sizes, line choices, retrieve styl
 **For You** (1 paragraph)
 ${personalOutput.has_personal ? "Personalised adjustments based on their stats. What to lean into, what to try differently." : "Brief encouragement to log sessions for personalised advice in future."}
 
-Use UK fly fishing terminology (buzzer, blob, washing line, figure-of-eight, etc.). Be conversational but authoritative. Reference specific data points.`;
+${terminologyHint} Be conversational but authoritative. Reference specific data points.`;
 
     // ── Step 5: Call AI ────────────────────────────────────────
     let adviceText = "";

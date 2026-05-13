@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
+import { requireUser } from "../_shared/user_auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,6 +42,10 @@ serve(async (req) => {
   }
 
   try {
+    // Per prompt 190: require authenticated user
+    const auth = await requireUser(req, corsHeaders);
+    if (auth.error) return auth.error;
+
     const { venue, date, weatherData } = await req.json();
 
     if (!venue || !date) {

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
+import { requireUser, forbiddenResponse } from "../_shared/user_auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -528,6 +529,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Per prompt 190: require authenticated user
+    const auth = await requireUser(req, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user;
+
     const supabase = createClient(
       requireEnv('SUPABASE_URL'),
       requireEnv('SUPABASE_SERVICE_ROLE_KEY')
@@ -553,6 +559,11 @@ Deno.serve(async (req) => {
         JSON.stringify({ success: false, error: `Session not found: ${sessErr?.message || 'no data'}` }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Verify session ownership before running expensive compute
+    if ((session as any).user_id && (session as any).user_id !== user.id) {
+      return forbiddenResponse('Forbidden — session not yours', corsHeaders);
     }
 
     // 2. Fetch events ordered by time
