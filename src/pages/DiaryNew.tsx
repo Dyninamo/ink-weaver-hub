@@ -187,6 +187,14 @@ export default function DiaryNew() {
       return;
     }
 
+    // Reject placeholder venue names (prompt 174). Home is a deliberate user choice and is allowed.
+    const trimmed = venue.trim();
+    const PLACEHOLDER_NAMES = new Set(["", "unknown", "n/a", "na", "tbd"]);
+    if (PLACEHOLDER_NAMES.has(trimmed.toLowerCase())) {
+      toast.error("Pick a venue before starting the session");
+      return;
+    }
+
     // Preflight: refuse to start a new session if an active one already exists.
     // (Belt + braces — DB also enforces via uniq_user_active_diary_session.)
     const { data: existingActive } = await supabase
@@ -221,12 +229,27 @@ export default function DiaryNew() {
     let createdSessionId: string | null = null;
     let createdRodId: string | null = null;
 
+    // Resolve venue_id from venues_new BEFORE inserting the session row (prompt 174).
+    // Case-insensitive exact match on name; we don't fuzzy-match here.
+    let matchedVenue: { venue_id: string; contact_email: string | null } | null = null;
+    const trimmedVenue = venue.trim();
+    if (trimmedVenue && trimmedVenue.toLowerCase() !== "home") {
+      const { data } = await supabase
+        .from("venues_new")
+        .select("venue_id, contact_email")
+        .ilike("name", trimmedVenue)
+        .limit(1)
+        .maybeSingle();
+      matchedVenue = (data as any) ?? null;
+    }
+
     try {
       // ---- 8a. fishing_sessions ----
       const session = await createSession({
         user_id: user.id,
         source: "diary",
-        venue_name: venue,
+        venue_name: trimmedVenue,
+        venue_id: matchedVenue?.venue_id ?? null,
         venue_type: venueType,
         session_date: sessionDate,
         start_time: startTime,
@@ -307,13 +330,7 @@ export default function DiaryNew() {
         if (presetErr) throw presetErr;
       }
 
-      // Resolve venue_id (non-critical)
-      const { data: matchedVenue } = await supabase
-        .from("venues_new")
-        .select("venue_id, contact_email")
-        .ilike("name", venue)
-        .limit(1)
-        .maybeSingle();
+      // Side-effect calls — reuse matchedVenue resolved before insert (prompt 174).
       if (matchedVenue?.venue_id) {
         supabase.functions.invoke("on-session-logged", {
           body: { user_id: user.id, venue_id: matchedVenue.venue_id, session_date: sessionDate },
