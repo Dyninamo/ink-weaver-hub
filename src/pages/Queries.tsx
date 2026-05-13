@@ -163,7 +163,7 @@ export default function Queries() {
               disabled={asking}
             />
           </div>
-          <Button type="submit" disabled={asking || question.trim().length < 3}>
+          <Button type="submit" disabled={asking || question.trim().length < 3} aria-label="Send question">
             <Send className="h-4 w-4" />
           </Button>
         </form>
