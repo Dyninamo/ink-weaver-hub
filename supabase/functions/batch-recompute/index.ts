@@ -710,8 +710,9 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        processed: batch.length - errors.length,
+        processed: batch.length - errors.length - skippedNoVenue,
         failed: errors.length,
+        skipped_no_venue: skippedNoVenue,
         remaining,
         total_fish: totalFishAll,
         errors,
