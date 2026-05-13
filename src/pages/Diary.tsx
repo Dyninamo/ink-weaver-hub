@@ -327,7 +327,13 @@ export default function Diary() {
         <div className="flex gap-2">
           <Button
             className="min-h-[44px]"
-            onClick={() => navigate("/diary/new")}
+            onClick={() => {
+              if (activeSession) {
+                toast.info("You already have an active session — resume or discard it first.");
+                return;
+              }
+              navigate("/diary/new");
+            }}
           >
             <Plus className="h-4 w-4 mr-2" /> New
           </Button>

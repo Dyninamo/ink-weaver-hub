@@ -6,9 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogDescription, AlertDialogFooter,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { createSession } from "@/services/diaryService";
+import { formatDistanceToNow } from "date-fns";
+import { createSession, endSession } from "@/services/diaryService";
 import SetupWizard, { type WizardCommit } from "@/components/diary/setup/SetupWizard";
 import { positionsForFlyCount } from "@/components/diary/setup/vocabulary";
 import { logEvent } from "@/services/eventLogger";
@@ -77,6 +82,13 @@ export default function DiaryNew() {
   const [venues, setVenues] = useState<VenueOption[]>([]);
   
   const [showWizard, setShowWizard] = useState(false);
+  const [pendingActiveConflict, setPendingActiveConflict] = useState<{
+    id: string;
+    venue_name: string | null;
+    start_time: string | null;
+    created_at: string;
+  } | null>(null);
+  const [pendingCommit, setPendingCommit] = useState<WizardCommit | null>(null);
 
   useEffect(() => {
     async function loadVenues() {
@@ -174,6 +186,29 @@ export default function DiaryNew() {
       navigate("/auth");
       return;
     }
+
+    // Preflight: refuse to start a new session if an active one already exists.
+    // (Belt + braces — DB also enforces via uniq_user_active_diary_session.)
+    const { data: existingActive } = await supabase
+      .from("fishing_sessions")
+      .select("id, venue_name, start_time, created_at")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .eq("source", "diary")
+      .limit(1)
+      .maybeSingle();
+
+    if (existingActive) {
+      setPendingCommit(commit);
+      setPendingActiveConflict(existingActive as any);
+      return;
+    }
+
+    await proceedWithCreate(commit);
+  }
+
+  async function proceedWithCreate(commit: WizardCommit) {
+    if (!user) return;
 
     // Best-effort GPS capture. Browser prompt fires on first call.
     const gps = await getBrowserGps();
@@ -313,10 +348,72 @@ export default function DiaryNew() {
       if (createdSessionId) {
         await supabase.from("fishing_sessions").delete().eq("id", createdSessionId);
       }
+      // Race: another tab/device started one between preflight and insert.
+      if (err?.code === "23505" && String(err?.message ?? "").includes("uniq_user_active_diary_session")) {
+        toast.error("Another active session was started elsewhere. Tap 'Resume' on /diary.");
+        navigate("/diary");
+        return;
+      }
       toast.error(err.message || "Failed to start session");
       throw err;
     }
   }
+
+  const conflictModal = pendingActiveConflict ? (
+    <AlertDialog open onOpenChange={(o) => { if (!o) { setPendingActiveConflict(null); setPendingCommit(null); } }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>You already have an active session</AlertDialogTitle>
+          <AlertDialogDescription>
+            {pendingActiveConflict.venue_name ?? "Untitled"} — started{" "}
+            {formatDistanceToNow(
+              new Date(pendingActiveConflict.start_time ?? pendingActiveConflict.created_at),
+              { addSuffix: true }
+            )}.
+            Finish that one first, or resume it to keep logging.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={() => { setPendingActiveConflict(null); setPendingCommit(null); }}>
+            Cancel
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const id = pendingActiveConflict.id;
+              setPendingActiveConflict(null);
+              setPendingCommit(null);
+              navigate(`/diary/${id}`);
+            }}
+          >
+            Resume existing
+          </Button>
+          <Button
+            onClick={async () => {
+              const conflict = pendingActiveConflict;
+              const commit = pendingCommit;
+              setPendingActiveConflict(null);
+              setPendingCommit(null);
+              try {
+                await endSession(conflict.id, {});
+                refreshActiveSession();
+              } catch (e: any) {
+                toast.error(e?.message || "Failed to end existing session");
+                return;
+              }
+              if (commit) {
+                await proceedWithCreate(commit);
+              } else {
+                toast.info("Previous session ended. Tap Build your rig to start a new one.");
+              }
+            }}
+          >
+            End existing &amp; start new
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  ) : null;
 
   // --- Wizard view ---
   if (showWizard && user) {
@@ -331,6 +428,7 @@ export default function DiaryNew() {
             onComplete={handleCommit}
           />
         </div>
+        {conflictModal}
       </div>
     );
   }
@@ -424,6 +522,7 @@ export default function DiaryNew() {
           Build your rig <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>
+      {conflictModal}
     </div>
   );
 }
