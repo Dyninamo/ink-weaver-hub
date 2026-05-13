@@ -187,6 +187,29 @@ export default function DiaryNew() {
       return;
     }
 
+    // Preflight: refuse to start a new session if an active one already exists.
+    // (Belt + braces — DB also enforces via uniq_user_active_diary_session.)
+    const { data: existingActive } = await supabase
+      .from("fishing_sessions")
+      .select("id, venue_name, start_time, created_at")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .eq("source", "diary")
+      .limit(1)
+      .maybeSingle();
+
+    if (existingActive) {
+      setPendingCommit(commit);
+      setPendingActiveConflict(existingActive as any);
+      return;
+    }
+
+    await proceedWithCreate(commit);
+  }
+
+  async function proceedWithCreate(commit: WizardCommit) {
+    if (!user) return;
+
     // Best-effort GPS capture. Browser prompt fires on first call.
     const gps = await getBrowserGps();
     logEvent("diary.gps_capture", { granted: !!gps });
