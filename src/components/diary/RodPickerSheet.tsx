@@ -12,8 +12,12 @@ export interface SessionRod {
   rod_index: number;
   name: string | null;
   rod_weight: number | null;
+  rod_length_ft: number | null;
   line_name: string | null;
+  line_profile: string | null;
   style: string | null;
+  dropper_count: number | null;
+  flies_on_cast: unknown;
   is_active: boolean;
   started_at: string;
   ended_at: string | null;

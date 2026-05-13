@@ -105,6 +105,11 @@ export interface CurrentSetup {
   flies_on_cast: FliesOnCast | null;
   spot: string | null;
   depth_zone: string | null;
+  /**
+   * Number of droppers on the cast (so total positions = dropper_count + 1).
+   * Null when the rod row hasn't been read or doesn't exist. Per prompt 182 §1a.
+   */
+  dropper_count: number | null;
 }
 
 /**
