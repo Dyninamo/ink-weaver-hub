@@ -311,6 +311,7 @@ export default function DiaryEntry() {
             size="icon"
             onClick={() => navigate("/diary")}
             className={isActive ? "text-[#8BA3BB] hover:text-[#E8EFF5]" : ""}
+            aria-label="Back to diary"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
