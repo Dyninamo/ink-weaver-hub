@@ -70,7 +70,7 @@ export default function DiaryEntry() {
   // Expanded events
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const [profileId, setProfileId] = useState<string | null>(null);
+  const profileId = (profile as any)?.profile_id ?? null;
   const [notableOpen, setNotableOpen] = useState(false);
   const [notablePrefill, setNotablePrefill] = useState<string | null>(null);
   const [venueId, setVenueId] = useState<string | null>(null);
@@ -147,19 +147,8 @@ export default function DiaryEntry() {
     loadData();
   }, [loadData]);
 
-  // Fetch profile_id for sharing
-  useEffect(() => {
-    if (!user) return;
-    const fetchProfile = async () => {
-      const { data } = await supabase
-        .from("user_profiles")
-        .select("profile_id")
-        .eq("id", user.id)
-        .single();
-      if (data) setProfileId(data.profile_id);
-    };
-    fetchProfile();
-  }, [user]);
+  // profileId derived from AuthContext profile (deduped) — see prompt 179 §3.
+
 
   const stats = calculateSessionStats(events);
   const isActive = session?.is_active === true;
@@ -215,6 +204,32 @@ export default function DiaryEntry() {
   }
 
   // --- Helpers ---
+
+  function humaniseKey(k: string): string {
+    return k.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').toLowerCase().trim()
+            .replace(/^./, c => c.toUpperCase());
+  }
+
+  function formatChangeTo(change_to: any): string {
+    if (!change_to || typeof change_to !== 'object') return 'Setup change';
+    if (change_to.fly_pattern || change_to.fly) {
+      const pattern = change_to.fly_pattern ?? (typeof change_to.fly === 'string' ? change_to.fly : change_to.fly?.pattern);
+      const size = change_to.fly_size ?? change_to.size ?? change_to.fly?.size;
+      const pos = change_to.position;
+      return [pos && `${pos}:`, pattern, size && `#${size}`].filter(Boolean).join(' ') || 'Setup change';
+    }
+    if (change_to.leader) return `Leader: ${change_to.leader}`;
+    if (change_to.venue) return `Venue: ${change_to.venue}`;
+    const KNOWN_KEYS = ['style', 'rig', 'line_type', 'line', 'retrieve', 'spot', 'depth_zone', 'lineProfile', 'rodWeight', 'flyCount'];
+    const parts: string[] = [];
+    for (const k of KNOWN_KEYS) {
+      const v = change_to[k];
+      if (v == null) continue;
+      if (typeof v === 'object') continue;
+      parts.push(`${humaniseKey(k)}: ${v}`);
+    }
+    return parts.length ? parts.join(' · ') : 'Setup change';
+  }
 
   function formatTime(isoStr: string): string {
     return new Date(isoStr).toLocaleTimeString("en-GB", {
@@ -552,13 +567,7 @@ export default function DiaryEntry() {
                     {event.event_type === "change" && (
                       <>
                         <RefreshCw className="h-4 w-4 text-diary-change shrink-0" />
-                        <span className="truncate">
-                          {event.change_to
-                            ? Object.entries(event.change_to as Record<string, any>)
-                                .map(([, v]) => `${v}`)
-                                .join(" · ")
-                            : "Setup change"}
-                        </span>
+                        <span className="truncate">{formatChangeTo(event.change_to)}</span>
                       </>
                     )}
                   </div>

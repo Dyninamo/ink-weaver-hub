@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useActiveSessionQuery } from "@/hooks/useActiveSessionQuery";
 
 interface ActiveSessionContextValue {
   active: boolean;
@@ -14,44 +15,17 @@ const ActiveSessionContext = createContext<ActiveSessionContextValue>({
 
 export function ActiveSessionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [active, setActive] = useState(false);
-
-  const check = useCallback(async (uid?: string) => {
-    const id = uid ?? user?.id;
-    if (!id) {
-      setActive(false);
-      return;
-    }
-    const { data } = await supabase
-      .from("fishing_sessions")
-      .select("id")
-      .eq("user_id", id)
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-    setActive(!!data);
-  }, [user]);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!user) {
-      setActive(false);
-      return;
-    }
-    void check(user.id).catch(() => {
-      if (!cancelled) setActive(false);
-    });
-    const sub = supabase.auth.onAuthStateChange(() => {
-      if (!cancelled) void check();
-    });
-    return () => {
-      cancelled = true;
-      sub.data.subscription.unsubscribe();
-    };
-  }, [user, check]);
+  const qc = useQueryClient();
+  const { data } = useActiveSessionQuery(user?.id);
+  const active = !!data;
 
   return (
-    <ActiveSessionContext.Provider value={{ active, refresh: () => void check() }}>
+    <ActiveSessionContext.Provider
+      value={{
+        active,
+        refresh: () => { void qc.invalidateQueries({ queryKey: ['active-session'] }); },
+      }}
+    >
       {children}
     </ActiveSessionContext.Provider>
   );
