@@ -175,6 +175,18 @@ export default function ChangeFlow({
         toBlob.position = pos;
         toBlob.fly_pattern = newFly.pattern;
         toBlob.fly_size = newFly.size;
+      } else if (field === "droppers") {
+        // droppers isn't on session_events as a column — record delta in
+        // change_from/change_to so Timeline + analytics have data (prompt 183 §5).
+        const oldDropperCount =
+          currentSetup.dropper_count ??
+          Math.max(
+            0,
+            Object.keys(currentSetup.flies_on_cast ?? {}).filter((k) => (currentSetup.flies_on_cast as any)?.[k]).length - 1,
+          );
+        fromBlob.droppers = oldDropperCount;
+        toBlob.droppers = newValue;
+        next.dropper_count = newValue;
       } else if (field === "leader") {
         // Leader stored on session_rods; we record summary in change event.
         const summaryText = `${leader.material ?? ""} ${leader.length_ft ?? ""}ft @ ${leader.strength_lb ?? ""}lb`.trim();
