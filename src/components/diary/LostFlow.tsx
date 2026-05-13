@@ -1,6 +1,7 @@
 // Full-screen Lost-fish phase. Replaces LostModal — same content, no Dialog.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { addEvent, type CurrentSetup } from "@/services/diaryService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,8 @@ export default function LostFlow({
 }: Props) {
   const [stage, setStage] = useState<string | null>(null);
   const [flyPos, setFlyPos] = useState<string | null>(null);
+  const [notes, setNotes] = useState("");
+  const [notesOpen, setNotesOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
