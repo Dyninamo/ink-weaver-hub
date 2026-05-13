@@ -77,6 +77,7 @@ export default function DiaryEntry() {
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loadError, setLoadError] = useState<"not_found" | "bad_id" | "other" | null>(null);
 
   // Load session + events
   const loadData = useCallback(async () => {
