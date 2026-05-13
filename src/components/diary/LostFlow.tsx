@@ -1,6 +1,7 @@
 // Full-screen Lost-fish phase. Replaces LostModal — same content, no Dialog.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { addEvent, type CurrentSetup } from "@/services/diaryService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,8 @@ export default function LostFlow({
 }: Props) {
   const [stage, setStage] = useState<string | null>(null);
   const [flyPos, setFlyPos] = useState<string | null>(null);
+  const [notes, setNotes] = useState("");
+  const [notesOpen, setNotesOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -63,6 +66,7 @@ export default function LostFlow({
         sort_order: eventCount + 1,
         got_away_stage: stage!,
         fly_pattern: flyPattern,
+        notes: notes.trim() || null,
         // @ts-ignore
         fly_position_unknown: flyUnknown,
         style: currentSetup.style,
@@ -146,6 +150,25 @@ export default function LostFlow({
           </div>
         </div>
       )}
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setNotesOpen((o) => !o)}
+          className="text-sm text-muted-foreground underline"
+        >
+          {notesOpen ? "Hide note" : "Add a note (optional)"}
+        </button>
+        {notesOpen && (
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="What happened? (e.g. hook pulled, bit off, snagged)"
+            className="mt-2"
+            rows={3}
+          />
+        )}
+      </div>
 
       <button
         type="button"

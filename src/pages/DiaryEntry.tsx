@@ -325,7 +325,7 @@ export default function DiaryEntry() {
             variant="ghost"
             size="icon"
             onClick={() => navigate("/diary")}
-            className={isActive ? "text-[#8BA3BB] hover:text-[#E8EFF5]" : ""}
+            className={isActive ? "text-shell-active-muted-fg hover:text-shell-active-fg" : ""}
             aria-label="Back to diary"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -353,7 +353,7 @@ export default function DiaryEntry() {
                   setNotablePrefill(null);
                   setNotableOpen(true);
                 }}
-                className="shrink-0 text-[#F59E0B]"
+                className="shrink-0 text-diary-notable"
                 title="Submit Notable Fish"
                 aria-label="Submit notable fish"
               >
@@ -377,7 +377,7 @@ export default function DiaryEntry() {
         {(displayWeather.temp != null || displayWeather.windText) && (
           <div className={cn(
             "flex items-center gap-4 text-xs px-3 py-2 rounded-md",
-            isActive ? "bg-[#162230]" : "bg-muted/50"
+            isActive ? "bg-shell-active-surface" : "bg-muted/50"
           )}>
             {displayWeather.temp != null && (
               <span className="flex items-center gap-1">
@@ -400,10 +400,10 @@ export default function DiaryEntry() {
 
         {/* Current setup banner (active only) */}
         {isActive && currentSetup.style && (
-          <div className="bg-[#162230] rounded-md p-3 text-xs space-y-1">
-            <p className="text-[#5A7A95] uppercase tracking-wider text-[10px] mb-1">Current Setup</p>
+          <div className="bg-shell-active-surface rounded-md p-3 text-xs space-y-1">
+            <p className="text-shell-active-muted-fg/85 uppercase tracking-wider text-[10px] mb-1">Current Setup</p>
             <p>{[currentSetup.style, currentSetup.rig].filter(Boolean).join(" · ")}</p>
-            <p className="text-[#8BA3BB]">
+            <p className="text-shell-active-muted-fg">
               {[currentSetup.line_type, currentSetup.retrieve, currentSetup.spot].filter(Boolean).join(" · ")}
             </p>
           </div>
@@ -412,7 +412,7 @@ export default function DiaryEntry() {
         {/* Stats row */}
         <div className={cn(
           "grid grid-cols-4 gap-2 text-center",
-          isActive ? "bg-[#162230] rounded-md p-3" : "bg-muted/30 rounded-md p-3"
+          isActive ? "bg-shell-active-surface rounded-md p-3" : "bg-muted/30 rounded-md p-3"
         )}>
           <div>
             <p className="text-xl font-mono font-bold text-diary-catch">{stats.totalFish}</p>
@@ -493,7 +493,7 @@ export default function DiaryEntry() {
               size="sm"
               className={cn(
                 "flex-1 capitalize min-h-[40px]",
-                isActive && tab !== t && "text-[#8BA3BB]"
+                isActive && tab !== t && "text-shell-active-muted-fg"
               )}
               onClick={() => setTab(t)}
             >
@@ -520,11 +520,11 @@ export default function DiaryEntry() {
                   key={event.id}
                   className={cn(
                     "rounded-md p-3 text-sm cursor-pointer transition-colors",
-                    isActive ? "bg-[#162230] hover:bg-[#1E3044]" : "bg-muted/30 hover:bg-muted/50",
+                    isActive ? "bg-shell-active-surface hover:bg-shell-active-surface-hover" : "bg-muted/30 hover:bg-muted/50",
                     event.event_type === "catch" && "border-l-4 border-l-diary-catch",
                     event.event_type === "blank" && "border-l-4 border-l-diary-blank",
                     event.event_type === "change" && "border-l-4 border-l-diary-change",
-                    event.event_type === "got_away" && "border-l-4 border-l-diary-gotaway",
+                    event.event_type === "got_away" && "border-l-4 border-l-diary-lost",
                   )}
                   onClick={() => setExpandedEvent(
                     expandedEvent === event.id ? null : event.id
@@ -574,7 +574,7 @@ export default function DiaryEntry() {
 
                   {/* Expanded detail */}
                   {expandedEvent === event.id && (
-                    <div className={cn("mt-2 pt-2 border-t text-xs space-y-1", isActive ? "border-[#2A4055]" : "border-border")}>
+                    <div className={cn("mt-2 pt-2 border-t text-xs space-y-1", isActive ? "border-shell-active-border" : "border-border")}>
                       {event.style && <p>Style: {event.style}</p>}
                       {event.rig && <p>Rig: {event.rig}</p>}
                       {event.line_type && <p>Line: {event.line_type}</p>}
@@ -611,7 +611,7 @@ export default function DiaryEntry() {
               events
                 .filter((e) => e.event_type === "catch")
                 .map((event) => (
-                  <Card key={event.id} className={isActive ? "bg-[#162230] border-[#2A4055]" : ""}>
+                  <Card key={event.id} className={isActive ? "bg-shell-active-surface border-shell-active-border" : ""}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -645,7 +645,7 @@ export default function DiaryEntry() {
                           className="p-1.5 rounded-md hover:bg-muted/50 transition-colors"
                           title="Submit as notable fish"
                         >
-                          <Trophy className="h-4 w-4 text-muted-foreground hover:text-[#F59E0B] transition-colors" />
+                          <Trophy className="h-4 w-4 text-muted-foreground hover:text-diary-notable transition-colors" />
                         </button>
                       </div>
                     </CardContent>
@@ -659,7 +659,7 @@ export default function DiaryEntry() {
           <div className="space-y-4">
             {/* Species breakdown */}
             {Object.keys(stats.species).length > 0 && (
-              <Card className={isActive ? "bg-[#162230] border-[#2A4055]" : ""}>
+              <Card className={isActive ? "bg-shell-active-surface border-shell-active-border" : ""}>
                 <CardContent className="p-4">
                   <p className={cn("text-xs uppercase tracking-wider mb-2", mutedClass)}>Species</p>
                   {Object.entries(stats.species).map(([species, count]) => (
@@ -674,7 +674,7 @@ export default function DiaryEntry() {
 
             {/* Flies breakdown */}
             {Object.keys(stats.flies).length > 0 && (
-              <Card className={isActive ? "bg-[#162230] border-[#2A4055]" : ""}>
+              <Card className={isActive ? "bg-shell-active-surface border-shell-active-border" : ""}>
                 <CardContent className="p-4">
                   <p className={cn("text-xs uppercase tracking-wider mb-2", mutedClass)}>Flies</p>
                   {Object.entries(stats.flies)
@@ -691,7 +691,7 @@ export default function DiaryEntry() {
 
             {/* Methods breakdown */}
             {Object.keys(stats.styles).length > 0 && (
-              <Card className={isActive ? "bg-[#162230] border-[#2A4055]" : ""}>
+              <Card className={isActive ? "bg-shell-active-surface border-shell-active-border" : ""}>
                 <CardContent className="p-4">
                   <p className={cn("text-xs uppercase tracking-wider mb-2", mutedClass)}>Methods</p>
                   {Object.entries(stats.styles)
@@ -708,7 +708,7 @@ export default function DiaryEntry() {
 
             {/* Session notes */}
             {session.notes && (
-              <Card className={isActive ? "bg-[#162230] border-[#2A4055]" : ""}>
+              <Card className={isActive ? "bg-shell-active-surface border-shell-active-border" : ""}>
                 <CardContent className="p-4">
                   <p className={cn("text-xs uppercase tracking-wider mb-2", mutedClass)}>Notes</p>
                   <p className="text-sm whitespace-pre-wrap">{session.notes}</p>
@@ -718,7 +718,7 @@ export default function DiaryEntry() {
 
             {/* Plan */}
             {session.plan && (
-              <Card className={isActive ? "bg-[#162230] border-[#2A4055]" : ""}>
+              <Card className={isActive ? "bg-shell-active-surface border-shell-active-border" : ""}>
                 <CardContent className="p-4">
                   <p className={cn("text-xs uppercase tracking-wider mb-2", mutedClass)}>Plan</p>
                   <p className="text-sm">{session.plan}</p>
