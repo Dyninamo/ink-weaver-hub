@@ -25,6 +25,7 @@ import { acquireWakeLock, releaseWakeLock } from "@/lib/wakeLock";
 import {
   endSession,
   pollSessionWeather,
+  getCurrentSetup,
   type CurrentSetup,
   type FishingSession,
   type SessionEvent,
@@ -67,6 +68,11 @@ export default function ActiveSessionShell({
   const [outreachChecked, setOutreachChecked] = useState(false);
   const [endSaveDone, setEndSaveDone] = useState(false);
   const [endSaveError, setEndSaveError] = useState<string | null>(null);
+  const [activeRodRow, setActiveRodRow] = useState<{
+    rod_weight: number | null;
+    rod_length_ft: number | null;
+    line_profile: string | null;
+  } | null>(null);
 
   const sessionId = session.id!;
 
@@ -265,15 +271,9 @@ export default function ActiveSessionShell({
         activeRodIndex={activeRodIndex}
         onSwitchRod={async (rod: SessionRod) => {
           setActiveRodIndex(rod.rod_index);
-          setCurrentSetup({
-            style: rod.style,
-            rig: null,
-            line_type: rod.line_name,
-            retrieve: null,
-            flies_on_cast: null,
-            spot: currentSetup.spot,
-            depth_zone: null,
-          } as CurrentSetup);
+          // Hydrate from session_rods + events overlay (prompt 182 §3).
+          const setup = await getCurrentSetup(sessionId, rod.rod_index);
+          setCurrentSetup(setup);
           toast.success(`Switched to ${rod.name || `Rod ${rod.rod_index}`}`);
           setPhase("ready");
         }}
