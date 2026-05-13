@@ -339,6 +339,7 @@ export default function DiaryEntry() {
                 }}
                 className="shrink-0 text-[#F59E0B]"
                 title="Submit Notable Fish"
+                aria-label="Submit notable fish"
               >
                 <Trophy className="h-5 w-5" />
               </Button>
@@ -348,6 +349,7 @@ export default function DiaryEntry() {
                 onClick={() => setShareOpen(true)}
                 className="shrink-0"
                 title="Share to group"
+                aria-label="Share session"
               >
                 <Share2 className="h-5 w-5" />
               </Button>
