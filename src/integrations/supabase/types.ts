@@ -6537,10 +6537,10 @@ export type Database = {
       auto_end_stale_diary_sessions: {
         Args: { p_max_age_hours?: number }
         Returns: {
-          duration_minutes: number
+          ended_duration_minutes: number
           ended_id: string
-          user_id: string
-          venue_name: string
+          ended_user_id: string
+          ended_venue_name: string
         }[]
       }
       clear_table: { Args: { target_table: string }; Returns: undefined }
