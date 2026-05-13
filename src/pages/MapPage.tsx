@@ -199,6 +199,9 @@ export default function MapPage() {
             date: s.session_date,
             catches: pts.filter((p) => p.isCatch).length,
             trail: pts.map((p) => [p.longitude, p.latitude] as [number, number]),
+            catchPoints: pts
+              .filter((p) => p.isCatch)
+              .map((p) => [p.longitude, p.latitude] as [number, number]),
           };
         })
         .filter((h) => h.trail.length >= 2);
