@@ -340,6 +340,7 @@ export default function Settings() {
             <Switch
               checked={reduceMotion}
               onCheckedChange={(v) => persistAppearance({ reduceMotion: v })}
+              aria-label="Reduce motion"
             />
           </div>
         </div>
