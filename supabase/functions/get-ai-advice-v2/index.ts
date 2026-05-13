@@ -4,6 +4,7 @@ import { getPredictionParams, getVenueProfile } from "../_shared/prediction-para
 import type { PredictionParams } from "../_shared/prediction-params.ts";
 import { callAnthropic } from "../_shared/anthropic.ts";
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
+import { requireUser, forbiddenResponse } from "../_shared/user_auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -266,6 +267,11 @@ serve(async (req) => {
   }
 
   try {
+    // Per prompt 190: require authenticated user before any work
+    const auth = await requireUser(req, corsHeaders);
+    if (auth.error) return auth.error;
+    const user = auth.user;
+
     const { venue_name, target_date, user_id, debug, forecast_override, skip_ai, water_type_override } = await req.json();
 
     if (!venue_name || !target_date) {
@@ -273,6 +279,10 @@ serve(async (req) => {
         JSON.stringify({ error: "Missing venue_name and target_date" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    if (user_id && user_id !== user.id) {
+      return forbiddenResponse("Forbidden — user_id mismatch", corsHeaders);
     }
 
     // ── Sentinel / Home pseudo-venue guard → archetype path ─────
