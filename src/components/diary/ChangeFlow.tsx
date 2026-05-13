@@ -334,6 +334,18 @@ export default function ChangeFlow({
       )}
 
       {field === "fly" && (
+        <div>
+          <Label>Why? (optional — type before tapping Add)</Label>
+          <Input
+            placeholder="e.g. wind shifted, fish moved deeper"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="mt-1.5"
+          />
+        </div>
+      )}
+
+      {field === "fly" && (
         <FlyChangeEditor
           currentSetup={currentSetup}
           venueType={venueType}
@@ -345,28 +357,36 @@ export default function ChangeFlow({
         />
       )}
 
-      <div>
-        <Label>Why? (optional)</Label>
-        <Input
-          placeholder="e.g. wind shifted, fish moved deeper"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          className="mt-1.5"
-        />
-      </div>
+      {field !== "fly" && (
+        <div>
+          <Label>Why? (optional)</Label>
+          <Input
+            placeholder="e.g. wind shifted, fish moved deeper"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="mt-1.5"
+          />
+        </div>
+      )}
 
-      <div className="flex gap-2">
-        <Button variant="outline" className="flex-1 min-h-[48px]" onClick={backToPicker} disabled={saving}>
-          Cancel
-        </Button>
-        <Button
-          className="flex-1 min-h-[48px] bg-diary-change hover:bg-diary-change/90"
-          onClick={handleSave}
-          disabled={saving || !isReady(field, newValue, pendingFly, leader, flyPos)}
-        >
-          {saving ? "Saving…" : `Save · ${summary}`}
-        </Button>
-      </div>
+      {field !== "fly" && (
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex-1 min-h-[48px]" onClick={backToPicker} disabled={saving}>
+            Cancel
+          </Button>
+          <Button
+            className="flex-1 min-h-[48px] bg-diary-change hover:bg-diary-change/90"
+            onClick={handleSave}
+            disabled={saving || !isReady(field, newValue, pendingFly, leader, flyPos)}
+          >
+            {saving ? "Saving…" : `Save · ${summary}`}
+          </Button>
+        </div>
+      )}
+
+      {field === "fly" && saving && (
+        <div className="text-center text-sm text-muted-foreground py-2">Saving…</div>
+      )}
     </div>
   );
 }
