@@ -208,7 +208,7 @@ export default function DiaryEntry() {
     }
     if (change_to.leader) return `Leader: ${change_to.leader}`;
     if (change_to.venue) return `Venue: ${change_to.venue}`;
-    const KNOWN_KEYS = ['style', 'rig', 'line_type', 'line', 'retrieve', 'spot', 'depth_zone', 'lineProfile', 'rodWeight', 'flyCount'];
+    const KNOWN_KEYS = ['style', 'rig', 'line_type', 'line', 'retrieve', 'spot', 'depth_zone', 'lineProfile', 'rodWeight', 'flyCount', 'droppers'];
     const parts: string[] = [];
     for (const k of KNOWN_KEYS) {
       const v = change_to[k];
@@ -556,6 +556,23 @@ export default function DiaryEntry() {
                       <>
                         <RefreshCw className="h-4 w-4 text-diary-change shrink-0" />
                         <span className="truncate">{formatChangeTo(event.change_to)}</span>
+                      </>
+                    )}
+
+                    {event.event_type === "got_away" && (
+                      <>
+                        <Fish className="h-4 w-4 text-diary-lost shrink-0" style={{ opacity: 0.6 }} />
+                        <span className="font-medium">Lost</span>
+                        {event.got_away_stage && (
+                          <span className={cn("text-xs", mutedClass)}>
+                            · {event.got_away_stage.replace(/_/g, " ")}
+                          </span>
+                        )}
+                        {event.fly_pattern && (
+                          <span className={cn("text-xs truncate", mutedClass)}>
+                            · {event.fly_pattern}{event.fly_size ? ` #${event.fly_size}` : ""}
+                          </span>
+                        )}
                       </>
                     )}
                   </div>

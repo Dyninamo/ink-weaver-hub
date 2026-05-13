@@ -489,21 +489,18 @@ function FlyChangeEditor({
   setPendingFly: (p: { pattern: string; size: number | null } | null) => void;
 }) {
   const flies = currentSetup.flies_on_cast as any;
-  const positions = flies ? Object.keys(flies) : [];
+  // flyCount = dropper_count + 1; fall back to filled positions, then 1 (prompt 183 §6).
+  const droppersFromRod = currentSetup.dropper_count;
+  const filledCount = flies ? Object.keys(flies).filter((k) => flies[k]).length : 0;
+  const flyCount = droppersFromRod != null
+    ? Math.max(1, droppersFromRod + 1)
+    : Math.max(1, filledCount);
+  const positions = positionsForFlyCount(flyCount);
 
   // Single-fly auto-pick (lifts up to parent so save handler sees it).
   useEffect(() => {
     if (positions.length === 1 && !flyPos) setFlyPos(positions[0]);
   }, [positions, flyPos, setFlyPos]);
-
-  // No flies recorded yet
-  if (positions.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-4">
-        No flies recorded yet on this rod. Set them up via Change → Style first.
-      </p>
-    );
-  }
 
   if (!flyPos) {
     return (
