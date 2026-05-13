@@ -239,10 +239,29 @@ export default function DiaryEntry() {
     return `${h}h ${m > 0 ? `${m}m` : ""}`.trim();
   }
 
-  if (loading || !session) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Loading session...</p>
+      </div>
+    );
+  }
+  if (!session) {
+    const headline =
+      loadError === "not_found" ? "Session not found" :
+      loadError === "bad_id"    ? "Invalid session link" :
+                                  "Couldn't load session";
+    const body =
+      loadError === "not_found" ? "This session doesn't exist or has been deleted." :
+      loadError === "bad_id"    ? "The link doesn't look right." :
+                                  "Please try again — if it keeps failing, check your connection.";
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-sm text-center space-y-3">
+          <h1 className="text-xl font-medium">{headline}</h1>
+          <p className="text-sm text-muted-foreground">{body}</p>
+          <Button onClick={() => navigate("/diary")}>Back to diary</Button>
+        </div>
       </div>
     );
   }
