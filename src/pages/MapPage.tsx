@@ -295,7 +295,7 @@ export default function MapPage() {
             map={shellRef.current?.map ?? null}
             venues={filteredVenues}
             selectedId={selected?.venue_id ?? null}
-            onSelect={(v) => setSelected(v)}
+            onSelect={handleSelectVenue}
           />
         )}
 
