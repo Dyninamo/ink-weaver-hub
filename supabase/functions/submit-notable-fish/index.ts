@@ -445,6 +445,10 @@ Deno.serve(async (req) => {
         edit_clean: checkEditClean,
         plausibility: plausibilityPass,
         measure_in_frame: null
+      },
+      exif: {
+        status: exifStatus,
+        error_reason: exifErrorReason
       }
     }), { headers })
 
