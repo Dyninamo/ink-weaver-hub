@@ -151,7 +151,7 @@ export async function getCurrentSetup(
     .from("session_rods" as any)
     .select("rod_index, is_active, style, line_profile, flies_on_cast, dropper_count")
     .eq("session_id", sessionId);
-  const rows = (rodRows ?? []) as Array<{
+  const rows = ((rodRows ?? []) as unknown) as Array<{
     rod_index: number;
     is_active: boolean;
     style: string | null;
