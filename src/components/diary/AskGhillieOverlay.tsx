@@ -1,7 +1,6 @@
 // AskGhillieOverlay — mid-session "Ask the ghillie" affordance.
-// Per prompt 148 §2. Calls the existing ask-ghillie edge function with
-// surface=mid_session and rich session context baked into the prompt.
-import { useState } from "react";
+// Per prompt 148 §2 + prompt 187 (chip fly_name validation against catalogue).
+import { useState, useEffect, useMemo } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +16,7 @@ interface ChipAction {
   category: string;
   label: string;
   detail?: string;
+  fly_name?: string;
 }
 
 interface GhillieAnswer {
@@ -56,8 +56,58 @@ export default function AskGhillieOverlay({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Lazy-loaded snapshot of the local flies catalogue for chip validation.
+  const [flyCatalogue, setFlyCatalogue] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.from("flies").select("name, aliases").then(({ data, error: fErr }) => {
+      if (cancelled || fErr) {
+        if (fErr) console.warn("Could not preload flies catalogue:", fErr);
+        if (!cancelled) setFlyCatalogue(new Set());
+        return;
+      }
+      const set = new Set<string>();
+      for (const r of (data ?? []) as Array<{ name: string; aliases: string[] | null }>) {
+        if (r.name) set.add(r.name.toLowerCase());
+        for (const a of (r.aliases ?? [])) if (a) set.add(a.toLowerCase());
+      }
+      setFlyCatalogue(set);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const tally = events.filter((e) => e.event_type === "catch").length;
   const elapsed = elapsedLabel(session.start_time || session.created_at);
+
+  // Validate swap_in chips against catalogue. Drop unmatched ones; older
+  // payloads pre-187 lack fly_name and are kept (can't validate).
+  const validatedChips = useMemo(() => {
+    if (!answer?.chips) return [];
+    if (!flyCatalogue) return answer.chips;
+    const valid: ChipAction[] = [];
+    for (const c of answer.chips) {
+      if (c.category === "swap_in") {
+        const name = c.fly_name;
+        if (!name) {
+          valid.push(c);
+          continue;
+        }
+        if (flyCatalogue.has(name.toLowerCase())) {
+          valid.push(c);
+        } else {
+          void logEvent("warning", {
+            context: "ghillie_chip_no_fly_match",
+            chip_label: c.label,
+            chip_fly_name: name,
+          }, session.id ?? undefined);
+        }
+      } else {
+        valid.push(c);
+      }
+    }
+    return valid;
+  }, [answer?.chips, flyCatalogue, session.id]);
 
   async function handleAsk() {
     const q = question.trim();
@@ -69,9 +119,6 @@ export default function AskGhillieOverlay({
     setError(null);
     setAnswer(null);
 
-    // Compose a context-enriched question so the existing prompt template
-    // (which doesn't yet know about rod / setup / tally) gets the relevant
-    // mid-session bits inline.
     const ctxBits: string[] = [];
     if (rodWeight) ctxBits.push(`rod ${rodWeight}#`);
     if (currentSetup.style) ctxBits.push(`style ${currentSetup.style}`);
@@ -124,6 +171,8 @@ export default function AskGhillieOverlay({
     }
   }
 
+  const droppedCount = (answer?.chips?.length ?? 0) - validatedChips.length;
+
   return (
     <div className="p-4 space-y-4 pb-32">
       <div className="flex items-center gap-3">
@@ -172,9 +221,9 @@ export default function AskGhillieOverlay({
           <div className="rounded-md border bg-muted/30 p-3 whitespace-pre-wrap text-sm">
             {answer.narrative}
           </div>
-          {answer.chips && answer.chips.length > 0 && (
+          {validatedChips.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {answer.chips.map((c, i) => (
+              {validatedChips.map((c, i) => (
                 <span
                   key={i}
                   className="inline-flex flex-col items-start rounded-full border px-3 py-1.5 text-xs bg-background"
@@ -185,6 +234,11 @@ export default function AskGhillieOverlay({
                 </span>
               ))}
             </div>
+          )}
+          {droppedCount > 0 && (
+            <p className="text-[11px] text-muted-foreground italic mt-1">
+              {droppedCount} suggestion{droppedCount === 1 ? "" : "s"} hidden — pattern not in your fly catalogue yet.
+            </p>
           )}
           {answer.confidence && (
             <div className="text-[11px] text-muted-foreground uppercase tracking-wide">
