@@ -5,8 +5,10 @@ export interface HistoricalSession {
   id: string;
   date: string; // ISO
   catches: number;
-  /** Sorted event coords. May be empty. */
+  /** Sorted event coords (line geometry). May be empty. */
   trail: [number, number][];
+  /** Subset of trail points that were catches — used for catch-only pin overlay. */
+  catchPoints: [number, number][];
 }
 
 interface Props {
