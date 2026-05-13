@@ -14,7 +14,7 @@ import { logEvent } from "@/services/eventLogger";
 import FlyPicker from "./FlyPicker";
 import LeaderPicker, { type LeaderValue, EMPTY_LEADER } from "./LeaderPicker";
 import SpotPicker from "./SpotPicker";
-import { STYLE_OPTIONS, ALL_LINES, linesForWeight } from "./setup/vocabulary";
+import { STYLE_OPTIONS, ALL_LINES, linesForWeight, positionsForFlyCount } from "./setup/vocabulary";
 import { retrievesForStyle, depthsForStyle } from "@/services/styleRules";
 
 export type ChangeField =
@@ -53,6 +53,7 @@ export default function ChangeFlow({
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const lastAutoSavedRef = useRef<string | null>(null);
 
   // Per-field draft state
   const [newValue, setNewValue] = useState<any>(null);
@@ -68,6 +69,7 @@ export default function ChangeFlow({
     setNewValue(null);
     setFlyPos(null);
     setPendingFly(null);
+    lastAutoSavedRef.current = null;
     setReason("");
     if (f === "leader") setLeader(EMPTY_LEADER);
   }
@@ -77,7 +79,21 @@ export default function ChangeFlow({
     setNewValue(null);
     setFlyPos(null);
     setPendingFly(null);
+    lastAutoSavedRef.current = null;
   }
+
+  // Auto-save when FlyPicker hands us a fully-formed pendingFly (prompt 183 §2).
+  useEffect(() => {
+    if (field !== "fly") return;
+    if (saving) return;
+    if (!pendingFly?.pattern) return;
+    if (!isReady("fly", newValue, pendingFly, leader, flyPos)) return;
+    const fingerprint = `${pendingFly.pattern}|${pendingFly.size ?? ""}|${flyPos ?? ""}`;
+    if (lastAutoSavedRef.current === fingerprint) return;
+    lastAutoSavedRef.current = fingerprint;
+    void handleSave();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingFly, field, flyPos, saving]);
 
   // ---- Field picker landing ----
   if (field === null) {
@@ -159,6 +175,18 @@ export default function ChangeFlow({
         toBlob.position = pos;
         toBlob.fly_pattern = newFly.pattern;
         toBlob.fly_size = newFly.size;
+      } else if (field === "droppers") {
+        // droppers isn't on session_events as a column — record delta in
+        // change_from/change_to so Timeline + analytics have data (prompt 183 §5).
+        const oldDropperCount =
+          currentSetup.dropper_count ??
+          Math.max(
+            0,
+            Object.keys(currentSetup.flies_on_cast ?? {}).filter((k) => (currentSetup.flies_on_cast as any)?.[k]).length - 1,
+          );
+        fromBlob.droppers = oldDropperCount;
+        toBlob.droppers = newValue;
+        next.dropper_count = newValue;
       } else if (field === "leader") {
         // Leader stored on session_rods; we record summary in change event.
         const summaryText = `${leader.material ?? ""} ${leader.length_ft ?? ""}ft @ ${leader.strength_lb ?? ""}lb`.trim();
@@ -213,12 +241,21 @@ export default function ChangeFlow({
             .eq("session_id", sessionId)
             .eq("is_active", true);
           if (rodErr) {
-            console.warn("session_rods sync failed (non-fatal):", rodErr.message);
+            console.warn("session_rods sync failed:", rodErr.message);
             logEvent("warning", { context: "rod_sync_after_change", field, message: rodErr.message }, sessionId);
+            toast.warning(
+              "Change saved, but rod state didn't sync. Refresh the page and verify the new setup is shown.",
+              { duration: 6000 }
+            );
           }
         }
       } catch (rodWriteErr: any) {
-        console.warn("session_rods sync threw (non-fatal):", rodWriteErr?.message);
+        console.warn("session_rods sync threw:", rodWriteErr?.message);
+        logEvent("error", { context: "rod_sync_after_change", field, message: rodWriteErr?.message }, sessionId);
+        toast.warning(
+          "Change saved, but rod state didn't sync. Refresh the page and verify the new setup is shown.",
+          { duration: 6000 }
+        );
       }
 
       logEvent("session.change", { session_id: sessionId, field, has_reason: !!reason }, sessionId);
@@ -297,6 +334,18 @@ export default function ChangeFlow({
       )}
 
       {field === "fly" && (
+        <div>
+          <Label>Why? (optional — type before tapping Add)</Label>
+          <Input
+            placeholder="e.g. wind shifted, fish moved deeper"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="mt-1.5"
+          />
+        </div>
+      )}
+
+      {field === "fly" && (
         <FlyChangeEditor
           currentSetup={currentSetup}
           venueType={venueType}
@@ -308,28 +357,36 @@ export default function ChangeFlow({
         />
       )}
 
-      <div>
-        <Label>Why? (optional)</Label>
-        <Input
-          placeholder="e.g. wind shifted, fish moved deeper"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          className="mt-1.5"
-        />
-      </div>
+      {field !== "fly" && (
+        <div>
+          <Label>Why? (optional)</Label>
+          <Input
+            placeholder="e.g. wind shifted, fish moved deeper"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="mt-1.5"
+          />
+        </div>
+      )}
 
-      <div className="flex gap-2">
-        <Button variant="outline" className="flex-1 min-h-[48px]" onClick={backToPicker} disabled={saving}>
-          Cancel
-        </Button>
-        <Button
-          className="flex-1 min-h-[48px] bg-diary-change hover:bg-diary-change/90"
-          onClick={handleSave}
-          disabled={saving || !isReady(field, newValue, pendingFly, leader, flyPos)}
-        >
-          {saving ? "Saving…" : `Save · ${summary}`}
-        </Button>
-      </div>
+      {field !== "fly" && (
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex-1 min-h-[48px]" onClick={backToPicker} disabled={saving}>
+            Cancel
+          </Button>
+          <Button
+            className="flex-1 min-h-[48px] bg-diary-change hover:bg-diary-change/90"
+            onClick={handleSave}
+            disabled={saving || !isReady(field, newValue, pendingFly, leader, flyPos)}
+          >
+            {saving ? "Saving…" : `Save · ${summary}`}
+          </Button>
+        </div>
+      )}
+
+      {field === "fly" && saving && (
+        <div className="text-center text-sm text-muted-foreground py-2">Saving…</div>
+      )}
     </div>
   );
 }
@@ -432,21 +489,18 @@ function FlyChangeEditor({
   setPendingFly: (p: { pattern: string; size: number | null } | null) => void;
 }) {
   const flies = currentSetup.flies_on_cast as any;
-  const positions = flies ? Object.keys(flies) : [];
+  // flyCount = dropper_count + 1; fall back to filled positions, then 1 (prompt 183 §6).
+  const droppersFromRod = currentSetup.dropper_count;
+  const filledCount = flies ? Object.keys(flies).filter((k) => flies[k]).length : 0;
+  const flyCount = droppersFromRod != null
+    ? Math.max(1, droppersFromRod + 1)
+    : Math.max(1, filledCount);
+  const positions = positionsForFlyCount(flyCount);
 
   // Single-fly auto-pick (lifts up to parent so save handler sees it).
   useEffect(() => {
     if (positions.length === 1 && !flyPos) setFlyPos(positions[0]);
   }, [positions, flyPos, setFlyPos]);
-
-  // No flies recorded yet
-  if (positions.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-4">
-        No flies recorded yet on this rod. Set them up via Change → Style first.
-      </p>
-    );
-  }
 
   if (!flyPos) {
     return (

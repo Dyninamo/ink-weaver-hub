@@ -715,11 +715,16 @@ function SpotStep(props: {
                 <Label htmlFor="rig-flies" className="cursor-pointer">Rig + flies</Label>
               </div>
             </RadioGroup>
-            <Input
-              value={props.presetName}
-              onChange={(e) => props.setPresetName(e.target.value)}
-              placeholder={props.defaultPresetName}
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="preset-name">Name this rig (optional)</Label>
+              <Input
+                id="preset-name"
+                value={props.presetName}
+                onChange={(e) => props.setPresetName(e.target.value)}
+                placeholder={props.defaultPresetName}
+              />
+              <p className="text-xs text-muted-foreground">Leave blank to use the default name.</p>
+            </div>
           </div>
         )}
       </div>

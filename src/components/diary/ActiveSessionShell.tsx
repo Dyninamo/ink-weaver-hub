@@ -25,6 +25,7 @@ import { acquireWakeLock, releaseWakeLock } from "@/lib/wakeLock";
 import {
   endSession,
   pollSessionWeather,
+  getCurrentSetup,
   type CurrentSetup,
   type FishingSession,
   type SessionEvent,
@@ -36,9 +37,8 @@ export type SessionPhase =
   | "ask_ghillie" | "venue_switch"
   | "end_confirm" | "end_syncing" | "end_done";
 
-const PHASES_WITH_PILL = new Set<SessionPhase>([
-  "ready", "catch", "blank", "lost", "change", "rod_change", "ask_ghillie", "venue_switch",
-]);
+// End-Session pill is only visible on the main menu (ready). Per prompt 183 §3.
+const PHASES_WITH_PILL = new Set<SessionPhase>(["ready"]);
 
 interface Props {
   session: FishingSession;
@@ -67,6 +67,11 @@ export default function ActiveSessionShell({
   const [outreachChecked, setOutreachChecked] = useState(false);
   const [endSaveDone, setEndSaveDone] = useState(false);
   const [endSaveError, setEndSaveError] = useState<string | null>(null);
+  const [activeRodRow, setActiveRodRow] = useState<{
+    rod_weight: number | null;
+    rod_length_ft: number | null;
+    line_profile: string | null;
+  } | null>(null);
 
   const sessionId = session.id!;
 
@@ -80,6 +85,23 @@ export default function ActiveSessionShell({
       void releaseWakeLock();
     };
   }, []);
+
+  // Fetch live rod row when about to confirm end-session — so the summary
+  // reflects post-change line/rod state, not the original session columns.
+  useEffect(() => {
+    if (phase !== "end_confirm") return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("session_rods" as any)
+        .select("rod_weight, rod_length_ft, line_profile")
+        .eq("session_id", sessionId)
+        .eq("rod_index", activeRodIndex)
+        .maybeSingle();
+      if (!cancelled && data) setActiveRodRow(data as any);
+    })();
+    return () => { cancelled = true; };
+  }, [phase, sessionId, activeRodIndex]);
 
   function repollWeather() {
     if (!sessionId) return;
@@ -265,15 +287,9 @@ export default function ActiveSessionShell({
         activeRodIndex={activeRodIndex}
         onSwitchRod={async (rod: SessionRod) => {
           setActiveRodIndex(rod.rod_index);
-          setCurrentSetup({
-            style: rod.style,
-            rig: null,
-            line_type: rod.line_name,
-            retrieve: null,
-            flies_on_cast: null,
-            spot: currentSetup.spot,
-            depth_zone: null,
-          } as CurrentSetup);
+          // Hydrate from session_rods + events overlay (prompt 182 §3).
+          const setup = await getCurrentSetup(sessionId, rod.rod_index);
+          setCurrentSetup(setup);
           toast.success(`Switched to ${rod.name || `Rod ${rod.rod_index}`}`);
           setPhase("ready");
         }}
@@ -289,9 +305,9 @@ export default function ActiveSessionShell({
         session={session}
         events={events}
         activeRod={{
-          rodWeight: (session as any).rod_weight ?? null,
-          rodLengthFt: (session as any).rod_length_ft ?? null,
-          line: (session as any).line_profile ?? null,
+          rodWeight:   activeRodRow?.rod_weight    ?? (session as any).rod_weight    ?? null,
+          rodLengthFt: activeRodRow?.rod_length_ft ?? (session as any).rod_length_ft ?? null,
+          line:        activeRodRow?.line_profile  ?? (session as any).line_profile  ?? null,
         }}
         onCancel={() => setPhase("ready")}
         onConfirm={handleConfirmEnd}

@@ -105,6 +105,11 @@ export interface CurrentSetup {
   flies_on_cast: FliesOnCast | null;
   spot: string | null;
   depth_zone: string | null;
+  /**
+   * Number of droppers on the cast (so total positions = dropper_count + 1).
+   * Null when the rod row hasn't been read or doesn't exist. Per prompt 182 §1a.
+   */
+  dropper_count: number | null;
 }
 
 /**
@@ -131,6 +136,58 @@ export function normaliseFliesOnCast(raw: unknown): FliesOnCast | null {
     }
   }
   return Object.keys(out).length > 0 ? out : null;
+}
+
+/**
+ * Hydrate a CurrentSetup from session_rods (truth) with overlay from the
+ * latest event for fields not stored on the rod row. Per prompt 182.
+ */
+export async function getCurrentSetup(
+  sessionId: string,
+  rodIndex: number = 0,
+  prefetchedEvents?: SessionEvent[],
+): Promise<CurrentSetup> {
+  const { data: rodRows } = await supabase
+    .from("session_rods" as any)
+    .select("rod_index, is_active, style, line_profile, flies_on_cast, dropper_count")
+    .eq("session_id", sessionId);
+  const rows = ((rodRows ?? []) as unknown) as Array<{
+    rod_index: number;
+    is_active: boolean;
+    style: string | null;
+    line_profile: string | null;
+    flies_on_cast: unknown;
+    dropper_count: number | null;
+  }>;
+  const rod =
+    rows.find((r) => r.rod_index === rodIndex) ??
+    rows.find((r) => r.is_active) ??
+    rows[0] ??
+    null;
+
+  const events = prefetchedEvents ?? (await getSessionEvents(sessionId));
+  const reversed = [...events].reverse();
+  const findFirst = <K extends keyof SessionEvent>(key: K): SessionEvent[K] | null => {
+    for (const e of reversed) {
+      const v = e[key];
+      if (v != null && v !== "") return v;
+    }
+    return null;
+  };
+
+  const rodFlies = normaliseFliesOnCast(rod?.flies_on_cast ?? null);
+  const eventFlies = normaliseFliesOnCast(findFirst("flies_on_cast"));
+
+  return {
+    style:         rod?.style        ?? findFirst("style"),
+    line_type:     rod?.line_profile ?? findFirst("line_type"),
+    flies_on_cast: rodFlies ?? eventFlies,
+    rig:           findFirst("rig"),
+    retrieve:      findFirst("retrieve"),
+    spot:          findFirst("spot"),
+    depth_zone:    findFirst("depth_zone"),
+    dropper_count: rod?.dropper_count ?? null,
+  };
 }
 
 /** Render a FliesOnCast map (or legacy string-shape) as a single line. */

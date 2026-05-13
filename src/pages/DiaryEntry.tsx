@@ -26,10 +26,10 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   getSession,
   getSessionEvents,
+  getCurrentSetup,
   deleteSession,
   calculateSessionStats,
   formatFliesOnCast,
-  normaliseFliesOnCast,
   type FishingSession,
   type SessionEvent,
   type CurrentSetup,
@@ -53,6 +53,7 @@ export default function DiaryEntry() {
   const [currentSetup, setCurrentSetup] = useState<CurrentSetup>({
     style: null, rig: null, line_type: null, retrieve: null,
     flies_on_cast: null, spot: null, depth_zone: null,
+    dropper_count: null,
   });
 
   // Carry-forward state — only the active shell consumes lastSpecies; kept here
@@ -104,26 +105,13 @@ export default function DiaryEntry() {
         }
       }
 
-      // Derive current setup from most recent change/catch event
-      const setupEvents = [...e].reverse();
-      const lastSetupEvent = setupEvents.find(
-        (ev) => ev.style || ev.rig || ev.line_type
-      );
-      if (lastSetupEvent) {
-        setCurrentSetup({
-          style: lastSetupEvent.style,
-          rig: lastSetupEvent.rig,
-          line_type: lastSetupEvent.line_type,
-          retrieve: lastSetupEvent.retrieve,
-          flies_on_cast: normaliseFliesOnCast(lastSetupEvent.flies_on_cast),
-          spot: lastSetupEvent.spot,
-          depth_zone: lastSetupEvent.depth_zone,
-        });
-      }
+      // Hydrate current setup from session_rods (truth) with event overlay.
+      // Per prompt 182.
+      const setup = await getCurrentSetup(id, activeRodIndex, e);
+      setCurrentSetup(setup);
 
-      // Derive carry-forward (lastSpecies only — rig position/fly size were
-      // consumed by removed catch-modal handlers).
-      const lastCatch = setupEvents.find((ev) => ev.event_type === "catch");
+      // Derive carry-forward lastSpecies from the most recent catch event.
+      const lastCatch = [...e].reverse().find((ev) => ev.event_type === "catch");
       if (lastCatch) {
         setLastSpecies(lastCatch.species);
       }
@@ -141,7 +129,7 @@ export default function DiaryEntry() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, activeRodIndex]);
 
   useEffect(() => {
     loadData();
@@ -220,7 +208,7 @@ export default function DiaryEntry() {
     }
     if (change_to.leader) return `Leader: ${change_to.leader}`;
     if (change_to.venue) return `Venue: ${change_to.venue}`;
-    const KNOWN_KEYS = ['style', 'rig', 'line_type', 'line', 'retrieve', 'spot', 'depth_zone', 'lineProfile', 'rodWeight', 'flyCount'];
+    const KNOWN_KEYS = ['style', 'rig', 'line_type', 'line', 'retrieve', 'spot', 'depth_zone', 'lineProfile', 'rodWeight', 'flyCount', 'droppers'];
     const parts: string[] = [];
     for (const k of KNOWN_KEYS) {
       const v = change_to[k];
@@ -568,6 +556,23 @@ export default function DiaryEntry() {
                       <>
                         <RefreshCw className="h-4 w-4 text-diary-change shrink-0" />
                         <span className="truncate">{formatChangeTo(event.change_to)}</span>
+                      </>
+                    )}
+
+                    {event.event_type === "got_away" && (
+                      <>
+                        <Fish className="h-4 w-4 text-diary-lost shrink-0" style={{ opacity: 0.6 }} />
+                        <span className="font-medium">Lost</span>
+                        {event.got_away_stage && (
+                          <span className={cn("text-xs", mutedClass)}>
+                            · {event.got_away_stage.replace(/_/g, " ")}
+                          </span>
+                        )}
+                        {event.fly_pattern && (
+                          <span className={cn("text-xs truncate", mutedClass)}>
+                            · {event.fly_pattern}{event.fly_size ? ` #${event.fly_size}` : ""}
+                          </span>
+                        )}
                       </>
                     )}
                   </div>
