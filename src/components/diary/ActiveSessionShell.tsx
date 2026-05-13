@@ -37,9 +37,8 @@ export type SessionPhase =
   | "ask_ghillie" | "venue_switch"
   | "end_confirm" | "end_syncing" | "end_done";
 
-const PHASES_WITH_PILL = new Set<SessionPhase>([
-  "ready", "catch", "blank", "lost", "change", "rod_change", "ask_ghillie", "venue_switch",
-]);
+// End-Session pill is only visible on the main menu (ready). Per prompt 183 §3.
+const PHASES_WITH_PILL = new Set<SessionPhase>(["ready"]);
 
 interface Props {
   session: FishingSession;
