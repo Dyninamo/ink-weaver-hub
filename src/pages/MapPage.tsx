@@ -157,12 +157,18 @@ export default function MapPage() {
       const venueName = activeSession?.venue_name;
       let sessionQuery = supabase
         .from('fishing_sessions')
-        .select('id, session_date, venue_name')
+        .select('id, session_date, venue_name, venue_id')
         .eq('user_id', user.id)
         .eq('is_active', false)
         .order('session_date', { ascending: false })
         .limit(20);
-      if (venueName) sessionQuery = sessionQuery.eq('venue_name', venueName);
+      // Prefer venue_id (immune to name typos / casing / alias drift). Only
+      // fall back to venue_name if the active session itself has no venue_id.
+      if (activeSession?.venue_id) {
+        sessionQuery = sessionQuery.eq('venue_id', activeSession.venue_id);
+      } else if (venueName) {
+        sessionQuery = sessionQuery.eq('venue_name', venueName);
+      }
       const { data: sessions } = await sessionQuery;
       if (cancelled || !sessions || sessions.length === 0) {
         if (!cancelled) setHistory([]);
