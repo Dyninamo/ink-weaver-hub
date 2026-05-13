@@ -522,6 +522,7 @@ export default function DiaryNew() {
           Build your rig <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>
+      {conflictModal}
     </div>
   );
 }
