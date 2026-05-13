@@ -82,6 +82,13 @@ export default function DiaryNew() {
   const [venues, setVenues] = useState<VenueOption[]>([]);
   
   const [showWizard, setShowWizard] = useState(false);
+  const [pendingActiveConflict, setPendingActiveConflict] = useState<{
+    id: string;
+    venue_name: string | null;
+    start_time: string | null;
+    created_at: string;
+  } | null>(null);
+  const [pendingCommit, setPendingCommit] = useState<WizardCommit | null>(null);
 
   useEffect(() => {
     async function loadVenues() {
