@@ -87,6 +87,23 @@ export default function ActiveSessionShell({
     };
   }, []);
 
+  // Fetch live rod row when about to confirm end-session — so the summary
+  // reflects post-change line/rod state, not the original session columns.
+  useEffect(() => {
+    if (phase !== "end_confirm") return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("session_rods" as any)
+        .select("rod_weight, rod_length_ft, line_profile")
+        .eq("session_id", sessionId)
+        .eq("rod_index", activeRodIndex)
+        .maybeSingle();
+      if (!cancelled && data) setActiveRodRow(data as any);
+    })();
+    return () => { cancelled = true; };
+  }, [phase, sessionId, activeRodIndex]);
+
   function repollWeather() {
     if (!sessionId) return;
     pollSessionWeather(sessionId).then((s) => s && setLatestWeather(s));
@@ -289,9 +306,9 @@ export default function ActiveSessionShell({
         session={session}
         events={events}
         activeRod={{
-          rodWeight: (session as any).rod_weight ?? null,
-          rodLengthFt: (session as any).rod_length_ft ?? null,
-          line: (session as any).line_profile ?? null,
+          rodWeight:   activeRodRow?.rod_weight    ?? (session as any).rod_weight    ?? null,
+          rodLengthFt: activeRodRow?.rod_length_ft ?? (session as any).rod_length_ft ?? null,
+          line:        activeRodRow?.line_profile  ?? (session as any).line_profile  ?? null,
         }}
         onCancel={() => setPhase("ready")}
         onConfirm={handleConfirmEnd}

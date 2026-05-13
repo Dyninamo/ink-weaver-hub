@@ -213,12 +213,21 @@ export default function ChangeFlow({
             .eq("session_id", sessionId)
             .eq("is_active", true);
           if (rodErr) {
-            console.warn("session_rods sync failed (non-fatal):", rodErr.message);
+            console.warn("session_rods sync failed:", rodErr.message);
             logEvent("warning", { context: "rod_sync_after_change", field, message: rodErr.message }, sessionId);
+            toast.warning(
+              "Change saved, but rod state didn't sync. Refresh the page and verify the new setup is shown.",
+              { duration: 6000 }
+            );
           }
         }
       } catch (rodWriteErr: any) {
-        console.warn("session_rods sync threw (non-fatal):", rodWriteErr?.message);
+        console.warn("session_rods sync threw:", rodWriteErr?.message);
+        logEvent("error", { context: "rod_sync_after_change", field, message: rodWriteErr?.message }, sessionId);
+        toast.warning(
+          "Change saved, but rod state didn't sync. Refresh the page and verify the new setup is shown.",
+          { duration: 6000 }
+        );
       }
 
       logEvent("session.change", { session_id: sessionId, field, has_reason: !!reason }, sessionId);
