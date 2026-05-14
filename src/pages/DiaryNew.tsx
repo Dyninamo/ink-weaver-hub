@@ -255,7 +255,7 @@ export default function DiaryNew() {
         start_time: startTime,
         gps_start_lat: gps?.lat ?? null,
         gps_start_lon: gps?.lon ?? null,
-        plan: commit.plan,
+        plan: null,
         rods: 1,
         keep_limit: commit.keepLimit,
         rod_weight: rod.rodWeight,
@@ -265,7 +265,7 @@ export default function DiaryNew() {
         leader_material: rod.leaderMaterial,
         leader_length_ft: rod.leaderLengthFt,
         leader_strength_lb: rod.leaderStrengthLb,
-        spot_name: commit.spotName,
+        spot_name: null,
         is_active: true,
         // NOTE: fishing_style intentionally NOT written to fishing_sessions
         // (column doesn't exist; style lives on session_rods.style only — see prompt 141 decisions §1)
