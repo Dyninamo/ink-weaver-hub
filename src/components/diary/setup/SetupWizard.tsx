@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,11 +87,15 @@ export default function SetupWizard({
   const [lengthInches, setLengthInches] = useState<number | null>(null);
   const [lengthUnit, setLengthUnit] = useState<"ft" | "m">("ft");
   const [committing, setCommitting] = useState(false);
-
-  // Spot step locals
-  const [spotName, setSpotName] = useState("");
-  const [plan, setPlan] = useState("");
   const [keepLimit, setKeepLimit] = useState<string>("2");
+
+  // Synchronous double-fire guard. Replaces the state-based `committing` flag,
+  // which was racy because React batches setState within an event tick and two
+  // callers in the same tick could both observe `committing === false`.
+  const commitInFlightRef = useRef(false);
+  // Records which path closed the dialog so onOpenChange's outside-click branch
+  // only fires when neither button was clicked.
+  const dialogDispositionRef = useRef<null | "save" | "skip">(null);
 
   // Fly picker sheet
   const [flyPickerPos, setFlyPickerPos] = useState<FlyPosition | null>(null);
@@ -283,10 +287,11 @@ export default function SetupWizard({
   }
 
   async function handleStart() {
-    if (committing) return;
+    if (commitInFlightRef.current) return;
     const defaultName = `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim();
     setSavePromptName(defaultName);
     setSavePromptIncludeFlies(false);
+    dialogDispositionRef.current = null;
     setSavePromptOpen(true);
     logEvent("wizard.save_prompt_shown", {
       rod_weight: state.rodWeight,
@@ -299,7 +304,8 @@ export default function SetupWizard({
   }
 
   async function doCommit(savePreset: { name: string; includeFlies: boolean } | null) {
-    if (committing) return;
+    if (commitInFlightRef.current) return;   // ref-checked, synchronous
+    commitInFlightRef.current = true;
     setCommitting(true);
     try {
       logEvent("wizard.commit", {
@@ -321,6 +327,9 @@ export default function SetupWizard({
       });
     } finally {
       setCommitting(false);
+      // Intentionally do NOT clear commitInFlightRef — once a session commits, the
+      // wizard unmounts. If you ever add a non-unmounting commit path, clear it
+      // explicitly there.
     }
   }
 
@@ -342,7 +351,7 @@ export default function SetupWizard({
               .from("user_presets")
               .update({ last_used_at: new Date().toISOString() })
               .eq("id", p.id);
-            const rod = p.rod as RodSetupState;
+            const rod = readPresetRod(p.rod);
             const hasFlies = !!(
               p.include_flies &&
               rod?.flies &&
@@ -365,7 +374,8 @@ export default function SetupWizard({
               if (rod.rodLengthFt) {
                 setLengthInches(Math.round(rod.rodLengthFt * 12));
               }
-              if (committing) return;
+              if (commitInFlightRef.current) return;
+              commitInFlightRef.current = true;
               setCommitting(true);
               try {
                 logEvent("wizard.commit", {
@@ -536,12 +546,12 @@ export default function SetupWizard({
           <AlertDialog
             open={savePromptOpen}
             onOpenChange={(open) => {
-              if (!open && savePromptOpen) {
-                setSavePromptOpen(false);
+              setSavePromptOpen(open);
+              if (open) return;
+              if (dialogDispositionRef.current === null) {
+                dialogDispositionRef.current = "skip";
                 logEvent("wizard.save_prompt_dismissed", { reason: "outside_click" });
                 void doCommit(null);
-              } else {
-                setSavePromptOpen(open);
               }
             }}
           >
@@ -576,6 +586,8 @@ export default function SetupWizard({
               <AlertDialogFooter>
                 <AlertDialogCancel
                   onClick={() => {
+                    if (dialogDispositionRef.current !== null) return;
+                    dialogDispositionRef.current = "skip";
                     setSavePromptOpen(false);
                     logEvent("wizard.save_prompt_dismissed", { reason: "skip" });
                     void doCommit(null);
@@ -585,8 +597,10 @@ export default function SetupWizard({
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
-                    setSavePromptOpen(false);
+                    if (dialogDispositionRef.current !== null) return;
+                    dialogDispositionRef.current = "save";
                     const name = savePromptName.trim() || `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim();
+                    setSavePromptOpen(false);
                     logEvent("wizard.save_prompt_accepted", {
                       name,
                       include_flies: savePromptIncludeFlies,
@@ -636,7 +650,7 @@ function ChooserView({
         </div>
         <div className="space-y-2">
           {presets.map((p) => {
-            const rod: any = p.rod || {};
+            const rod = readPresetRod(p.rod);
             const subtitle = [
               rod.rodWeight ? `#${rod.rodWeight}` : null,
               rod.lineProfile,
@@ -668,6 +682,35 @@ function ChooserView({
 }
 
 // ---------- Helpers ----------
+
+// Defensive reader for user_presets.rod — tolerates pre-203 legacy keys.
+// Once the §1.3 migration is verified clean, this can be removed (prompt 205-ish).
+function readPresetRod(blob: any): RodSetupState {
+  const rodLengthFt =
+    typeof blob?.rodLengthFt === "number"
+      ? blob.rodLengthFt
+      : typeof blob?.rodLength === "string"
+      ? parseFloat(blob.rodLength.replace(/ft$/, ""))
+      : null;
+  const leaderLengthFt =
+    typeof blob?.leaderLengthFt === "number"
+      ? blob.leaderLengthFt
+      : typeof blob?.leaderLength === "string"
+      ? parseFloat(blob.leaderLength.replace(/ft$/, ""))
+      : null;
+  return {
+    rodWeight: blob?.rodWeight ?? null,
+    rodLengthFt: Number.isFinite(rodLengthFt) ? rodLengthFt : null,
+    lineProfile: blob?.lineProfile ?? blob?.line ?? null,
+    leaderId: blob?.leaderId ?? null,
+    leaderMaterial: blob?.leaderMaterial ?? null,
+    leaderLengthFt: Number.isFinite(leaderLengthFt) ? leaderLengthFt : null,
+    leaderStrengthLb: blob?.leaderStrengthLb ?? null,
+    style: blob?.style ?? null,
+    flyCount: (blob?.flyCount ?? 2) as RodSetupState["flyCount"],
+    flies: blob?.flies ?? {},
+  };
+}
 
 function leaderValueFromState(s: RodSetupState): LeaderValue {
   return {
