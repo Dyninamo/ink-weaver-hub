@@ -445,16 +445,25 @@ export default function SetupWizard({
     return rodLengthInchesForWeight(state.rodWeight);
   }, [state.rodWeight]);
 
+  // 205 §4.1 — combined readiness gate.
+  const ready = profileLoaded && presetsLoaded;
+
   return (
     <div className="space-y-4">
-      {mode === "choose" && !presetsLoaded && (
+      {!ready && (
         <div className="space-y-6 py-8 flex flex-col items-center">
           <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-          <p className="text-sm text-muted-foreground">Loading your saved rigs…</p>
+          <p className="text-sm text-muted-foreground">
+            {!profileLoaded && !presetsLoaded
+              ? "Loading your profile and saved rigs…"
+              : !profileLoaded
+              ? "Loading your profile…"
+              : "Loading your saved rigs…"}
+          </p>
         </div>
       )}
 
-      {mode === "choose" && presetsLoaded && (
+      {ready && mode === "choose" && (
         <ChooserView
           presets={presets}
           onCancel={handleChooserCancel}
