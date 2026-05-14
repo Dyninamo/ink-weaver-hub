@@ -65,10 +65,15 @@ async function tryAcquire(): Promise<void> {
     sentinel?.addEventListener("release", () => {
       console.info("[wakeLock] released");
       sentinel = null;
+      void import("@/services/eventLogger").then((m) => m.logEvent("lifecycle.wakelock.released", null));
     });
     console.info("[wakeLock] acquired");
+    void import("@/services/eventLogger").then((m) => m.logEvent("lifecycle.wakelock.acquired", null));
   } catch (err) {
     console.warn("[wakeLock] request failed:", err);
     sentinel = null;
+    void import("@/services/eventLogger").then((m) =>
+      m.logEvent("lifecycle.wakelock.failed", { error: String(err).slice(0, 200) })
+    );
   }
 }

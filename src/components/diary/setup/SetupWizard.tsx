@@ -156,6 +156,13 @@ export default function SetupWizard({
 
   useEffect(() => { logEvent("wizard.phase_enter", { phase, rodSubStep }); }, [phase, rodSubStep]);
 
+  // Per prompt 201 §3.4 — mount/unmount events. If "wizard.unmounted" fires
+  // without a "wizard.commit" before it, that's "loses setup" caught red-handed.
+  useEffect(() => {
+    logEvent("wizard.mounted", null);
+    return () => logEvent("wizard.unmounted", null);
+  }, []);
+
   function applyPreset(rod: RodSetupState, hasFlies: boolean) {
     setState((s) => ({
       ...s,

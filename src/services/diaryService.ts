@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logEvent } from "@/services/eventLogger";
 
 // ============================================================
 // TYPES
@@ -265,8 +266,9 @@ export async function endSession(id: string, wrapUp: {
     is_active: false,
   });
 
-  // Fire-and-forget: compute session summary → cascades to angler + venue stats
-  triggerSessionSummary(id);
+  // Fire-and-forget compute summary; awaited internally so the outcome is logged
+  // (per prompt 201 §1.2). Don't await here — UI must progress immediately.
+  void triggerSessionSummary(id);
 
   // Auto-favourite the venue and log to history
   try {
@@ -335,15 +337,38 @@ export async function pollSessionWeather(sessionId: string): Promise<WeatherSnap
   }
 }
 
-/** Fire-and-forget: trigger compute-session-summary Edge Function */
+/** Triggers compute-session-summary and logs the outcome.
+ *  Was fire-and-forget per prompt 145 — promoted to await + log per prompt 201 §1.2
+ *  after that pattern hid a 100%-fail UUID/TEXT mismatch for weeks. */
 export async function triggerSessionSummary(sessionId: string): Promise<void> {
+  const t0 = performance.now();
   try {
-    await supabase.functions.invoke('compute-session-summary', {
+    const { data, error } = await supabase.functions.invoke('compute-session-summary', {
       body: { session_id: sessionId },
     });
+    const ms = Math.round(performance.now() - t0);
+    if (error) {
+      logEvent('session_summary.failed', {
+        session_id: sessionId,
+        ms,
+        error: (error as any).message ?? String(error),
+      }, sessionId);
+      console.error('Session summary computation failed:', error);
+      return;
+    }
+    logEvent('session_summary.computed', {
+      session_id: sessionId,
+      ms,
+      total_fish: (data as any)?.total_fish ?? null,
+      weather_periods: (data as any)?.weather_periods ?? null,
+    }, sessionId);
   } catch (err) {
+    logEvent('session_summary.failed', {
+      session_id: sessionId,
+      ms: Math.round(performance.now() - t0),
+      error: (err as Error).message ?? String(err),
+    }, sessionId);
     console.error('Session summary computation failed:', err);
-    // Non-critical — summary can be recomputed later via admin backfill
   }
 }
 

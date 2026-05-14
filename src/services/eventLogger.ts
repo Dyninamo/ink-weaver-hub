@@ -212,3 +212,46 @@ export function installGlobalEventHooks() {
     console.warn("[event] boot log failed", err);
   }
 }
+
+// ---- Lifecycle hooks (per prompt 201 §3.2) ----
+let lifecycleInstalled = false;
+export function installLifecycleLogger() {
+  if (lifecycleInstalled) return;
+  if (typeof document === "undefined") return;
+  lifecycleInstalled = true;
+
+  // Visibility — tracks tab-in-background which on mobile can lead to React
+  // state eviction ("loses setup").
+  document.addEventListener("visibilitychange", () => {
+    logEvent("lifecycle.visibility", { state: document.visibilityState });
+  });
+
+  // Service worker controller change — fires when a new PWA build takes over.
+  // If this happens mid-session, the app may behave inconsistently until reload.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      logEvent("lifecycle.sw_controllerchange", null);
+    });
+    navigator.serviceWorker
+      .getRegistration()
+      .then((reg) => {
+        logEvent("lifecycle.sw_state", {
+          has_registration: !!reg,
+          active: !!reg?.active,
+          installing: !!reg?.installing,
+          waiting: !!reg?.waiting,
+          scope: reg?.scope ?? null,
+        });
+      })
+      .catch((err) => {
+        logEvent("lifecycle.sw_state", {
+          has_registration: false,
+          error: String(err).slice(0, 200),
+        });
+      });
+  }
+
+  // Window focus/blur — complements visibilitychange on desktop browsers.
+  window.addEventListener("focus", () => logEvent("lifecycle.focus", null));
+  window.addEventListener("blur", () => logEvent("lifecycle.blur", null));
+}

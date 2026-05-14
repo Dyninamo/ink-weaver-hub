@@ -68,3 +68,5 @@ verify_jwt = false
 
 [functions.admin-dump-app-events]
 verify_jwt = false
+[functions.backfill-session-summaries]
+verify_jwt = false

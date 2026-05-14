@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 import { requireUser, forbiddenResponse } from "../_shared/user_auth.ts";
+import { requireAdmin } from "../_shared/admin_auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -529,10 +530,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Per prompt 190: require authenticated user
-    const auth = await requireUser(req, corsHeaders);
-    if (auth.error) return auth.error;
-    const user = auth.user;
+    // Per prompt 201 §2.2: dual-path auth.
+    // Path A — admin (backfill / ops): bypass user-ownership check below.
+    // Path B — regular user: standard requireUser gate.
+    let user: { id: string; email?: string } | null = null;
+    let isAdmin = false;
+    const admin = await requireAdmin(req);
+    if (admin.ok) {
+      isAdmin = true;
+    } else {
+      const userAuth = await requireUser(req, corsHeaders);
+      if (userAuth.error) return userAuth.error;
+      user = userAuth.user;
+    }
 
     const supabase = createClient(
       requireEnv('SUPABASE_URL'),
@@ -561,8 +571,8 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Verify session ownership before running expensive compute
-    if ((session as any).user_id && (session as any).user_id !== user.id) {
+    // Verify session ownership before running expensive compute (skip for admin path).
+    if (!isAdmin && (session as any).user_id && (session as any).user_id !== user!.id) {
       return forbiddenResponse('Forbidden — session not yours', corsHeaders);
     }
 
