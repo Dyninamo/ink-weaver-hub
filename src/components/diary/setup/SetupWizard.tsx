@@ -683,6 +683,35 @@ function ChooserView({
 
 // ---------- Helpers ----------
 
+// Defensive reader for user_presets.rod — tolerates pre-203 legacy keys.
+// Once the §1.3 migration is verified clean, this can be removed (prompt 205-ish).
+function readPresetRod(blob: any): RodSetupState {
+  const rodLengthFt =
+    typeof blob?.rodLengthFt === "number"
+      ? blob.rodLengthFt
+      : typeof blob?.rodLength === "string"
+      ? parseFloat(blob.rodLength.replace(/ft$/, ""))
+      : null;
+  const leaderLengthFt =
+    typeof blob?.leaderLengthFt === "number"
+      ? blob.leaderLengthFt
+      : typeof blob?.leaderLength === "string"
+      ? parseFloat(blob.leaderLength.replace(/ft$/, ""))
+      : null;
+  return {
+    rodWeight: blob?.rodWeight ?? null,
+    rodLengthFt: Number.isFinite(rodLengthFt) ? rodLengthFt : null,
+    lineProfile: blob?.lineProfile ?? blob?.line ?? null,
+    leaderId: blob?.leaderId ?? null,
+    leaderMaterial: blob?.leaderMaterial ?? null,
+    leaderLengthFt: Number.isFinite(leaderLengthFt) ? leaderLengthFt : null,
+    leaderStrengthLb: blob?.leaderStrengthLb ?? null,
+    style: blob?.style ?? null,
+    flyCount: (blob?.flyCount ?? 2) as RodSetupState["flyCount"],
+    flies: blob?.flies ?? {},
+  };
+}
+
 function leaderValueFromState(s: RodSetupState): LeaderValue {
   return {
     ...EMPTY_LEADER,
