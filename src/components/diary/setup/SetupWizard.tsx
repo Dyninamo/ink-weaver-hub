@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +21,6 @@ import { toast } from "sonner";
 import LeaderPicker, { EMPTY_LEADER, type LeaderValue } from "@/components/diary/LeaderPicker";
 import FlyPicker from "@/components/diary/FlyPicker";
 import Dial from "./Dial";
-import SavedRigsBanner from "./SavedRigsBanner";
 import {
   ROD_WEIGHTS,
   STYLE_OPTIONS,
@@ -31,8 +38,8 @@ import {
 } from "./vocabulary";
 import { logEvent } from "@/services/eventLogger";
 
-type Phase = "rod" | "line" | "leader" | "style" | "droppers" | "flies" | "spot";
-const PHASES: Phase[] = ["rod", "line", "leader", "style", "droppers", "flies", "spot"];
+type Phase = "rod" | "line" | "leader" | "style" | "droppers" | "flies";
+const PHASES: Phase[] = ["rod", "line", "leader", "style", "droppers", "flies"];
 const PHASE_LABEL: Record<Phase, string> = {
   rod: "Rod",
   line: "Line",
@@ -40,16 +47,7 @@ const PHASE_LABEL: Record<Phase, string> = {
   style: "Style",
   droppers: "Droppers",
   flies: "Flies",
-  spot: "Spot",
 };
-
-interface ProfileDefaults {
-  rodWeight?: number | null;
-  rodLengthFt?: number | null;
-  lineProfile?: string | null;
-  leaderId?: number | null;
-  keepLimit?: number | null;
-}
 
 interface SetupWizardProps {
   userId: string;
@@ -65,6 +63,15 @@ export interface WizardCommit {
   plan: string | null;
   keepLimit: number | null;
   savePreset: { name: string; includeFlies: boolean } | null;
+}
+
+interface PresetRow {
+  id: string;
+  name: string;
+  rod: RodSetupState & { id?: string };
+  water_type: string | null;
+  include_flies: boolean;
+  last_used_at: string;
 }
 
 export default function SetupWizard({
@@ -85,12 +92,20 @@ export default function SetupWizard({
   const [spotName, setSpotName] = useState("");
   const [plan, setPlan] = useState("");
   const [keepLimit, setKeepLimit] = useState<string>("2");
-  const [savePreset, setSavePreset] = useState(false);
-  const [presetIncludeFlies, setPresetIncludeFlies] = useState(false);
-  const [presetName, setPresetName] = useState("");
 
   // Fly picker sheet
   const [flyPickerPos, setFlyPickerPos] = useState<FlyPosition | null>(null);
+
+  // Chooser state
+  const [presets, setPresets] = useState<PresetRow[]>([]);
+  const [presetsLoaded, setPresetsLoaded] = useState(false);
+  const [mode, setMode] = useState<"choose" | "wizard">("choose");
+  const [path, setPath] = useState<"existing" | "new" | null>(null);
+
+  // Save-prompt dialog
+  const [savePromptOpen, setSavePromptOpen] = useState(false);
+  const [savePromptName, setSavePromptName] = useState("");
+  const [savePromptIncludeFlies, setSavePromptIncludeFlies] = useState(false);
 
   // -------- Pre-fill defaults from user_profiles --------
   useEffect(() => {
@@ -132,6 +147,36 @@ export default function SetupWizard({
     return () => { cancelled = true; };
   }, [userId, venueWaterType]);
 
+  // -------- Load presets for chooser --------
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const { data, error } = await supabase
+        .from("user_presets")
+        .select("id, name, rod, water_type, include_flies, last_used_at")
+        .eq("user_id", userId)
+        .order("last_used_at", { ascending: false })
+        .limit(8);
+      if (cancelled) return;
+      const rows = (error || !data ? [] : data) as unknown as PresetRow[];
+      // Filter by stillwater/river only — never by specific venue.
+      const filtered = rows.filter(
+        (p) => !p.water_type || p.water_type === venueWaterType
+      );
+      setPresets(filtered);
+      setPresetsLoaded(true);
+      if (filtered.length === 0) {
+        setMode("wizard");
+        setPath("new");
+        logEvent("wizard.chooser_skipped", { reason: "no_presets" });
+      } else {
+        logEvent("wizard.chooser_shown", { count: filtered.length });
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [userId, venueWaterType]);
+
   // When weight changes, ensure length is in-range and line is valid
   useEffect(() => {
     if (state.rodWeight == null) return;
@@ -154,10 +199,11 @@ export default function SetupWizard({
 
   const phaseIdx = PHASES.indexOf(phase);
 
-  useEffect(() => { logEvent("wizard.phase_enter", { phase, rodSubStep }); }, [phase, rodSubStep]);
+  useEffect(() => {
+    if (mode === "wizard") logEvent("wizard.phase_enter", { phase, rodSubStep });
+  }, [phase, rodSubStep, mode]);
 
-  // Per prompt 201 §3.4 — mount/unmount events. If "wizard.unmounted" fires
-  // without a "wizard.commit" before it, that's "loses setup" caught red-handed.
+  // Per prompt 201 §3.4 — mount/unmount events.
   useEffect(() => {
     logEvent("wizard.mounted", null);
     return () => logEvent("wizard.unmounted", null);
@@ -167,11 +213,9 @@ export default function SetupWizard({
     setState((s) => ({
       ...s,
       ...rod,
-      // ensure shape sanity
       flyCount: (rod.flyCount as any) ?? 2,
       flies: rod.flies ?? {},
     }));
-    // Pre-fill length: prefer preset's value, else the new weight's median, else null.
     if (rod.rodLengthFt) {
       setLengthInches(Math.round(rod.rodLengthFt * 12));
     } else if (rod.rodWeight != null) {
@@ -180,9 +224,9 @@ export default function SetupWizard({
       setLengthInches(null);
     }
     logEvent("wizard.preset_applied", { hasFlies, rodWeight: rod.rodWeight, line: rod.lineProfile });
-    if (hasFlies) setPhase("spot");
-    else setPhase("flies");
-    toast.success("Rig applied — pick a spot to start");
+    // Always jump to flies — only chooser path that calls applyPreset is existing-no-flies.
+    setPhase("flies");
+    toast.success("Rig applied — pick your flies");
   }
 
   // -------- Per-phase Next-enabled rules --------
@@ -192,17 +236,13 @@ export default function SetupWizard({
         if (rodSubStep === "weight") return state.rodWeight != null;
         return state.rodLengthFt != null;
       case "line": return !!state.lineProfile;
-      case "leader": return true; // optional — LeaderPicker stores partial
-      case "style": return true;  // skip allowed
+      case "leader": return true;
+      case "style": return true;
       case "droppers": return state.flyCount >= 1;
       case "flies": {
         const positions = positionsForFlyCount(state.flyCount);
         return positions.every((pos) => state.flies[pos]?.name);
       }
-      case "spot":
-        // Spot is optional on Home sessions — there's no real water to anchor it to.
-        if (venueName === "Home") return true;
-        return spotName.trim().length > 0;
     }
   })();
 
@@ -228,11 +268,37 @@ export default function SetupWizard({
       setPhase(prev);
       if (prev === "rod") setRodSubStep("length");
     } else {
-      onCancel();
+      // First phase. If presets exist, drop back to chooser.
+      if (presets.length > 0) {
+        setMode("choose");
+        setPath(null);
+        setState(EMPTY_ROD_SETUP);
+        setLengthInches(null);
+        setPhase("rod");
+        setRodSubStep("weight");
+      } else {
+        onCancel();
+      }
     }
   }
 
   async function handleStart() {
+    if (committing) return;
+    const defaultName = `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim();
+    setSavePromptName(defaultName);
+    setSavePromptIncludeFlies(false);
+    setSavePromptOpen(true);
+    logEvent("wizard.save_prompt_shown", {
+      rod_weight: state.rodWeight,
+      fly_count: state.flyCount,
+      style: state.style,
+      line: state.lineProfile,
+      existing_preset_count: presets.length,
+      path,
+    });
+  }
+
+  async function doCommit(savePreset: { name: string; includeFlies: boolean } | null) {
     if (committing) return;
     setCommitting(true);
     try {
@@ -242,19 +308,16 @@ export default function SetupWizard({
         line: state.lineProfile,
         style: state.style,
         fly_count: state.flyCount,
-        saved_preset: savePreset,
+        saved_preset: !!savePreset,
+        path,
+        skipped_wizard: false,
       });
       await onComplete({
         rod: state,
-        spotName: spotName.trim() || null,
-        plan: plan.trim() || null,
+        spotName: null,
+        plan: null,
         keepLimit: keepLimit ? parseInt(keepLimit, 10) : null,
-        savePreset: savePreset
-          ? {
-              name: presetName.trim() || `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim(),
-              includeFlies: presetIncludeFlies,
-            }
-          : null,
+        savePreset,
       });
     } finally {
       setCommitting(false);
@@ -269,163 +332,337 @@ export default function SetupWizard({
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {mode === "choose" && presetsLoaded && (
+        <ChooserView
+          presets={presets}
+          onCancel={onCancel}
+          onPickExisting={async (p) => {
+            setPath("existing");
+            void supabase
+              .from("user_presets")
+              .update({ last_used_at: new Date().toISOString() })
+              .eq("id", p.id);
+            const rod = p.rod as RodSetupState;
+            const hasFlies = !!(
+              p.include_flies &&
+              rod?.flies &&
+              Object.values(rod.flies).some((f: any) => !!f?.name)
+            );
+
+            logEvent("wizard.chooser_picked_existing", {
+              preset_id: p.id,
+              had_flies: hasFlies,
+              skipped_wizard: hasFlies,
+            });
+
+            if (hasFlies) {
+              setState((s) => ({
+                ...s,
+                ...rod,
+                flyCount: (rod.flyCount as any) ?? 2,
+                flies: rod.flies ?? {},
+              }));
+              if (rod.rodLengthFt) {
+                setLengthInches(Math.round(rod.rodLengthFt * 12));
+              }
+              if (committing) return;
+              setCommitting(true);
+              try {
+                logEvent("wizard.commit", {
+                  rod_weight: rod.rodWeight,
+                  rod_length_ft: rod.rodLengthFt,
+                  line: rod.lineProfile,
+                  style: rod.style,
+                  fly_count: rod.flyCount,
+                  saved_preset: false,
+                  path: "existing",
+                  skipped_wizard: true,
+                });
+                await onComplete({
+                  rod,
+                  spotName: null,
+                  plan: null,
+                  keepLimit: keepLimit ? parseInt(keepLimit, 10) : null,
+                  savePreset: null,
+                });
+              } finally {
+                setCommitting(false);
+              }
+              return;
+            }
+
+            applyPreset(rod, false);
+            setMode("wizard");
+          }}
+          onPickNew={() => {
+            setPath("new");
+            setMode("wizard");
+            logEvent("wizard.chooser_picked_new", { existing_count: presets.length });
+          }}
+        />
+      )}
+
+      {mode === "wizard" && (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={goBack}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+            <div className="text-xs font-medium text-muted-foreground" aria-current="step">
+              {phaseIdx + 1}/{PHASES.length} · {PHASE_LABEL[phase]}
+            </div>
+            <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
+          </div>
+
+          {/* RigSoFar */}
+          <RigSoFarCard state={state} />
+
+          {/* Phase body */}
+          <div className="min-h-[220px]">
+            {phase === "rod" && rodSubStep === "weight" && (
+              <RodWeightStep value={state.rodWeight} onChange={(v) => setState((s) => ({ ...s, rodWeight: v }))} />
+            )}
+            {phase === "rod" && rodSubStep === "length" && state.rodWeight != null && (
+              <RodLengthStep
+                options={lengthOptionsInches}
+                valueInches={lengthInches}
+                unit={lengthUnit}
+                onUnitChange={setLengthUnit}
+                onChange={setLengthInches}
+              />
+            )}
+
+            {phase === "line" && state.rodWeight != null && (
+              <LineStep
+                options={linesForWeight(state.rodWeight)}
+                value={state.lineProfile}
+                onChange={(v) => setState((s) => ({ ...s, lineProfile: v }))}
+              />
+            )}
+
+            {phase === "leader" && (
+              <LeaderPicker
+                value={leaderValueFromState(state)}
+                onChange={(v) => setState((s) => ({
+                  ...s,
+                  leaderId: v.leader_id ?? null,
+                  leaderMaterial: (v.material as any) ?? null,
+                  leaderLengthFt: v.length_ft ?? null,
+                  leaderStrengthLb: v.strength_lb ?? null,
+                }))}
+                prefillUserId={userId}
+              />
+            )}
+
+            {phase === "style" && (
+              <StyleStep
+                value={state.style}
+                onChange={(v) => setState((s) => ({ ...s, style: v }))}
+              />
+            )}
+
+            {phase === "droppers" && (
+              <DroppersStep
+                value={state.flyCount}
+                onChange={(v) => setState((s) => ({ ...s, flyCount: v as any, flies: trimFlies(s.flies, v) }))}
+              />
+            )}
+
+            {phase === "flies" && (
+              <FliesStep
+                flyCount={state.flyCount}
+                flies={state.flies}
+                onPick={(pos) => setFlyPickerPos(pos)}
+              />
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="pt-2">
+            {phase === "flies" ? (
+              <Button
+                onClick={handleStart}
+                disabled={!canAdvance || committing}
+                className="w-full min-h-[48px] text-base font-medium"
+              >
+                {committing ? "Starting…" : "Start fishing"}
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                {phase === "style" && (
+                  <Button variant="ghost" onClick={goNext} className="flex-1 min-h-[44px]">
+                    Skip
+                  </Button>
+                )}
+                <Button
+                  onClick={goNext}
+                  disabled={!canAdvance}
+                  className="flex-1 min-h-[48px] text-base"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Fly picker sheet */}
+          <Sheet open={flyPickerPos != null} onOpenChange={(o) => !o && setFlyPickerPos(null)}>
+            <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>{flyPickerPos ? positionLabel(flyPickerPos) : "Pick a fly"}</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                {flyPickerPos && (
+                  <FlyPicker
+                    value={state.flies[flyPickerPos]?.name ?? null}
+                    currentStyle={state.style}
+                    currentLine={state.lineProfile}
+                    venueName={venueName}
+                    onChange={(res) => {
+                      setState((s) => ({
+                        ...s,
+                        flies: { ...s.flies, [flyPickerPos]: { name: res.pattern, size: res.size } },
+                      }));
+                      setFlyPickerPos(null);
+                    }}
+                  />
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Save-this-rig prompt */}
+          <AlertDialog
+            open={savePromptOpen}
+            onOpenChange={(open) => {
+              if (!open && savePromptOpen) {
+                setSavePromptOpen(false);
+                logEvent("wizard.save_prompt_dismissed", { reason: "outside_click" });
+                void doCommit(null);
+              } else {
+                setSavePromptOpen(open);
+              }
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Save this rig for next time?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Saved rigs appear at the top of the wizard so you can re-use them with one tap.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="save-prompt-name">Rig name</Label>
+                  <Input
+                    id="save-prompt-name"
+                    value={savePromptName}
+                    onChange={(e) => setSavePromptName(e.target.value)}
+                    placeholder="e.g. Buzzer 3-fly stillwater"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <Switch
+                    id="save-prompt-include-flies"
+                    checked={savePromptIncludeFlies}
+                    onCheckedChange={setSavePromptIncludeFlies}
+                  />
+                  <Label htmlFor="save-prompt-include-flies" className="cursor-pointer">
+                    Include today's fly choices in the saved rig
+                  </Label>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel
+                  onClick={() => {
+                    setSavePromptOpen(false);
+                    logEvent("wizard.save_prompt_dismissed", { reason: "skip" });
+                    void doCommit(null);
+                  }}
+                >
+                  Skip — just start
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setSavePromptOpen(false);
+                    const name = savePromptName.trim() || `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim();
+                    logEvent("wizard.save_prompt_accepted", {
+                      name,
+                      include_flies: savePromptIncludeFlies,
+                    });
+                    void doCommit({ name, includeFlies: savePromptIncludeFlies });
+                  }}
+                >
+                  Save it
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------- Chooser ----------
+
+function ChooserView({
+  presets,
+  onPickExisting,
+  onPickNew,
+  onCancel,
+}: {
+  presets: PresetRow[];
+  onPickExisting: (p: PresetRow) => void;
+  onPickNew: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="space-y-6 py-2">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={goBack}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back
-        </Button>
-        <div className="text-xs font-medium text-muted-foreground" aria-current="step">
-          {phaseIdx + 1}/{PHASES.length} · {PHASE_LABEL[phase]}
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold">Pick a rig</h3>
+          <p className="text-sm text-muted-foreground">
+            Tap a saved rig to use it, or create a new one from scratch.
+          </p>
         </div>
         <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
       </div>
 
-      {/* Saved rigs banner only on first phase — placed above RigSoFar so it's first in view */}
-      {phase === "rod" && rodSubStep === "weight" && (
-        <SavedRigsBanner
-          userId={userId}
-          venueWaterType={venueWaterType}
-          onApply={(p) => applyPreset(p.rod, p.hasFlies)}
-        />
-      )}
-
-      {/* RigSoFar */}
-      <RigSoFarCard state={state} />
-
-      {/* Phase body */}
-      <div className="min-h-[220px]">
-        {phase === "rod" && rodSubStep === "weight" && (
-          <RodWeightStep value={state.rodWeight} onChange={(v) => setState((s) => ({ ...s, rodWeight: v }))} />
-        )}
-        {phase === "rod" && rodSubStep === "length" && state.rodWeight != null && (
-          <RodLengthStep
-            options={lengthOptionsInches}
-            valueInches={lengthInches}
-            unit={lengthUnit}
-            onUnitChange={setLengthUnit}
-            onChange={setLengthInches}
-          />
-        )}
-
-        {phase === "line" && state.rodWeight != null && (
-          <LineStep
-            options={linesForWeight(state.rodWeight)}
-            value={state.lineProfile}
-            onChange={(v) => setState((s) => ({ ...s, lineProfile: v }))}
-          />
-        )}
-
-        {phase === "leader" && (
-          <LeaderPicker
-            value={leaderValueFromState(state)}
-            onChange={(v) => setState((s) => ({
-              ...s,
-              leaderId: v.leader_id ?? null,
-              leaderMaterial: (v.material as any) ?? null,
-              leaderLengthFt: v.length_ft ?? null,
-              leaderStrengthLb: v.strength_lb ?? null,
-            }))}
-            prefillUserId={userId}
-          />
-        )}
-
-        {phase === "style" && (
-          <StyleStep
-            value={state.style}
-            onChange={(v) => setState((s) => ({ ...s, style: v }))}
-          />
-        )}
-
-        {phase === "droppers" && (
-          <DroppersStep
-            value={state.flyCount}
-            onChange={(v) => setState((s) => ({ ...s, flyCount: v as any, flies: trimFlies(s.flies, v) }))}
-          />
-        )}
-
-        {phase === "flies" && (
-          <FliesStep
-            flyCount={state.flyCount}
-            flies={state.flies}
-            onPick={(pos) => setFlyPickerPos(pos)}
-          />
-        )}
-
-        {phase === "spot" && (
-          <SpotStep
-            spotName={spotName} setSpotName={setSpotName}
-            plan={plan} setPlan={setPlan}
-            keepLimit={keepLimit} setKeepLimit={setKeepLimit}
-            savePreset={savePreset} setSavePreset={setSavePreset}
-            presetIncludeFlies={presetIncludeFlies} setPresetIncludeFlies={setPresetIncludeFlies}
-            presetName={presetName} setPresetName={setPresetName}
-            defaultPresetName={`${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`}
-          />
-        )}
+      <div className="space-y-2">
+        <div className="text-xs font-medium text-muted-foreground px-1">
+          Your saved rigs
+        </div>
+        <div className="space-y-2">
+          {presets.map((p) => {
+            const rod: any = p.rod || {};
+            const subtitle = [
+              rod.rodWeight ? `#${rod.rodWeight}` : null,
+              rod.lineProfile,
+              rod.style,
+              `${rod.flyCount ?? "?"}-fly`,
+            ].filter(Boolean).join(" · ");
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onPickExisting(p)}
+                className="w-full text-left px-4 py-3 rounded-lg border bg-card hover:border-primary transition-colors"
+              >
+                <div className="text-sm font-medium truncate">{p.name}</div>
+                <div className="text-xs text-muted-foreground truncate">{subtitle}</div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Footer */}
       <div className="pt-2">
-        {phase === "spot" ? (
-          <>
-            <Button
-              onClick={handleStart}
-              disabled={!canAdvance || committing}
-              className="w-full min-h-[48px] text-base font-medium"
-            >
-              {committing ? "Starting…" : "Start fishing"}
-            </Button>
-            {!canAdvance && !committing && (
-              <p className="text-[11px] text-muted-foreground text-center mt-2">
-                {venueName === "Home"
-                  ? "Pick all rod fields above to start."
-                  : "Add a spot to start (e.g. South bank, Boat 7)."}
-              </p>
-            )}
-          </>
-        ) : (
-          <div className="flex gap-2">
-            {phase === "style" && (
-              <Button variant="ghost" onClick={goNext} className="flex-1 min-h-[44px]">
-                Skip
-              </Button>
-            )}
-            <Button
-              onClick={goNext}
-              disabled={!canAdvance}
-              className="flex-1 min-h-[48px] text-base"
-            >
-              Next
-            </Button>
-          </div>
-        )}
+        <Button variant="outline" className="w-full" onClick={onPickNew}>
+          Create new rig
+        </Button>
       </div>
-
-      {/* Fly picker sheet */}
-      <Sheet open={flyPickerPos != null} onOpenChange={(o) => !o && setFlyPickerPos(null)}>
-        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{flyPickerPos ? positionLabel(flyPickerPos) : "Pick a fly"}</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4">
-            {flyPickerPos && (
-              <FlyPicker
-                value={state.flies[flyPickerPos]?.name ?? null}
-                currentStyle={state.style}
-                currentLine={state.lineProfile}
-                venueName={venueName}
-                onChange={(res) => {
-                  setState((s) => ({
-                    ...s,
-                    flies: { ...s.flies, [flyPickerPos]: { name: res.pattern, size: res.size } },
-                  }));
-                  setFlyPickerPos(null);
-                }}
-              />
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
@@ -652,88 +889,6 @@ function FliesStep({
             </button>
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-function SpotStep(props: {
-  spotName: string; setSpotName: (v: string) => void;
-  plan: string; setPlan: (v: string) => void;
-  keepLimit: string; setKeepLimit: (v: string) => void;
-  savePreset: boolean; setSavePreset: (v: boolean) => void;
-  presetIncludeFlies: boolean; setPresetIncludeFlies: (v: boolean) => void;
-  presetName: string; setPresetName: (v: string) => void;
-  defaultPresetName: string;
-}) {
-  return (
-    <div className="space-y-4">
-      <div>
-        <Label>Where on the venue?</Label>
-        <Input
-          value={props.spotName}
-          onChange={(e) => props.setSpotName(e.target.value.slice(0, 80))}
-          placeholder="Boat 7 / South bank / Dam wall…"
-          className="mt-1.5"
-        />
-      </div>
-      <div>
-        <Label>Today's plan</Label>
-        <Textarea
-          value={props.plan}
-          onChange={(e) => props.setPlan(e.target.value)}
-          placeholder="Static buzzers under indicator until risers"
-          rows={3}
-          className="mt-1.5"
-        />
-      </div>
-      <div>
-        <Label>Keep limit</Label>
-        <Input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          max={20}
-          value={props.keepLimit}
-          onChange={(e) => props.setKeepLimit(e.target.value)}
-          className="mt-1.5"
-        />
-        <p className="text-xs text-muted-foreground mt-1">0 = catch &amp; release</p>
-      </div>
-
-      <div className="rounded-lg border border-border p-3 space-y-3">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="save-preset" className="cursor-pointer">Save this rig as a preset?</Label>
-          <Switch id="save-preset" checked={props.savePreset} onCheckedChange={props.setSavePreset} />
-        </div>
-        {props.savePreset && (
-          <div className="space-y-3 pt-2 border-t">
-            <RadioGroup
-              value={props.presetIncludeFlies ? "flies" : "rig"}
-              onValueChange={(v) => props.setPresetIncludeFlies(v === "flies")}
-              className="flex gap-4"
-            >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="rig" id="rig-only" />
-                <Label htmlFor="rig-only" className="cursor-pointer">Rig only</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="flies" id="rig-flies" />
-                <Label htmlFor="rig-flies" className="cursor-pointer">Rig + flies</Label>
-              </div>
-            </RadioGroup>
-            <div className="space-y-1.5">
-              <Label htmlFor="preset-name">Name this rig (optional)</Label>
-              <Input
-                id="preset-name"
-                value={props.presetName}
-                onChange={(e) => props.setPresetName(e.target.value)}
-                placeholder={props.defaultPresetName}
-              />
-              <p className="text-xs text-muted-foreground">Leave blank to use the default name.</p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
