@@ -149,15 +149,7 @@ export type Database = {
           user_id?: string
           venue_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "angler_venue_stats_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venue_metadata"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       app_events: {
         Row: {
@@ -3473,13 +3465,6 @@ export type Database = {
             referencedRelation: "fishing_sessions"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "session_summaries_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venue_metadata"
-            referencedColumns: ["id"]
-          },
         ]
       }
       session_trails: {
@@ -5563,15 +5548,7 @@ export type Database = {
           updated_at?: string
           venue_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "venue_stats_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: true
-            referencedRelation: "venue_metadata"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       venues: {
         Row: {
