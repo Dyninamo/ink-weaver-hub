@@ -992,7 +992,62 @@ Provide personalised recommendations based on this angler's strengths and areas 
       ? `Use river fly fishing terminology: upstream nymph, French leader, duo / dry-dropper, Klink-and-dink, mend, swing, take, drift. Avoid stillwater-specific terms like buzzer, blob, washing line.`
       : `Use UK stillwater fly fishing terminology: buzzer, blob, washing line, figure-of-eight, midge tip, top-and-tail, hang, point fly.`;
 
-    const aiPrompt = `You are an expert ${venueDescriptor} advisor. Generate practical advice for fishing at ${venue_name} on ${dayOfWeek} ${target_date} (${season}).
+    // Prompt 207 — baked slice section (canonical recommendation).
+    const sliceSection = venueSlice ? (() => {
+      const monthKey = String(new Date(target_date).getUTCMonth() + 1).padStart(2, "0");
+      const monthly = venueSlice.monthly?.[monthKey] ?? {};
+      const topFlies = (venueSlice.flies_ranked ?? []).slice(0, 12).map((f: any) =>
+        `  - ${f.fly} (score ${f.total_score?.toFixed?.(1) ?? "?"}; ${f.general_rating ?? ""}; videos ${f.distinct_videos ?? 0})`
+      ).join("\n");
+      const topMethods = (venueSlice.methods_ranked ?? []).slice(0, 8).map((m: any) =>
+        `  - ${m.method} (score ${m.yt_score?.toFixed?.(1) ?? "?"})`
+      ).join("\n");
+      const topSpots = (venueSlice.top_spots_from_reports ?? []).slice(0, 6).map((s: any) =>
+        `  - ${s.name} (${s.mentions} mentions)`
+      ).join("\n");
+      const monthlyFlies = (monthly.top_flies ?? []).slice(0, 6).map((f: any) =>
+        typeof f === "string" ? `  - ${f}` : `  - ${f.fly ?? f.name ?? JSON.stringify(f)}`
+      ).join("\n");
+      const monthlyHatches = (monthly.hatches ?? []).slice(0, 4).map((h: any) =>
+        typeof h === "string" ? `  - ${h}` : `  - ${h.name ?? JSON.stringify(h)}`
+      ).join("\n");
+      const venueSpecific = (venueSlice.venue_specific_advice ?? []).slice(0, 3).map((a: any) =>
+        typeof a === "string" ? `  - ${a}` : `  - ${a.text ?? JSON.stringify(a)}`
+      ).join("\n");
+      return `## Baked slice — canonical recommendation for ${venueSlice.venue?.name ?? venue_name}
+This section is the canonical advice corpus that master and the RN app use.
+It blends YouTube atoms (own + peer-cluster + archetype), reports_enriched,
+wt_monthly_fly_advice, and species_hatch_calendar with the venue's
+peer-cluster weights. Treat it as your primary source; the live-weather
+sections below are adjustments on top.
+
+Top flies overall:
+${topFlies || "  (none)"}
+
+Top methods overall:
+${topMethods || "  (none)"}
+
+Top spots from reports:
+${topSpots || "  (none)"}
+
+This month (${monthKey}) — top flies:
+${monthlyFlies || "  (none)"}
+
+This month — hatches:
+${monthlyHatches || "  (none)"}
+
+Venue-specific advice:
+${venueSpecific || "  (none)"}
+`;
+    })() : "";
+
+    const sliceSystemHint = venueSlice
+      ? "\n\nA 'Baked slice' section is included for this venue. Treat its top flies, methods, and spots as your primary tactical recommendation. The other grounding sections (weighted reports, session-summary tactical, archetype baseline) are supporting evidence — use them to validate or weather-adjust the slice's recommendation, not to override it."
+      : "";
+
+    const aiPrompt = `You are an expert ${venueDescriptor} advisor. Generate practical advice for fishing at ${venue_name} on ${dayOfWeek} ${target_date} (${season}).${sliceSystemHint}
+
+${sliceSection}
 
 ## Weather Forecast${forecast.is_historical ? " (historical average — no live forecast available)" : ""}
 Temperature: ${forecast.temp}°C
