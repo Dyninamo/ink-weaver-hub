@@ -309,8 +309,9 @@ export default function SetupWizard({
         setLengthInches(null);
         setPhase("rod");
         setRodSubStep("weight");
-        // 204 §5.4 — refetch on chooser return.
-        presetFetchOnceRef.current = false;
+        // 205 §8.1 — goBack always refetches; another tab may have changed
+        // the user's presets. We don't consult initialPresetFetchDoneRef here
+        // on purpose.
         void loadPresets();
       } else {
         onCancel();
