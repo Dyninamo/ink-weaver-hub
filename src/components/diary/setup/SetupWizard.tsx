@@ -213,20 +213,20 @@ export default function SetupWizard({
     if (mode === "wizard") logEvent("wizard.phase_enter", { phase, rodSubStep });
   }, [phase, rodSubStep, mode]);
 
-  // 204 §4.2 — wizard.mounted only fires inside the wizard fork.
+  // 205 §7 — snapshot path so cleanup logs the same value as mount, and add
+  // path to deps. Mode transitions (choose → wizard) cleanly fire mount then
+  // unmount; we accept the small double-event noise on the transition tick.
   useEffect(() => {
-    if (mode === "wizard") {
-      logEvent("wizard.mounted", { path });
-      return () => logEvent("wizard.unmounted", { path });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+    if (mode !== "wizard") return;
+    const pathSnapshot = path;
+    logEvent("wizard.mounted", { path: pathSnapshot });
+    return () => logEvent("wizard.unmounted", { path: pathSnapshot });
+  }, [mode, path]);
 
   useEffect(() => {
-    if (mode === "choose") {
-      logEvent("wizard.chooser_mounted", null);
-      return () => logEvent("wizard.chooser_unmounted", null);
-    }
+    if (mode !== "choose") return;
+    logEvent("wizard.chooser_mounted", null);
+    return () => logEvent("wizard.chooser_unmounted", null);
   }, [mode]);
 
   function applyPreset(rod: RodSetupState, hasFlies: boolean) {
