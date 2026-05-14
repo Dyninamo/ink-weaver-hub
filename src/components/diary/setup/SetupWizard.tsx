@@ -112,7 +112,7 @@ export default function SetupWizard({
       toast.error("Couldn't load saved rigs — starting fresh setup");
       return;
     }
-    const rows = (data ?? []).filter(isPresetRow);
+    const rows = ((data ?? []) as any[]).filter(isPresetRow);
     const filtered = rows.filter((p) => !p.water_type || p.water_type === venueWaterType);
     setPresets(filtered);
     setPresetsLoaded(true);
