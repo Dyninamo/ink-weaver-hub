@@ -44,8 +44,6 @@ interface SetupWizardProps {
 
 export interface WizardCommit {
   rod: RodSetupState;
-  spotName: string | null;
-  plan: string | null;
   keepLimit: number | null;
   savePreset: { name: string; includeFlies: boolean } | null;
 }
@@ -63,7 +61,8 @@ export default function SetupWizard({
   const [lengthInches, setLengthInches] = useState<number | null>(null);
   const [lengthUnit, setLengthUnit] = useState<"ft" | "m">("ft");
   const [committing, setCommitting] = useState(false);
-  const [keepLimit, setKeepLimit] = useState<string>("2");
+  // 205 §10.2 — null until profile loads (or stays null if no default set).
+  const [keepLimit, setKeepLimit] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Synchronous double-fire guard. See prompt 203 §2.
