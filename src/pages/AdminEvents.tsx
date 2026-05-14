@@ -82,7 +82,15 @@ export default function AdminEvents() {
   return (
     <div className="min-h-screen p-4 max-w-screen-lg mx-auto">
       <h1 className="text-xl font-semibold mb-3">Recent app events</h1>
-      <div className="flex gap-2 items-center mb-3">
+      <div className="flex flex-wrap gap-2 items-center mb-3">
+        <input
+          type="email"
+          placeholder="user email (admin) — blank = self"
+          value={viewingEmail}
+          onChange={(e) => setViewingEmail(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void load(); }}
+          className="border rounded p-1 text-sm bg-background min-w-[16rem]"
+        />
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
@@ -93,6 +101,7 @@ export default function AdminEvents() {
         </select>
         <Button size="sm" variant="outline" onClick={load}>Refresh</Button>
         <span className="text-xs text-muted-foreground">{rows.length} rows</span>
+        {statusMsg && <span className="text-xs text-muted-foreground">· {statusMsg}</span>}
       </div>
 
       <div className="overflow-x-auto">
