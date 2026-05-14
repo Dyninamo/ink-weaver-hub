@@ -91,12 +91,13 @@ export default function SetupWizard({
   const loadPresets = useCallback(async () => {
     setPresetsLoaded(false);
     setPresetError(null);
+    const PRESET_LIMIT = 25;
     const { data, error } = await supabase
       .from("user_presets")
       .select("id, name, rod, water_type, include_flies, last_used_at")
       .eq("user_id", userId)
       .order("last_used_at", { ascending: false })
-      .limit(8);
+      .limit(PRESET_LIMIT);
     if (error) {
       setPresetError(error.message || "Failed to load saved rigs");
       setPresetsLoaded(true);
@@ -106,10 +107,18 @@ export default function SetupWizard({
       toast.error("Couldn't load saved rigs — starting fresh setup");
       return;
     }
-    const rows = ((data ?? []) as any[]).filter(isPresetRow);
-    const filtered = rows.filter((p) => !p.water_type || p.water_type === venueWaterType);
-    setPresets(filtered);
+    // 205 §2.3 — strict filter: validate row shape, then normalise rod blob,
+    // then belt-and-braces drop anything still missing rodWeight.
+    const valid = ((data ?? []) as any[])
+      .filter(isPresetRow)
+      .map((row) => ({ ...row, rod: readPresetRod(row.rod) }))
+      .filter((row) => row.rod.rodWeight != null);
+    const filtered = valid.filter((p) => !p.water_type || p.water_type === venueWaterType);
+    setPresets(filtered as PresetRow[]);
     setPresetsLoaded(true);
+    if ((data ?? []).length === PRESET_LIMIT) {
+      logEvent("wizard.chooser_truncated", { limit: PRESET_LIMIT });
+    }
     if (filtered.length === 0) {
       setMode("wizard");
       setPath("new");
@@ -119,13 +128,14 @@ export default function SetupWizard({
     }
   }, [userId, venueWaterType]);
 
-  // Re-run guard — once loaded for this (userId, venueWaterType), don't refetch
-  // automatically. goBack() can call loadPresets() explicitly.
-  const presetFetchOnceRef = useRef(false);
+  // 205 §8.1 — renamed from presetFetchOnceRef. Consulted only by the mount
+  // effect; goBack() always refetches unconditionally.
+  const initialPresetFetchDoneRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     async function loadAll() {
+      if (initialPresetFetchDoneRef.current) return;
       const [profileResult] = await Promise.all([
         supabase
           .from("user_profiles")
@@ -134,10 +144,10 @@ export default function SetupWizard({
           )
           .eq("id", userId)
           .maybeSingle(),
-        presetFetchOnceRef.current ? Promise.resolve(null) : loadPresets(),
+        loadPresets(),
       ]);
       if (cancelled) return;
-      presetFetchOnceRef.current = true;
+      initialPresetFetchDoneRef.current = true;
 
       const p = (profileResult.data || {}) as any;
       const wt = venueWaterType;
@@ -145,15 +155,24 @@ export default function SetupWizard({
         (wt === "river" ? p.river_default_rod_weight : p.stillwater_default_rod_weight) ??
         p.default_rod_weight ??
         (wt === "river" ? 5 : 7);
-      const line =
+      const profileLine =
         (wt === "river" ? p.river_default_line : p.stillwater_default_line) ??
         p.default_line_profile ??
         "Floating";
+      const resolvedLine = linesForWeight(rw).includes(profileLine) ? profileLine : "Floating";
+      // 205 §6 — surface silent overrides for telemetry.
+      if (profileLine !== resolvedLine) {
+        logEvent("wizard.profile_line_overridden", {
+          saved: profileLine,
+          weight: rw,
+          fallback: resolvedLine,
+        });
+      }
       setState((s) => ({
         ...s,
         rodWeight: rw,
         rodLengthFt: p.default_rod_length_ft ?? null,
-        lineProfile: linesForWeight(rw).includes(line) ? line : "Floating",
+        lineProfile: resolvedLine,
         leaderId: p.default_leader_id ?? null,
       }));
       if (p.default_rod_length_ft) {
