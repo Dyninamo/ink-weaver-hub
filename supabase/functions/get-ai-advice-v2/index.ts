@@ -1,3 +1,7 @@
+// Deploy marker: prompt 209 — force redeploy 2026-05-14 to surface 207's
+// slice consumer (slice_used/slice_built_at/slice_top_flies response
+// fields). Behaviour unchanged; this comment exists solely to bust the
+// Supabase Functions deploy cache.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import { getPredictionParams, getVenueProfile } from "../_shared/prediction-params.ts";
