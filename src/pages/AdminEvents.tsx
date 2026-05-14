@@ -27,6 +27,8 @@ export default function AdminEvents() {
   const [rows, setRows] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("");
+  const [viewingEmail, setViewingEmail] = useState<string>("");
+  const [statusMsg, setStatusMsg] = useState<string>("");
 
   useEffect(() => {
     if (!user) { nav("/auth"); return; }
@@ -37,11 +39,40 @@ export default function AdminEvents() {
 
   async function load() {
     setLoading(true);
-    let q = supabase.from("app_events" as any).select("*").order("server_time", { ascending: false }).limit(200);
-    if (filterType) q = q.eq("event_type", filterType);
-    const { data } = await q;
-    setRows((data as unknown as EventRow[]) ?? []);
-    setLoading(false);
+    setStatusMsg("");
+    try {
+      const trimmedEmail = viewingEmail.trim();
+      if (trimmedEmail) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { setRows([]); setStatusMsg("not signed in"); return; }
+        const SUPABASE_URL = (import.meta as any).env.VITE_SUPABASE_URL as string;
+        const params = new URLSearchParams({ user_email: trimmedEmail, limit: "500" });
+        if (filterType) params.set("event_type", filterType);
+        const resp = await fetch(
+          `${SUPABASE_URL}/functions/v1/admin-dump-app-events?${params.toString()}`,
+          { headers: { Authorization: `Bearer ${session.access_token}` } },
+        );
+        if (!resp.ok) {
+          const err = await resp.text();
+          // eslint-disable-next-line no-console
+          console.warn("admin-dump-app-events failed", resp.status, err);
+          setRows([]);
+          setStatusMsg(`error ${resp.status}: ${err.slice(0, 200)}`);
+          return;
+        }
+        const json = await resp.json();
+        const fetched = (json.rows ?? []) as EventRow[];
+        setRows(fetched);
+        setStatusMsg(`Viewing: ${trimmedEmail} — ${fetched.length} events`);
+      } else {
+        let q = supabase.from("app_events" as any).select("*").order("server_time", { ascending: false }).limit(200);
+        if (filterType) q = q.eq("event_type", filterType);
+        const { data } = await q;
+        setRows((data as unknown as EventRow[]) ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (!user || !ALLOWED_UIDS.has(user.id)) return null;
