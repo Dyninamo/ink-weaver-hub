@@ -321,10 +321,8 @@ export default function SetupWizard({
 
   async function handleStart() {
     if (commitInFlightRef.current) return;
-    if (!profileLoaded) {
-      toast.message("Loading profile…");
-      return;
-    }
+    // 205 §4.3 — profileLoaded gate now lives at the render layer; reaching
+    // this handler implies ready === true. Defensive guard kept as cheap noise.
     // 204 §2 — existing-rig path: skip the dialog to avoid duplicate-rig spam.
     if (path === "existing") {
       logEvent("wizard.save_prompt_skipped", { reason: "existing_path" });
@@ -350,19 +348,31 @@ export default function SetupWizard({
     if (commitInFlightRef.current) return;
     commitInFlightRef.current = true;
     setCommitting(true);
+    const payload = buildCommitPayload({
+      state, path, skipped_wizard: false, saved_preset: !!savePreset,
+    });
+    logEvent("wizard.commit_started", payload);
     try {
-      logEvent("wizard.commit", buildCommitPayload({
-        state, path, skipped_wizard: false, saved_preset: !!savePreset,
-      }));
       await onComplete({
         rod: state,
-        spotName: null,
-        plan: null,
-        keepLimit: keepLimit ? parseInt(keepLimit, 10) : null,
+        keepLimit: keepLimit != null ? parseInt(keepLimit, 10) : null,
         savePreset,
       });
+      logEvent("wizard.commit_succeeded", payload);
+    } catch (e) {
+      // 205 §1.2 — reset refs so the user can retry. Don't reset on success
+      // (the wizard unmounts immediately after a successful commit).
+      commitInFlightRef.current = false;
+      logEvent("wizard.commit_failed", {
+        ...payload,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      toast.error("Couldn't start session — please try again");
+      throw e;
     } finally {
       setCommitting(false);
+      // 205 §8.2 — ensure the next dialog open starts from a clean slate.
+      dialogDispositionRef.current = null;
     }
   }
 
@@ -384,27 +394,32 @@ export default function SetupWizard({
       skipped_wizard: hasFlies,
       preset_complete: complete,
       include_flies_flag: !!p.include_flies,
+      path: "existing",
     });
 
     if (hasFlies) {
       if (commitInFlightRef.current) return;
-      if (!profileLoaded) {
-        toast.message("Loading profile…");
-        return;
-      }
       commitInFlightRef.current = true;
       setCommitting(true);
+      const payload = buildCommitPayload({
+        state: rod, path: "existing", skipped_wizard: true, saved_preset: false,
+      });
+      logEvent("wizard.commit_started", payload);
       try {
-        logEvent("wizard.commit", buildCommitPayload({
-          state: rod, path: "existing", skipped_wizard: true, saved_preset: false,
-        }));
         await onComplete({
           rod,
-          spotName: null,
-          plan: null,
-          keepLimit: keepLimit ? parseInt(keepLimit, 10) : null,
+          keepLimit: keepLimit != null ? parseInt(keepLimit, 10) : null,
           savePreset: null,
         });
+        logEvent("wizard.commit_succeeded", payload);
+      } catch (e) {
+        commitInFlightRef.current = false;
+        logEvent("wizard.commit_failed", {
+          ...payload,
+          error: e instanceof Error ? e.message : String(e),
+        });
+        toast.error("Couldn't start session — please try again");
+        throw e;
       } finally {
         setCommitting(false);
       }
