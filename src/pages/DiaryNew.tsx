@@ -303,19 +303,19 @@ export default function DiaryNew() {
       // ---- 8c. user_presets (optional) ----
       if (commit.savePreset) {
         const presetId = crypto.randomUUID();
+        // Canonical rod-blob shape — matches RodSetupState exactly so the chooser
+        // can deserialise without translation. See prompt 203 §1 for context.
         const rodBlob = {
           id: presetId,
           name: commit.savePreset.name,
           rodWeight: rod.rodWeight,
-          rodLength: rod.rodLengthFt ? `${rod.rodLengthFt}ft` : null,
-          line: rod.lineProfile,
+          rodLengthFt: rod.rodLengthFt,
+          lineProfile: rod.lineProfile,
           leaderId: rod.leaderId,
           leaderMaterial: rod.leaderMaterial,
-          leaderLength: rod.leaderLengthFt ? `${rod.leaderLengthFt}ft` : null,
+          leaderLengthFt: rod.leaderLengthFt,
           leaderStrengthLb: rod.leaderStrengthLb,
           style: rod.style,
-          retrieve: null,
-          depth: null,
           flyCount: rod.flyCount,
           flies: commit.savePreset.includeFlies ? validFlies : {},
         };
