@@ -5421,6 +5421,27 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_slices: {
+        Row: {
+          slice: Json
+          slice_built_at: string | null
+          updated_at: string | null
+          venue_id: string
+        }
+        Insert: {
+          slice: Json
+          slice_built_at?: string | null
+          updated_at?: string | null
+          venue_id: string
+        }
+        Update: {
+          slice?: Json
+          slice_built_at?: string | null
+          updated_at?: string | null
+          venue_id?: string
+        }
+        Relationships: []
+      }
       venue_slices_cache: {
         Row: {
           archetype: string | null
