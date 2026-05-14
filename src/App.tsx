@@ -40,6 +40,7 @@ import ManagerClaim from "./manager/pages/ManagerClaim";
 import ManagerVenueHome from "./manager/pages/ManagerVenueHome";
 import ManagerStockingForm from "./manager/pages/ManagerStockingForm";
 import ManagerCalendar from "./manager/pages/ManagerCalendar";
+import EventLoggerHooks from "./services/eventLoggerHooks";
 
 const Manager = ({ children }: { children: React.ReactNode }) => (
   <ManagerProtectedRoute>{children}</ManagerProtectedRoute>
