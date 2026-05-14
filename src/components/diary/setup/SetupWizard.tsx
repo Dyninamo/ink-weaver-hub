@@ -14,6 +14,7 @@ import {
   rodMedianInchesForWeight,
   inchesToFt,
   positionsForFlyCount,
+  positionLabel,
   type RodSetupState,
   type FlyPosition,
 } from "./vocabulary";
