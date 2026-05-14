@@ -1219,6 +1219,12 @@ ${terminologyHint} Be conversational but authoritative. Reference specific data 
         data_quality: venueProfile?.data_quality_flag ?? "unknown",
         character_notes: venueProfile?.character_notes ?? null,
       },
+      // Prompt 207 — slice provenance for caller telemetry/dashboard.
+      slice_used: !!venueSlice,
+      slice_built_at: sliceBuiltAt,
+      slice_top_flies: venueSlice
+        ? (venueSlice.flies_ranked ?? []).slice(0, 5).map((f: any) => f.fly)
+        : [],
       // Debug data (only included when debug=true)
       ...(debug ? {
         debug: {
