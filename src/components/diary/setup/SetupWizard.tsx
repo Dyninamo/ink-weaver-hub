@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { RigSoFarCard, RodWeightStep, RodLengthStep, LineStep, StyleStep, DroppersStep, FliesStep } from "./wizardSteps";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ArrowLeft, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
