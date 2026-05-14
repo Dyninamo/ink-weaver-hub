@@ -32,7 +32,17 @@ export function readPresetRod(blob: any): RodSetupState {
     leaderLengthFt: Number.isFinite(leaderLengthFt) ? leaderLengthFt : null,
     leaderStrengthLb: blob?.leaderStrengthLb ?? null,
     style: blob?.style ?? null,
-    flyCount: (blob?.flyCount ?? 2) as RodSetupState["flyCount"],
+    flyCount: (() => {
+      const n = blob?.flyCount;
+      if (Number.isInteger(n) && n >= 1 && n <= 6) {
+        return n as RodSetupState["flyCount"];
+      }
+      if (n !== undefined && n !== null) {
+        // eslint-disable-next-line no-console
+        console.warn("[readPresetRod] invalid flyCount, falling back to 2:", n);
+      }
+      return 2 as RodSetupState["flyCount"];
+    })(),
     flies: blob?.flies ?? {},
   };
 }
