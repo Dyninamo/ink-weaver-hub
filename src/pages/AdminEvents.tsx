@@ -27,6 +27,8 @@ export default function AdminEvents() {
   const [rows, setRows] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("");
+  const [viewingEmail, setViewingEmail] = useState<string>("");
+  const [statusMsg, setStatusMsg] = useState<string>("");
 
   useEffect(() => {
     if (!user) { nav("/auth"); return; }
@@ -37,11 +39,40 @@ export default function AdminEvents() {
 
   async function load() {
     setLoading(true);
-    let q = supabase.from("app_events" as any).select("*").order("server_time", { ascending: false }).limit(200);
-    if (filterType) q = q.eq("event_type", filterType);
-    const { data } = await q;
-    setRows((data as unknown as EventRow[]) ?? []);
-    setLoading(false);
+    setStatusMsg("");
+    try {
+      const trimmedEmail = viewingEmail.trim();
+      if (trimmedEmail) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { setRows([]); setStatusMsg("not signed in"); return; }
+        const SUPABASE_URL = (import.meta as any).env.VITE_SUPABASE_URL as string;
+        const params = new URLSearchParams({ user_email: trimmedEmail, limit: "500" });
+        if (filterType) params.set("event_type", filterType);
+        const resp = await fetch(
+          `${SUPABASE_URL}/functions/v1/admin-dump-app-events?${params.toString()}`,
+          { headers: { Authorization: `Bearer ${session.access_token}` } },
+        );
+        if (!resp.ok) {
+          const err = await resp.text();
+          // eslint-disable-next-line no-console
+          console.warn("admin-dump-app-events failed", resp.status, err);
+          setRows([]);
+          setStatusMsg(`error ${resp.status}: ${err.slice(0, 200)}`);
+          return;
+        }
+        const json = await resp.json();
+        const fetched = (json.rows ?? []) as EventRow[];
+        setRows(fetched);
+        setStatusMsg(`Viewing: ${trimmedEmail} — ${fetched.length} events`);
+      } else {
+        let q = supabase.from("app_events" as any).select("*").order("server_time", { ascending: false }).limit(200);
+        if (filterType) q = q.eq("event_type", filterType);
+        const { data } = await q;
+        setRows((data as unknown as EventRow[]) ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (!user || !ALLOWED_UIDS.has(user.id)) return null;
@@ -51,7 +82,15 @@ export default function AdminEvents() {
   return (
     <div className="min-h-screen p-4 max-w-screen-lg mx-auto">
       <h1 className="text-xl font-semibold mb-3">Recent app events</h1>
-      <div className="flex gap-2 items-center mb-3">
+      <div className="flex flex-wrap gap-2 items-center mb-3">
+        <input
+          type="email"
+          placeholder="user email (admin) — blank = self"
+          value={viewingEmail}
+          onChange={(e) => setViewingEmail(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void load(); }}
+          className="border rounded p-1 text-sm bg-background min-w-[16rem]"
+        />
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
@@ -62,6 +101,7 @@ export default function AdminEvents() {
         </select>
         <Button size="sm" variant="outline" onClick={load}>Refresh</Button>
         <span className="text-xs text-muted-foreground">{rows.length} rows</span>
+        {statusMsg && <span className="text-xs text-muted-foreground">· {statusMsg}</span>}
       </div>
 
       <div className="overflow-x-auto">

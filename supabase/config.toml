@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.witness-notable-fish]
 verify_jwt = false
+
+[functions.admin-dump-app-events]
+verify_jwt = false
