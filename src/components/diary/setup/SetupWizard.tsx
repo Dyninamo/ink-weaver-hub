@@ -2,25 +2,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RigSoFarCard, RodWeightStep, RodLengthStep, LineStep, StyleStep, DroppersStep, FliesStep } from "./wizardSteps";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ArrowLeft, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import LeaderPicker, { EMPTY_LEADER, type LeaderValue } from "@/components/diary/LeaderPicker";
 import FlyPicker from "@/components/diary/FlyPicker";
-import Dial from "./Dial";
 import {
-  ROD_WEIGHTS,
-  STYLE_OPTIONS,
   EMPTY_ROD_SETUP,
   linesForWeight,
   rodLengthInchesForWeight,
   rodMedianInchesForWeight,
-  inchesLabel,
-  metresLabel,
   inchesToFt,
   positionsForFlyCount,
-  positionLabel,
   type RodSetupState,
   type FlyPosition,
 } from "./vocabulary";
