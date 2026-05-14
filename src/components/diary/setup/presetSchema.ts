@@ -90,3 +90,7 @@ export function buildCommitPayload(args: {
     skipped_wizard: args.skipped_wizard,
   };
 }
+
+// 205 §10.6 — re-export so downstream code can import WizardCommit from the
+// schema module without pulling in the whole wizard component.
+export type { WizardCommit } from "./SetupWizard";

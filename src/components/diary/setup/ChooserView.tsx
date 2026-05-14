@@ -32,7 +32,7 @@ export default function ChooserView({ presets, onPickExisting, onPickNew, onCanc
               rod.rodWeight ? `#${rod.rodWeight}` : null,
               rod.lineProfile,
               rod.style,
-              `${rod.flyCount ?? "?"}-fly`,
+              `${rod.flyCount}-fly`,
             ].filter(Boolean).join(" · ");
             return (
               <li key={p.id}>
