@@ -650,7 +650,7 @@ function ChooserView({
         </div>
         <div className="space-y-2">
           {presets.map((p) => {
-            const rod: any = p.rod || {};
+            const rod = readPresetRod(p.rod);
             const subtitle = [
               rod.rodWeight ? `#${rod.rodWeight}` : null,
               rod.lineProfile,
