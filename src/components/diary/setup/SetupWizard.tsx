@@ -229,6 +229,17 @@ export default function SetupWizard({
     return () => logEvent("wizard.chooser_unmounted", null);
   }, [mode]);
 
+  // 205 §3 — derive landing phase from rod state so partial presets land
+  // users on the first incomplete step rather than always on flies.
+  function firstIncompletePhase(rod: RodSetupState): Phase {
+    if (rod.rodWeight == null || rod.rodLengthFt == null) return "rod";
+    if (!rod.lineProfile) return "line";
+    if (!rod.leaderId) return "leader";
+    if (!rod.style) return "style";
+    if (rod.flyCount == null) return "droppers";
+    return "flies";
+  }
+
   function applyPreset(rod: RodSetupState, hasFlies: boolean) {
     setState((s) => ({
       ...s,
@@ -244,9 +255,11 @@ export default function SetupWizard({
       setLengthInches(null);
     }
     logEvent("wizard.preset_applied", { hasFlies, rodWeight: rod.rodWeight, line: rod.lineProfile });
-    setPhase("flies");
-    // 204 §5.2 — defer toast until next paint so the phase change lands first.
-    requestAnimationFrame(() => toast.success("Rig applied — pick your flies"));
+    const target = firstIncompletePhase(rod);
+    setPhase(target);
+    logEvent("wizard.preset_applied_to_phase", { target });
+    // 205 §10.1 — drop the rAF wrapper; React 18 already batches the setState above.
+    toast.success("Rig applied — pick your flies");
   }
 
   // -------- Per-phase Next-enabled rules --------
