@@ -197,6 +197,9 @@ export default function SetupWizard({
     if (state.lineProfile && !linesForWeight(state.rodWeight).includes(state.lineProfile)) {
       setState((s) => ({ ...s, lineProfile: "Floating" }));
     }
+    // 205 §10.4 — lengthInches is intentionally excluded from deps. This
+    // effect re-clamps the length when rod weight changes; including
+    // lengthInches would create a feedback loop with setLengthInches above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.rodWeight]);
 
