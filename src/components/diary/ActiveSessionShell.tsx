@@ -79,6 +79,13 @@ export default function ActiveSessionShell({
     logEvent("session.phase_enter", { phase, sessionId }, sessionId);
   }, [phase, sessionId]);
 
+  // Per prompt 201 §3.5 — mount/unmount events. Unmount without a session.end
+  // or end-route transition means the user got bounced out mid-session.
+  useEffect(() => {
+    logEvent("session_shell.mounted", { sessionId }, sessionId);
+    return () => logEvent("session_shell.unmounted", { sessionId }, sessionId);
+  }, [sessionId]);
+
   useEffect(() => {
     void acquireWakeLock();
     return () => {
