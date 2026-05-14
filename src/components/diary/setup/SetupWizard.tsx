@@ -476,7 +476,7 @@ export default function SetupWizard({
         />
       )}
 
-      {mode === "wizard" && (
+      {ready && mode === "wizard" && (
         <>
           {/* Header */}
           <div className="flex items-center justify-between">
