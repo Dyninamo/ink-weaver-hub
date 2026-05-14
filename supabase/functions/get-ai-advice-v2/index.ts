@@ -544,6 +544,22 @@ Use UK fly fishing terminology. Be conversational but concrete. Don't invent ven
       .maybeSingle();
 
     const venueId = (venue as any)?.venue_id ?? null;
+
+    // Prompt 207 — fetch baked venue slice (canonical advice corpus shared
+    // with master/RN). When present, drives tactical grounding; when absent
+    // (new venues, onboarding-in-flight), falls through to existing path.
+    let venueSlice: any = null;
+    let sliceBuiltAt: string | null = null;
+    if (venueId) {
+      const sliceRes = await supabase
+        .from("venue_slices")
+        .select("slice, slice_built_at")
+        .eq("venue_id", venueId)
+        .maybeSingle();
+      venueSlice = (sliceRes.data as any)?.slice ?? null;
+      sliceBuiltAt = (sliceRes.data as any)?.slice_built_at ?? null;
+    }
+
     const lat = (venue as any)?.latitude ?? null;
     const lon = (venue as any)?.longitude ?? null;
     const venueWaterTypeId = (venue as any)?.water_type_id ?? null;
