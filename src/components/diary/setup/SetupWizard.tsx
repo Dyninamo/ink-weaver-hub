@@ -158,7 +158,7 @@ export default function SetupWizard({
         .order("last_used_at", { ascending: false })
         .limit(8);
       if (cancelled) return;
-      const rows = (error || !data ? [] : data) as PresetRow[];
+      const rows = (error || !data ? [] : data) as unknown as PresetRow[];
       // Filter by stillwater/river only — never by specific venue.
       const filtered = rows.filter(
         (p) => !p.water_type || p.water_type === venueWaterType
