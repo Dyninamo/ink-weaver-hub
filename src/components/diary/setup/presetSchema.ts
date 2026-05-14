@@ -32,7 +32,17 @@ export function readPresetRod(blob: any): RodSetupState {
     leaderLengthFt: Number.isFinite(leaderLengthFt) ? leaderLengthFt : null,
     leaderStrengthLb: blob?.leaderStrengthLb ?? null,
     style: blob?.style ?? null,
-    flyCount: (blob?.flyCount ?? 2) as RodSetupState["flyCount"],
+    flyCount: (() => {
+      const n = blob?.flyCount;
+      if (Number.isInteger(n) && n >= 1 && n <= 6) {
+        return n as RodSetupState["flyCount"];
+      }
+      if (n !== undefined && n !== null) {
+        // eslint-disable-next-line no-console
+        console.warn("[readPresetRod] invalid flyCount, falling back to 2:", n);
+      }
+      return 2 as RodSetupState["flyCount"];
+    })(),
     flies: blob?.flies ?? {},
   };
 }
@@ -44,7 +54,9 @@ export function isPresetComplete(rod: Pick<RodSetupState, "flyCount" | "flies">)
   );
 }
 
-/** Lightweight validator — accepts a row if it has the minimum required shape. */
+/** Lightweight validator — accepts a row if it has the minimum required shape.
+ * Per 205 §2.1: requires a numeric, in-range rodWeight so partially-broken
+ * presets don't surface as bypass candidates. */
 export function isPresetRow(x: any): x is PresetRow {
   return (
     !!x &&
@@ -53,7 +65,10 @@ export function isPresetRow(x: any): x is PresetRow {
     typeof x.include_flies === "boolean" &&
     typeof x.last_used_at === "string" &&
     (x.water_type === null || typeof x.water_type === "string") &&
-    !!x.rod && typeof x.rod === "object"
+    !!x.rod && typeof x.rod === "object" &&
+    typeof x.rod.rodWeight === "number" &&
+    Number.isFinite(x.rod.rodWeight) &&
+    x.rod.rodWeight >= 1 && x.rod.rodWeight <= 12
   );
 }
 
@@ -75,3 +90,7 @@ export function buildCommitPayload(args: {
     skipped_wizard: args.skipped_wizard,
   };
 }
+
+// 205 §10.6 — re-export so downstream code can import WizardCommit from the
+// schema module without pulling in the whole wizard component.
+export type { WizardCommit } from "./SetupWizard";

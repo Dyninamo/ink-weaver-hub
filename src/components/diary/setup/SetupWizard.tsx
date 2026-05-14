@@ -44,8 +44,6 @@ interface SetupWizardProps {
 
 export interface WizardCommit {
   rod: RodSetupState;
-  spotName: string | null;
-  plan: string | null;
   keepLimit: number | null;
   savePreset: { name: string; includeFlies: boolean } | null;
 }
@@ -63,7 +61,8 @@ export default function SetupWizard({
   const [lengthInches, setLengthInches] = useState<number | null>(null);
   const [lengthUnit, setLengthUnit] = useState<"ft" | "m">("ft");
   const [committing, setCommitting] = useState(false);
-  const [keepLimit, setKeepLimit] = useState<string>("2");
+  // 205 §10.2 — null until profile loads (or stays null if no default set).
+  const [keepLimit, setKeepLimit] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Synchronous double-fire guard. See prompt 203 §2.
@@ -92,12 +91,13 @@ export default function SetupWizard({
   const loadPresets = useCallback(async () => {
     setPresetsLoaded(false);
     setPresetError(null);
+    const PRESET_LIMIT = 25;
     const { data, error } = await supabase
       .from("user_presets")
       .select("id, name, rod, water_type, include_flies, last_used_at")
       .eq("user_id", userId)
       .order("last_used_at", { ascending: false })
-      .limit(8);
+      .limit(PRESET_LIMIT);
     if (error) {
       setPresetError(error.message || "Failed to load saved rigs");
       setPresetsLoaded(true);
@@ -107,10 +107,18 @@ export default function SetupWizard({
       toast.error("Couldn't load saved rigs — starting fresh setup");
       return;
     }
-    const rows = ((data ?? []) as any[]).filter(isPresetRow);
-    const filtered = rows.filter((p) => !p.water_type || p.water_type === venueWaterType);
-    setPresets(filtered);
+    // 205 §2.3 — strict filter: validate row shape, then normalise rod blob,
+    // then belt-and-braces drop anything still missing rodWeight.
+    const valid = ((data ?? []) as any[])
+      .filter(isPresetRow)
+      .map((row) => ({ ...row, rod: readPresetRod(row.rod) }))
+      .filter((row) => row.rod.rodWeight != null);
+    const filtered = valid.filter((p) => !p.water_type || p.water_type === venueWaterType);
+    setPresets(filtered as PresetRow[]);
     setPresetsLoaded(true);
+    if ((data ?? []).length === PRESET_LIMIT) {
+      logEvent("wizard.chooser_truncated", { limit: PRESET_LIMIT });
+    }
     if (filtered.length === 0) {
       setMode("wizard");
       setPath("new");
@@ -120,13 +128,14 @@ export default function SetupWizard({
     }
   }, [userId, venueWaterType]);
 
-  // Re-run guard — once loaded for this (userId, venueWaterType), don't refetch
-  // automatically. goBack() can call loadPresets() explicitly.
-  const presetFetchOnceRef = useRef(false);
+  // 205 §8.1 — renamed from presetFetchOnceRef. Consulted only by the mount
+  // effect; goBack() always refetches unconditionally.
+  const initialPresetFetchDoneRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     async function loadAll() {
+      if (initialPresetFetchDoneRef.current) return;
       const [profileResult] = await Promise.all([
         supabase
           .from("user_profiles")
@@ -135,10 +144,10 @@ export default function SetupWizard({
           )
           .eq("id", userId)
           .maybeSingle(),
-        presetFetchOnceRef.current ? Promise.resolve(null) : loadPresets(),
+        loadPresets(),
       ]);
       if (cancelled) return;
-      presetFetchOnceRef.current = true;
+      initialPresetFetchDoneRef.current = true;
 
       const p = (profileResult.data || {}) as any;
       const wt = venueWaterType;
@@ -146,15 +155,24 @@ export default function SetupWizard({
         (wt === "river" ? p.river_default_rod_weight : p.stillwater_default_rod_weight) ??
         p.default_rod_weight ??
         (wt === "river" ? 5 : 7);
-      const line =
+      const profileLine =
         (wt === "river" ? p.river_default_line : p.stillwater_default_line) ??
         p.default_line_profile ??
         "Floating";
+      const resolvedLine = linesForWeight(rw).includes(profileLine) ? profileLine : "Floating";
+      // 205 §6 — surface silent overrides for telemetry.
+      if (profileLine !== resolvedLine) {
+        logEvent("wizard.profile_line_overridden", {
+          saved: profileLine,
+          weight: rw,
+          fallback: resolvedLine,
+        });
+      }
       setState((s) => ({
         ...s,
         rodWeight: rw,
         rodLengthFt: p.default_rod_length_ft ?? null,
-        lineProfile: linesForWeight(rw).includes(line) ? line : "Floating",
+        lineProfile: resolvedLine,
         leaderId: p.default_leader_id ?? null,
       }));
       if (p.default_rod_length_ft) {
@@ -179,6 +197,9 @@ export default function SetupWizard({
     if (state.lineProfile && !linesForWeight(state.rodWeight).includes(state.lineProfile)) {
       setState((s) => ({ ...s, lineProfile: "Floating" }));
     }
+    // 205 §10.4 — lengthInches is intentionally excluded from deps. This
+    // effect re-clamps the length when rod weight changes; including
+    // lengthInches would create a feedback loop with setLengthInches above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.rodWeight]);
 
@@ -195,21 +216,32 @@ export default function SetupWizard({
     if (mode === "wizard") logEvent("wizard.phase_enter", { phase, rodSubStep });
   }, [phase, rodSubStep, mode]);
 
-  // 204 §4.2 — wizard.mounted only fires inside the wizard fork.
+  // 205 §7 — snapshot path so cleanup logs the same value as mount, and add
+  // path to deps. Mode transitions (choose → wizard) cleanly fire mount then
+  // unmount; we accept the small double-event noise on the transition tick.
   useEffect(() => {
-    if (mode === "wizard") {
-      logEvent("wizard.mounted", { path });
-      return () => logEvent("wizard.unmounted", { path });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+    if (mode !== "wizard") return;
+    const pathSnapshot = path;
+    logEvent("wizard.mounted", { path: pathSnapshot });
+    return () => logEvent("wizard.unmounted", { path: pathSnapshot });
+  }, [mode, path]);
 
   useEffect(() => {
-    if (mode === "choose") {
-      logEvent("wizard.chooser_mounted", null);
-      return () => logEvent("wizard.chooser_unmounted", null);
-    }
+    if (mode !== "choose") return;
+    logEvent("wizard.chooser_mounted", null);
+    return () => logEvent("wizard.chooser_unmounted", null);
   }, [mode]);
+
+  // 205 §3 — derive landing phase from rod state so partial presets land
+  // users on the first incomplete step rather than always on flies.
+  function firstIncompletePhase(rod: RodSetupState): Phase {
+    if (rod.rodWeight == null || rod.rodLengthFt == null) return "rod";
+    if (!rod.lineProfile) return "line";
+    if (!rod.leaderId) return "leader";
+    if (!rod.style) return "style";
+    if (rod.flyCount == null) return "droppers";
+    return "flies";
+  }
 
   function applyPreset(rod: RodSetupState, hasFlies: boolean) {
     setState((s) => ({
@@ -226,9 +258,11 @@ export default function SetupWizard({
       setLengthInches(null);
     }
     logEvent("wizard.preset_applied", { hasFlies, rodWeight: rod.rodWeight, line: rod.lineProfile });
-    setPhase("flies");
-    // 204 §5.2 — defer toast until next paint so the phase change lands first.
-    requestAnimationFrame(() => toast.success("Rig applied — pick your flies"));
+    const target = firstIncompletePhase(rod);
+    setPhase(target);
+    logEvent("wizard.preset_applied_to_phase", { target });
+    // 205 §10.1 — drop the rAF wrapper; React 18 already batches the setState above.
+    toast.success("Rig applied — pick your flies");
   }
 
   // -------- Per-phase Next-enabled rules --------
@@ -278,8 +312,9 @@ export default function SetupWizard({
         setLengthInches(null);
         setPhase("rod");
         setRodSubStep("weight");
-        // 204 §5.4 — refetch on chooser return.
-        presetFetchOnceRef.current = false;
+        // 205 §8.1 — goBack always refetches; another tab may have changed
+        // the user's presets. We don't consult initialPresetFetchDoneRef here
+        // on purpose.
         void loadPresets();
       } else {
         onCancel();
@@ -289,10 +324,8 @@ export default function SetupWizard({
 
   async function handleStart() {
     if (commitInFlightRef.current) return;
-    if (!profileLoaded) {
-      toast.message("Loading profile…");
-      return;
-    }
+    // 205 §4.3 — profileLoaded gate now lives at the render layer; reaching
+    // this handler implies ready === true. Defensive guard kept as cheap noise.
     // 204 §2 — existing-rig path: skip the dialog to avoid duplicate-rig spam.
     if (path === "existing") {
       logEvent("wizard.save_prompt_skipped", { reason: "existing_path" });
@@ -318,19 +351,31 @@ export default function SetupWizard({
     if (commitInFlightRef.current) return;
     commitInFlightRef.current = true;
     setCommitting(true);
+    const payload = buildCommitPayload({
+      state, path, skipped_wizard: false, saved_preset: !!savePreset,
+    });
+    logEvent("wizard.commit_started", payload);
     try {
-      logEvent("wizard.commit", buildCommitPayload({
-        state, path, skipped_wizard: false, saved_preset: !!savePreset,
-      }));
       await onComplete({
         rod: state,
-        spotName: null,
-        plan: null,
-        keepLimit: keepLimit ? parseInt(keepLimit, 10) : null,
+        keepLimit: keepLimit != null ? parseInt(keepLimit, 10) : null,
         savePreset,
       });
+      logEvent("wizard.commit_succeeded", payload);
+    } catch (e) {
+      // 205 §1.2 — reset refs so the user can retry. Don't reset on success
+      // (the wizard unmounts immediately after a successful commit).
+      commitInFlightRef.current = false;
+      logEvent("wizard.commit_failed", {
+        ...payload,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      toast.error("Couldn't start session — please try again");
+      throw e;
     } finally {
       setCommitting(false);
+      // 205 §8.2 — ensure the next dialog open starts from a clean slate.
+      dialogDispositionRef.current = null;
     }
   }
 
@@ -352,27 +397,32 @@ export default function SetupWizard({
       skipped_wizard: hasFlies,
       preset_complete: complete,
       include_flies_flag: !!p.include_flies,
+      path: "existing",
     });
 
     if (hasFlies) {
       if (commitInFlightRef.current) return;
-      if (!profileLoaded) {
-        toast.message("Loading profile…");
-        return;
-      }
       commitInFlightRef.current = true;
       setCommitting(true);
+      const payload = buildCommitPayload({
+        state: rod, path: "existing", skipped_wizard: true, saved_preset: false,
+      });
+      logEvent("wizard.commit_started", payload);
       try {
-        logEvent("wizard.commit", buildCommitPayload({
-          state: rod, path: "existing", skipped_wizard: true, saved_preset: false,
-        }));
         await onComplete({
           rod,
-          spotName: null,
-          plan: null,
-          keepLimit: keepLimit ? parseInt(keepLimit, 10) : null,
+          keepLimit: keepLimit != null ? parseInt(keepLimit, 10) : null,
           savePreset: null,
         });
+        logEvent("wizard.commit_succeeded", payload);
+      } catch (e) {
+        commitInFlightRef.current = false;
+        logEvent("wizard.commit_failed", {
+          ...payload,
+          error: e instanceof Error ? e.message : String(e),
+        });
+        toast.error("Couldn't start session — please try again");
+        throw e;
       } finally {
         setCommitting(false);
       }
@@ -395,16 +445,25 @@ export default function SetupWizard({
     return rodLengthInchesForWeight(state.rodWeight);
   }, [state.rodWeight]);
 
+  // 205 §4.1 — combined readiness gate.
+  const ready = profileLoaded && presetsLoaded;
+
   return (
     <div className="space-y-4">
-      {mode === "choose" && !presetsLoaded && (
+      {!ready && (
         <div className="space-y-6 py-8 flex flex-col items-center">
           <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-          <p className="text-sm text-muted-foreground">Loading your saved rigs…</p>
+          <p className="text-sm text-muted-foreground">
+            {!profileLoaded && !presetsLoaded
+              ? "Loading your profile and saved rigs…"
+              : !profileLoaded
+              ? "Loading your profile…"
+              : "Loading your saved rigs…"}
+          </p>
         </div>
       )}
 
-      {mode === "choose" && presetsLoaded && (
+      {ready && mode === "choose" && (
         <ChooserView
           presets={presets}
           onCancel={handleChooserCancel}
@@ -417,7 +476,7 @@ export default function SetupWizard({
         />
       )}
 
-      {mode === "wizard" && (
+      {ready && mode === "wizard" && (
         <>
           {/* Header */}
           <div className="flex items-center justify-between">
