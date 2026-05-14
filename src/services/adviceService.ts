@@ -216,6 +216,9 @@ export async function getFishingAdvice(
       season: (result as any)?.season ?? null,
       tactical_fly_count: (result as any)?.tactical?.flies?.length ?? null,
       had_weather: !!(result as any)?.weather,
+      slice_used: (result as any)?.slice_used ?? false,
+      slice_top_flies: (result as any)?.slice_top_flies ?? [],
+      slice_built_at: (result as any)?.slice_built_at ?? null,
     })
     return result
   } catch (err) {
