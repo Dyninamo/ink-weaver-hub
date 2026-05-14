@@ -77,6 +77,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <EventLoggerHooks />
             <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
