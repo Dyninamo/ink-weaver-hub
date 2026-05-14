@@ -140,3 +140,75 @@ if (typeof window !== "undefined") {
     if (document.visibilityState === "hidden") void flush();
   });
 }
+
+// ---- Global hooks (per prompt 200 §1) ----
+let installed = false;
+export function installGlobalEventHooks() {
+  if (installed) return;
+  if (typeof window === "undefined") return;
+  installed = true;
+
+  // 1.1 Uncaught JS errors
+  window.addEventListener("error", (e: ErrorEvent) => {
+    logEvent("error.uncaught", {
+      message: String(e.message ?? "").slice(0, 500),
+      filename: e.filename ?? null,
+      lineno: e.lineno ?? null,
+      colno: e.colno ?? null,
+      stack: e.error?.stack ? String(e.error.stack).slice(0, 2000) : null,
+    });
+  });
+
+  // 1.2 Unhandled promise rejections
+  window.addEventListener("unhandledrejection", (e: PromiseRejectionEvent) => {
+    const reason: any = e.reason;
+    logEvent("error.unhandled_rejection", {
+      message: reason?.message ? String(reason.message).slice(0, 500) : String(reason).slice(0, 500),
+      stack: reason?.stack ? String(reason.stack).slice(0, 2000) : null,
+    });
+  });
+
+  // 1.3 Online / offline
+  window.addEventListener("online", () => logEvent("net.online", null));
+  window.addEventListener("offline", () => logEvent("net.offline", null));
+
+  // 1.4 Auth lifecycle
+  try {
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN") {
+        logEvent("auth.signed_in", {
+          user_id: session?.user?.id ?? null,
+          email: session?.user?.email ?? null,
+        });
+      } else if (event === "SIGNED_OUT") {
+        logEvent("auth.signed_out", null);
+      } else if (event === "TOKEN_REFRESHED") {
+        logEvent("auth.token_refreshed", null);
+      } else if (event === "USER_UPDATED") {
+        logEvent("auth.user_updated", null);
+      }
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[event] auth subscription failed", err);
+  }
+
+  // 1.5 App boot
+  try {
+    const standalone =
+      (window.matchMedia?.("(display-mode: standalone)").matches) ||
+      ((window.navigator as any).standalone === true);
+    logEvent("app.boot", {
+      url: window.location.href,
+      referrer: document.referrer || null,
+      standalone,
+      viewport: { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio ?? 1 },
+      language: navigator.language ?? null,
+      platform: (navigator as any).userAgentData?.platform ?? navigator.platform ?? null,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? null,
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[event] boot log failed", err);
+  }
+}
