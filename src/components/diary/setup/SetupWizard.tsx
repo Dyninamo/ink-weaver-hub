@@ -1,35 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { RigSoFarCard, RodWeightStep, RodLengthStep, LineStep, StyleStep, DroppersStep, FliesStep } from "./wizardSteps";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { ArrowLeft, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import LeaderPicker, { EMPTY_LEADER, type LeaderValue } from "@/components/diary/LeaderPicker";
 import FlyPicker from "@/components/diary/FlyPicker";
-import Dial from "./Dial";
 import {
-  ROD_WEIGHTS,
-  STYLE_OPTIONS,
   EMPTY_ROD_SETUP,
   linesForWeight,
   rodLengthInchesForWeight,
   rodMedianInchesForWeight,
-  inchesLabel,
-  metresLabel,
   inchesToFt,
   positionsForFlyCount,
   positionLabel,
@@ -37,6 +19,9 @@ import {
   type FlyPosition,
 } from "./vocabulary";
 import { logEvent } from "@/services/eventLogger";
+import ChooserView from "./ChooserView";
+import SaveRigPromptDialog from "./SaveRigPromptDialog";
+import { readPresetRod, isPresetComplete, isPresetRow, buildCommitPayload, type PresetRow } from "./presetSchema";
 
 type Phase = "rod" | "line" | "leader" | "style" | "droppers" | "flies";
 const PHASES: Phase[] = ["rod", "line", "leader", "style", "droppers", "flies"];
@@ -65,15 +50,6 @@ export interface WizardCommit {
   savePreset: { name: string; includeFlies: boolean } | null;
 }
 
-interface PresetRow {
-  id: string;
-  name: string;
-  rod: RodSetupState & { id?: string };
-  water_type: string | null;
-  include_flies: boolean;
-  last_used_at: string;
-}
-
 export default function SetupWizard({
   userId,
   venueName,
@@ -88,13 +64,12 @@ export default function SetupWizard({
   const [lengthUnit, setLengthUnit] = useState<"ft" | "m">("ft");
   const [committing, setCommitting] = useState(false);
   const [keepLimit, setKeepLimit] = useState<string>("2");
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
-  // Synchronous double-fire guard. Replaces the state-based `committing` flag,
-  // which was racy because React batches setState within an event tick and two
-  // callers in the same tick could both observe `committing === false`.
+  // Synchronous double-fire guard. See prompt 203 §2.
   const commitInFlightRef = useRef(false);
-  // Records which path closed the dialog so onOpenChange's outside-click branch
-  // only fires when neither button was clicked.
+  // Records dialog disposition so onOpenChange's outside-click branch only
+  // fires when neither button was clicked.
   const dialogDispositionRef = useRef<null | "save" | "skip">(null);
 
   // Fly picker sheet
@@ -103,27 +78,69 @@ export default function SetupWizard({
   // Chooser state
   const [presets, setPresets] = useState<PresetRow[]>([]);
   const [presetsLoaded, setPresetsLoaded] = useState(false);
+  const [presetError, setPresetError] = useState<string | null>(null);
   const [mode, setMode] = useState<"choose" | "wizard">("choose");
-  const [path, setPath] = useState<"existing" | "new" | null>(null);
+  // Per prompt 204 §4.1 — non-null. Default "new" before chooser flips it.
+  const [path, setPath] = useState<"existing" | "new">("new");
 
   // Save-prompt dialog
   const [savePromptOpen, setSavePromptOpen] = useState(false);
   const [savePromptName, setSavePromptName] = useState("");
   const [savePromptIncludeFlies, setSavePromptIncludeFlies] = useState(false);
 
-  // -------- Pre-fill defaults from user_profiles --------
+  // -------- Combined startup fetch (parallel) — 204 §8.2 --------
+  const loadPresets = useCallback(async () => {
+    setPresetsLoaded(false);
+    setPresetError(null);
+    const { data, error } = await supabase
+      .from("user_presets")
+      .select("id, name, rod, water_type, include_flies, last_used_at")
+      .eq("user_id", userId)
+      .order("last_used_at", { ascending: false })
+      .limit(8);
+    if (error) {
+      setPresetError(error.message || "Failed to load saved rigs");
+      setPresetsLoaded(true);
+      setMode("wizard");
+      setPath("new");
+      logEvent("wizard.chooser_skipped", { reason: "fetch_error", error: error.message });
+      toast.error("Couldn't load saved rigs — starting fresh setup");
+      return;
+    }
+    const rows = ((data ?? []) as any[]).filter(isPresetRow);
+    const filtered = rows.filter((p) => !p.water_type || p.water_type === venueWaterType);
+    setPresets(filtered);
+    setPresetsLoaded(true);
+    if (filtered.length === 0) {
+      setMode("wizard");
+      setPath("new");
+      logEvent("wizard.chooser_skipped", { reason: "no_presets" });
+    } else {
+      logEvent("wizard.chooser_shown", { count: filtered.length });
+    }
+  }, [userId, venueWaterType]);
+
+  // Re-run guard — once loaded for this (userId, venueWaterType), don't refetch
+  // automatically. goBack() can call loadPresets() explicitly.
+  const presetFetchOnceRef = useRef(false);
+
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      const { data } = await supabase
-        .from("user_profiles")
-        .select(
-          "default_rod_weight, default_rod_length_ft, default_line_profile, default_leader_id, default_keep_limit, stillwater_default_rod_weight, stillwater_default_line, river_default_rod_weight, river_default_line"
-        )
-        .eq("id", userId)
-        .maybeSingle();
+    async function loadAll() {
+      const [profileResult] = await Promise.all([
+        supabase
+          .from("user_profiles")
+          .select(
+            "default_rod_weight, default_rod_length_ft, default_line_profile, default_leader_id, default_keep_limit, stillwater_default_rod_weight, stillwater_default_line, river_default_rod_weight, river_default_line"
+          )
+          .eq("id", userId)
+          .maybeSingle(),
+        presetFetchOnceRef.current ? Promise.resolve(null) : loadPresets(),
+      ]);
       if (cancelled) return;
-      const p = (data || {}) as any;
+      presetFetchOnceRef.current = true;
+
+      const p = (profileResult.data || {}) as any;
       const wt = venueWaterType;
       const rw =
         (wt === "river" ? p.river_default_rod_weight : p.stillwater_default_rod_weight) ??
@@ -146,40 +163,11 @@ export default function SetupWizard({
         setLengthInches(rodMedianInchesForWeight(rw));
       }
       if (p.default_keep_limit != null) setKeepLimit(String(p.default_keep_limit));
+      setProfileLoaded(true);
     }
-    load();
+    loadAll();
     return () => { cancelled = true; };
-  }, [userId, venueWaterType]);
-
-  // -------- Load presets for chooser --------
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      const { data, error } = await supabase
-        .from("user_presets")
-        .select("id, name, rod, water_type, include_flies, last_used_at")
-        .eq("user_id", userId)
-        .order("last_used_at", { ascending: false })
-        .limit(8);
-      if (cancelled) return;
-      const rows = (error || !data ? [] : data) as unknown as PresetRow[];
-      // Filter by stillwater/river only — never by specific venue.
-      const filtered = rows.filter(
-        (p) => !p.water_type || p.water_type === venueWaterType
-      );
-      setPresets(filtered);
-      setPresetsLoaded(true);
-      if (filtered.length === 0) {
-        setMode("wizard");
-        setPath("new");
-        logEvent("wizard.chooser_skipped", { reason: "no_presets" });
-      } else {
-        logEvent("wizard.chooser_shown", { count: filtered.length });
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [userId, venueWaterType]);
+  }, [userId, venueWaterType, loadPresets]);
 
   // When weight changes, ensure length is in-range and line is valid
   useEffect(() => {
@@ -207,11 +195,21 @@ export default function SetupWizard({
     if (mode === "wizard") logEvent("wizard.phase_enter", { phase, rodSubStep });
   }, [phase, rodSubStep, mode]);
 
-  // Per prompt 201 §3.4 — mount/unmount events.
+  // 204 §4.2 — wizard.mounted only fires inside the wizard fork.
   useEffect(() => {
-    logEvent("wizard.mounted", null);
-    return () => logEvent("wizard.unmounted", null);
-  }, []);
+    if (mode === "wizard") {
+      logEvent("wizard.mounted", { path });
+      return () => logEvent("wizard.unmounted", { path });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode === "choose") {
+      logEvent("wizard.chooser_mounted", null);
+      return () => logEvent("wizard.chooser_unmounted", null);
+    }
+  }, [mode]);
 
   function applyPreset(rod: RodSetupState, hasFlies: boolean) {
     setState((s) => ({
@@ -228,9 +226,9 @@ export default function SetupWizard({
       setLengthInches(null);
     }
     logEvent("wizard.preset_applied", { hasFlies, rodWeight: rod.rodWeight, line: rod.lineProfile });
-    // Always jump to flies — only chooser path that calls applyPreset is existing-no-flies.
     setPhase("flies");
-    toast.success("Rig applied — pick your flies");
+    // 204 §5.2 — defer toast until next paint so the phase change lands first.
+    requestAnimationFrame(() => toast.success("Rig applied — pick your flies"));
   }
 
   // -------- Per-phase Next-enabled rules --------
@@ -272,14 +270,17 @@ export default function SetupWizard({
       setPhase(prev);
       if (prev === "rod") setRodSubStep("length");
     } else {
-      // First phase. If presets exist, drop back to chooser.
+      // First phase. If presets exist, drop back to chooser & refetch.
       if (presets.length > 0) {
         setMode("choose");
-        setPath(null);
+        setPath("new");
         setState(EMPTY_ROD_SETUP);
         setLengthInches(null);
         setPhase("rod");
         setRodSubStep("weight");
+        // 204 §5.4 — refetch on chooser return.
+        presetFetchOnceRef.current = false;
+        void loadPresets();
       } else {
         onCancel();
       }
@@ -288,6 +289,16 @@ export default function SetupWizard({
 
   async function handleStart() {
     if (commitInFlightRef.current) return;
+    if (!profileLoaded) {
+      toast.message("Loading profile…");
+      return;
+    }
+    // 204 §2 — existing-rig path: skip the dialog to avoid duplicate-rig spam.
+    if (path === "existing") {
+      logEvent("wizard.save_prompt_skipped", { reason: "existing_path" });
+      void doCommit(null);
+      return;
+    }
     const defaultName = `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim();
     setSavePromptName(defaultName);
     setSavePromptIncludeFlies(false);
@@ -304,20 +315,13 @@ export default function SetupWizard({
   }
 
   async function doCommit(savePreset: { name: string; includeFlies: boolean } | null) {
-    if (commitInFlightRef.current) return;   // ref-checked, synchronous
+    if (commitInFlightRef.current) return;
     commitInFlightRef.current = true;
     setCommitting(true);
     try {
-      logEvent("wizard.commit", {
-        rod_weight: state.rodWeight,
-        rod_length_ft: state.rodLengthFt,
-        line: state.lineProfile,
-        style: state.style,
-        fly_count: state.flyCount,
-        saved_preset: !!savePreset,
-        path,
-        skipped_wizard: false,
-      });
+      logEvent("wizard.commit", buildCommitPayload({
+        state, path, skipped_wizard: false, saved_preset: !!savePreset,
+      }));
       await onComplete({
         rod: state,
         spotName: null,
@@ -327,10 +331,62 @@ export default function SetupWizard({
       });
     } finally {
       setCommitting(false);
-      // Intentionally do NOT clear commitInFlightRef — once a session commits, the
-      // wizard unmounts. If you ever add a non-unmounting commit path, clear it
-      // explicitly there.
     }
+  }
+
+  // Chooser handlers ----------------------------------------------------
+
+  async function handlePickExisting(p: PresetRow) {
+    setPath("existing");
+    void supabase
+      .from("user_presets")
+      .update({ last_used_at: new Date().toISOString() })
+      .eq("id", p.id);
+    const rod = readPresetRod(p.rod);
+    const complete = isPresetComplete(rod);
+    const hasFlies = !!p.include_flies && complete;
+
+    logEvent("wizard.chooser_picked_existing", {
+      preset_id: p.id,
+      had_flies: hasFlies,
+      skipped_wizard: hasFlies,
+      preset_complete: complete,
+      include_flies_flag: !!p.include_flies,
+    });
+
+    if (hasFlies) {
+      if (commitInFlightRef.current) return;
+      if (!profileLoaded) {
+        toast.message("Loading profile…");
+        return;
+      }
+      commitInFlightRef.current = true;
+      setCommitting(true);
+      try {
+        logEvent("wizard.commit", buildCommitPayload({
+          state: rod, path: "existing", skipped_wizard: true, saved_preset: false,
+        }));
+        await onComplete({
+          rod,
+          spotName: null,
+          plan: null,
+          keepLimit: keepLimit ? parseInt(keepLimit, 10) : null,
+          savePreset: null,
+        });
+      } finally {
+        setCommitting(false);
+      }
+      return;
+    }
+
+    // Incomplete or include_flies=false → fill remaining flies in the wizard.
+    applyPreset(rod, false);
+    setMode("wizard");
+  }
+
+  function handleChooserCancel() {
+    logEvent("wizard.chooser_cancelled", { existing_count: presets.length });
+    onCancel();
   }
 
   // -------- Rendering helpers --------
@@ -341,69 +397,18 @@ export default function SetupWizard({
 
   return (
     <div className="space-y-4">
+      {mode === "choose" && !presetsLoaded && (
+        <div className="space-y-6 py-8 flex flex-col items-center">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+          <p className="text-sm text-muted-foreground">Loading your saved rigs…</p>
+        </div>
+      )}
+
       {mode === "choose" && presetsLoaded && (
         <ChooserView
           presets={presets}
-          onCancel={onCancel}
-          onPickExisting={async (p) => {
-            setPath("existing");
-            void supabase
-              .from("user_presets")
-              .update({ last_used_at: new Date().toISOString() })
-              .eq("id", p.id);
-            const rod = readPresetRod(p.rod);
-            const hasFlies = !!(
-              p.include_flies &&
-              rod?.flies &&
-              Object.values(rod.flies).some((f: any) => !!f?.name)
-            );
-
-            logEvent("wizard.chooser_picked_existing", {
-              preset_id: p.id,
-              had_flies: hasFlies,
-              skipped_wizard: hasFlies,
-            });
-
-            if (hasFlies) {
-              setState((s) => ({
-                ...s,
-                ...rod,
-                flyCount: (rod.flyCount as any) ?? 2,
-                flies: rod.flies ?? {},
-              }));
-              if (rod.rodLengthFt) {
-                setLengthInches(Math.round(rod.rodLengthFt * 12));
-              }
-              if (commitInFlightRef.current) return;
-              commitInFlightRef.current = true;
-              setCommitting(true);
-              try {
-                logEvent("wizard.commit", {
-                  rod_weight: rod.rodWeight,
-                  rod_length_ft: rod.rodLengthFt,
-                  line: rod.lineProfile,
-                  style: rod.style,
-                  fly_count: rod.flyCount,
-                  saved_preset: false,
-                  path: "existing",
-                  skipped_wizard: true,
-                });
-                await onComplete({
-                  rod,
-                  spotName: null,
-                  plan: null,
-                  keepLimit: keepLimit ? parseInt(keepLimit, 10) : null,
-                  savePreset: null,
-                });
-              } finally {
-                setCommitting(false);
-              }
-              return;
-            }
-
-            applyPreset(rod, false);
-            setMode("wizard");
-          }}
+          onCancel={handleChooserCancel}
+          onPickExisting={handlePickExisting}
           onPickNew={() => {
             setPath("new");
             setMode("wizard");
@@ -542,8 +547,7 @@ export default function SetupWizard({
             </SheetContent>
           </Sheet>
 
-          {/* Save-this-rig prompt */}
-          <AlertDialog
+          <SaveRigPromptDialog
             open={savePromptOpen}
             onOpenChange={(open) => {
               setSavePromptOpen(open);
@@ -554,163 +558,36 @@ export default function SetupWizard({
                 void doCommit(null);
               }
             }}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Save this rig for next time?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Saved rigs appear at the top of the wizard so you can re-use them with one tap.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="space-y-3 py-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="save-prompt-name">Rig name</Label>
-                  <Input
-                    id="save-prompt-name"
-                    value={savePromptName}
-                    onChange={(e) => setSavePromptName(e.target.value)}
-                    placeholder="e.g. Buzzer 3-fly stillwater"
-                  />
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  <Switch
-                    id="save-prompt-include-flies"
-                    checked={savePromptIncludeFlies}
-                    onCheckedChange={setSavePromptIncludeFlies}
-                  />
-                  <Label htmlFor="save-prompt-include-flies" className="cursor-pointer">
-                    Include today's fly choices in the saved rig
-                  </Label>
-                </div>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel
-                  onClick={() => {
-                    if (dialogDispositionRef.current !== null) return;
-                    dialogDispositionRef.current = "skip";
-                    setSavePromptOpen(false);
-                    logEvent("wizard.save_prompt_dismissed", { reason: "skip" });
-                    void doCommit(null);
-                  }}
-                >
-                  Skip — just start
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (dialogDispositionRef.current !== null) return;
-                    dialogDispositionRef.current = "save";
-                    const name = savePromptName.trim() || `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim();
-                    setSavePromptOpen(false);
-                    logEvent("wizard.save_prompt_accepted", {
-                      name,
-                      include_flies: savePromptIncludeFlies,
-                    });
-                    void doCommit({ name, includeFlies: savePromptIncludeFlies });
-                  }}
-                >
-                  Save it
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            name={savePromptName}
+            onNameChange={setSavePromptName}
+            includeFlies={savePromptIncludeFlies}
+            onIncludeFliesChange={setSavePromptIncludeFlies}
+            onSkip={() => {
+              if (dialogDispositionRef.current !== null) return;
+              dialogDispositionRef.current = "skip";
+              setSavePromptOpen(false);
+              logEvent("wizard.save_prompt_dismissed", { reason: "skip" });
+              void doCommit(null);
+            }}
+            onSave={() => {
+              if (dialogDispositionRef.current !== null) return;
+              dialogDispositionRef.current = "save";
+              const name = savePromptName.trim() || `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim();
+              setSavePromptOpen(false);
+              logEvent("wizard.save_prompt_accepted", {
+                name,
+                include_flies: savePromptIncludeFlies,
+              });
+              void doCommit({ name, includeFlies: savePromptIncludeFlies });
+            }}
+          />
         </>
       )}
     </div>
   );
 }
 
-// ---------- Chooser ----------
-
-function ChooserView({
-  presets,
-  onPickExisting,
-  onPickNew,
-  onCancel,
-}: {
-  presets: PresetRow[];
-  onPickExisting: (p: PresetRow) => void;
-  onPickNew: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="space-y-6 py-2">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold">Pick a rig</h3>
-          <p className="text-sm text-muted-foreground">
-            Tap a saved rig to use it, or create a new one from scratch.
-          </p>
-        </div>
-        <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
-      </div>
-
-      <div className="space-y-2">
-        <div className="text-xs font-medium text-muted-foreground px-1">
-          Your saved rigs
-        </div>
-        <div className="space-y-2">
-          {presets.map((p) => {
-            const rod = readPresetRod(p.rod);
-            const subtitle = [
-              rod.rodWeight ? `#${rod.rodWeight}` : null,
-              rod.lineProfile,
-              rod.style,
-              `${rod.flyCount ?? "?"}-fly`,
-            ].filter(Boolean).join(" · ");
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onPickExisting(p)}
-                className="w-full text-left px-4 py-3 rounded-lg border bg-card hover:border-primary transition-colors"
-              >
-                <div className="text-sm font-medium truncate">{p.name}</div>
-                <div className="text-xs text-muted-foreground truncate">{subtitle}</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="pt-2">
-        <Button variant="outline" className="w-full" onClick={onPickNew}>
-          Create new rig
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 // ---------- Helpers ----------
-
-// Defensive reader for user_presets.rod — tolerates pre-203 legacy keys.
-// Once the §1.3 migration is verified clean, this can be removed (prompt 205-ish).
-function readPresetRod(blob: any): RodSetupState {
-  const rodLengthFt =
-    typeof blob?.rodLengthFt === "number"
-      ? blob.rodLengthFt
-      : typeof blob?.rodLength === "string"
-      ? parseFloat(blob.rodLength.replace(/ft$/, ""))
-      : null;
-  const leaderLengthFt =
-    typeof blob?.leaderLengthFt === "number"
-      ? blob.leaderLengthFt
-      : typeof blob?.leaderLength === "string"
-      ? parseFloat(blob.leaderLength.replace(/ft$/, ""))
-      : null;
-  return {
-    rodWeight: blob?.rodWeight ?? null,
-    rodLengthFt: Number.isFinite(rodLengthFt) ? rodLengthFt : null,
-    lineProfile: blob?.lineProfile ?? blob?.line ?? null,
-    leaderId: blob?.leaderId ?? null,
-    leaderMaterial: blob?.leaderMaterial ?? null,
-    leaderLengthFt: Number.isFinite(leaderLengthFt) ? leaderLengthFt : null,
-    leaderStrengthLb: blob?.leaderStrengthLb ?? null,
-    style: blob?.style ?? null,
-    flyCount: (blob?.flyCount ?? 2) as RodSetupState["flyCount"],
-    flies: blob?.flies ?? {},
-  };
-}
 
 function leaderValueFromState(s: RodSetupState): LeaderValue {
   return {
@@ -731,208 +608,4 @@ function trimFlies(flies: RodSetupState["flies"], newCount: number): RodSetupSta
   return out;
 }
 
-// ---------- RigSoFar ----------
-
-function RigSoFarCard({ state }: { state: RodSetupState }) {
-  const items: { k: string; v: string }[] = [];
-  if (state.rodWeight) items.push({ k: "Rod", v: `${state.rodWeight}#${state.rodLengthFt ? ` · ${state.rodLengthFt.toFixed(1)}ft` : ""}` });
-  if (state.lineProfile) items.push({ k: "Line", v: state.lineProfile });
-  if (state.leaderMaterial) items.push({ k: "Leader", v: `${state.leaderMaterial}${state.leaderLengthFt ? ` · ${state.leaderLengthFt}ft` : ""}${state.leaderStrengthLb ? ` · ${state.leaderStrengthLb}lb` : ""}` });
-  if (state.style) items.push({ k: "Style", v: state.style });
-  if (state.flyCount) items.push({ k: "Cast", v: `${state.flyCount} fl${state.flyCount === 1 ? "y" : "ies"}` });
-  if (items.length === 0) return null;
-  return (
-    <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
-      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-        {items.map((i) => (
-          <span key={i.k}><span className="text-muted-foreground">{i.k}:</span> <span className="font-medium">{i.v}</span></span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ---------- Step components ----------
-
-function RodWeightStep({ value, onChange }: { value: number | null; onChange: (v: number) => void }) {
-  return (
-    <div>
-      <h2 className="text-lg font-semibold mb-2">Rod weight</h2>
-      <p className="text-sm text-muted-foreground mb-3">What weight rod are you using?</p>
-      <div className="grid grid-cols-4 gap-2">
-        {ROD_WEIGHTS.map((w) => (
-          <button
-            key={w}
-            type="button"
-            onClick={() => onChange(w)}
-            aria-pressed={value === w}
-            className={cn(
-              "min-h-[48px] rounded-lg border text-base font-medium transition-all",
-              value === w
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card border-border hover:border-primary/50"
-            )}
-          >
-            {w}#
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RodLengthStep({
-  options, valueInches, unit, onUnitChange, onChange,
-}: {
-  options: number[];
-  valueInches: number | null;
-  unit: "ft" | "m";
-  onUnitChange: (u: "ft" | "m") => void;
-  onChange: (inches: number) => void;
-}) {
-  const dialOptions = options.map((inches) => ({
-    value: inches,
-    label: unit === "ft" ? inchesLabel(inches) : metresLabel(inches).replace(" m", ""),
-  }));
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">Rod length</h2>
-        <div className="flex rounded-md border overflow-hidden text-xs">
-          {(["ft", "m"] as const).map((u) => (
-            <button
-              key={u}
-              type="button"
-              onClick={() => onUnitChange(u)}
-              className={cn("px-3 py-1 transition-colors", unit === u ? "bg-primary text-primary-foreground" : "bg-card")}
-            >
-              {u}
-            </button>
-          ))}
-        </div>
-      </div>
-      <Dial
-        options={dialOptions}
-        value={valueInches}
-        onChange={onChange}
-        ariaLabel="Rod length"
-        ariaValueText={(v) => unit === "ft" ? inchesLabel(v) : metresLabel(v)}
-      />
-      <div className="text-center mt-2 text-sm text-muted-foreground">
-        {valueInches != null && (unit === "ft" ? inchesLabel(valueInches) : metresLabel(valueInches))}
-      </div>
-    </div>
-  );
-}
-
-function LineStep({ options, value, onChange }: { options: string[]; value: string | null; onChange: (v: string) => void }) {
-  return (
-    <div>
-      <h2 className="text-lg font-semibold mb-2">Line</h2>
-      <p className="text-sm text-muted-foreground mb-3">Which line are you fishing?</p>
-      <div className="space-y-2">
-        {options.map((line) => (
-          <button
-            key={line}
-            type="button"
-            onClick={() => onChange(line)}
-            aria-pressed={value === line}
-            className={cn(
-              "w-full min-h-[44px] rounded-lg border text-left px-4 font-medium transition-all flex items-center justify-between",
-              value === line
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card border-border hover:border-primary/50"
-            )}
-          >
-            <span>{line}</span>
-            {value === line && <Check className="h-4 w-4" />}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function StyleStep({ value, onChange }: { value: string | null; onChange: (v: string) => void }) {
-  return (
-    <div>
-      <h2 className="text-lg font-semibold mb-2">Style</h2>
-      <p className="text-sm text-muted-foreground mb-3">How are you fishing?</p>
-      <div className="grid grid-cols-3 gap-2">
-        {STYLE_OPTIONS.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => onChange(s)}
-            aria-pressed={value === s}
-            className={cn(
-              "min-h-[48px] rounded-lg border text-sm font-medium px-2 transition-all",
-              value === s
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card border-border hover:border-primary/50"
-            )}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DroppersStep({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const opts = [1, 2, 3, 4, 5, 6].map((n) => ({ value: n, label: String(n) }));
-  return (
-    <div>
-      <h2 className="text-lg font-semibold mb-2">How many flies?</h2>
-      <p className="text-sm text-muted-foreground mb-3">Including the point fly.</p>
-      <Dial
-        options={opts}
-        value={value}
-        onChange={onChange}
-        ariaLabel="Fly count"
-        ariaValueText={(v) => v === 1 ? "Single fly" : `${v} flies`}
-      />
-      <div className="text-center mt-2 text-sm text-muted-foreground">
-        {value === 1 ? "Single fly" : `${value} flies`}
-      </div>
-    </div>
-  );
-}
-
-function FliesStep({
-  flyCount, flies, onPick,
-}: {
-  flyCount: number;
-  flies: RodSetupState["flies"];
-  onPick: (pos: FlyPosition) => void;
-}) {
-  const positions = positionsForFlyCount(flyCount);
-  return (
-    <div>
-      <h2 className="text-lg font-semibold mb-2">Flies on the cast</h2>
-      <p className="text-sm text-muted-foreground mb-3">Tap a position to pick a fly.</p>
-      <div className="space-y-2">
-        {positions.map((pos) => {
-          const fly = flies[pos];
-          return (
-            <button
-              key={pos}
-              type="button"
-              onClick={() => onPick(pos)}
-              className="w-full min-h-[52px] rounded-lg border border-border bg-card px-4 py-3 text-left flex items-center justify-between hover:border-primary/50 transition-colors"
-            >
-              <div>
-                <div className="text-xs text-muted-foreground">{positionLabel(pos)}</div>
-                <div className={cn("text-sm font-medium mt-0.5", !fly?.name && "italic text-muted-foreground")}>
-                  {fly?.name ? `${fly.name}${fly.size ? ` #${fly.size}` : ""}` : "Tap to pick a fly"}
-                </div>
-              </div>
-              {fly?.name && <Check className="h-4 w-4 text-primary" />}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// Step components live in ./wizardSteps
