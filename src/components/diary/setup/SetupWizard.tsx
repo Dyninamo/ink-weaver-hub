@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,11 +87,15 @@ export default function SetupWizard({
   const [lengthInches, setLengthInches] = useState<number | null>(null);
   const [lengthUnit, setLengthUnit] = useState<"ft" | "m">("ft");
   const [committing, setCommitting] = useState(false);
-
-  // Spot step locals
-  const [spotName, setSpotName] = useState("");
-  const [plan, setPlan] = useState("");
   const [keepLimit, setKeepLimit] = useState<string>("2");
+
+  // Synchronous double-fire guard. Replaces the state-based `committing` flag,
+  // which was racy because React batches setState within an event tick and two
+  // callers in the same tick could both observe `committing === false`.
+  const commitInFlightRef = useRef(false);
+  // Records which path closed the dialog so onOpenChange's outside-click branch
+  // only fires when neither button was clicked.
+  const dialogDispositionRef = useRef<null | "save" | "skip">(null);
 
   // Fly picker sheet
   const [flyPickerPos, setFlyPickerPos] = useState<FlyPosition | null>(null);
@@ -283,10 +287,11 @@ export default function SetupWizard({
   }
 
   async function handleStart() {
-    if (committing) return;
+    if (commitInFlightRef.current) return;
     const defaultName = `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim();
     setSavePromptName(defaultName);
     setSavePromptIncludeFlies(false);
+    dialogDispositionRef.current = null;
     setSavePromptOpen(true);
     logEvent("wizard.save_prompt_shown", {
       rod_weight: state.rodWeight,
@@ -299,7 +304,8 @@ export default function SetupWizard({
   }
 
   async function doCommit(savePreset: { name: string; includeFlies: boolean } | null) {
-    if (committing) return;
+    if (commitInFlightRef.current) return;   // ref-checked, synchronous
+    commitInFlightRef.current = true;
     setCommitting(true);
     try {
       logEvent("wizard.commit", {
@@ -321,6 +327,9 @@ export default function SetupWizard({
       });
     } finally {
       setCommitting(false);
+      // Intentionally do NOT clear commitInFlightRef — once a session commits, the
+      // wizard unmounts. If you ever add a non-unmounting commit path, clear it
+      // explicitly there.
     }
   }
 
