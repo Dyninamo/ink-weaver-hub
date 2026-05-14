@@ -351,7 +351,7 @@ export default function SetupWizard({
               .from("user_presets")
               .update({ last_used_at: new Date().toISOString() })
               .eq("id", p.id);
-            const rod = p.rod as RodSetupState;
+            const rod = readPresetRod(p.rod);
             const hasFlies = !!(
               p.include_flies &&
               rod?.flies &&
@@ -374,7 +374,8 @@ export default function SetupWizard({
               if (rod.rodLengthFt) {
                 setLengthInches(Math.round(rod.rodLengthFt * 12));
               }
-              if (committing) return;
+              if (commitInFlightRef.current) return;
+              commitInFlightRef.current = true;
               setCommitting(true);
               try {
                 logEvent("wizard.commit", {
@@ -545,12 +546,12 @@ export default function SetupWizard({
           <AlertDialog
             open={savePromptOpen}
             onOpenChange={(open) => {
-              if (!open && savePromptOpen) {
-                setSavePromptOpen(false);
+              setSavePromptOpen(open);
+              if (open) return;
+              if (dialogDispositionRef.current === null) {
+                dialogDispositionRef.current = "skip";
                 logEvent("wizard.save_prompt_dismissed", { reason: "outside_click" });
                 void doCommit(null);
-              } else {
-                setSavePromptOpen(open);
               }
             }}
           >
@@ -585,6 +586,8 @@ export default function SetupWizard({
               <AlertDialogFooter>
                 <AlertDialogCancel
                   onClick={() => {
+                    if (dialogDispositionRef.current !== null) return;
+                    dialogDispositionRef.current = "skip";
                     setSavePromptOpen(false);
                     logEvent("wizard.save_prompt_dismissed", { reason: "skip" });
                     void doCommit(null);
@@ -594,8 +597,10 @@ export default function SetupWizard({
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => {
-                    setSavePromptOpen(false);
+                    if (dialogDispositionRef.current !== null) return;
+                    dialogDispositionRef.current = "save";
                     const name = savePromptName.trim() || `${state.style ?? "Rig"} · ${state.flyCount}-fly · ${state.lineProfile ?? ""}`.trim();
+                    setSavePromptOpen(false);
                     logEvent("wizard.save_prompt_accepted", {
                       name,
                       include_flies: savePromptIncludeFlies,
