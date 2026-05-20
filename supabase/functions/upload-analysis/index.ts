@@ -36,6 +36,9 @@ const ALLOWED_TABLES = [
   'report_sources', 'source_venue_map',
   // Venue/session maps
   'session_venue_map', 'venue_spots',
+
+  // YouTube atom corpus (added 2026-05-20, prompt 210)
+  'youtube_atoms',
 ] as const;
 
 type AllowedTable = typeof ALLOWED_TABLES[number];
