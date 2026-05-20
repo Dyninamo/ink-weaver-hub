@@ -1117,6 +1117,30 @@ export type Database = {
           },
         ]
       }
+      fly_suitability_truth: {
+        Row: {
+          fly_name: string
+          generated_at: string | null
+          month: number
+          suitability: string
+          water_type_id: number
+        }
+        Insert: {
+          fly_name: string
+          generated_at?: string | null
+          month: number
+          suitability: string
+          water_type_id: number
+        }
+        Update: {
+          fly_name?: string
+          generated_at?: string | null
+          month?: number
+          suitability?: string
+          water_type_id?: number
+        }
+        Relationships: []
+      }
       fly_thumbnails: {
         Row: {
           created_at: string | null
