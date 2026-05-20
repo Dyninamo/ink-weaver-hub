@@ -39,6 +39,17 @@ const ALLOWED_TABLES = [
 
   // YouTube atom corpus (added 2026-05-20, prompt 210)
   'youtube_atoms',
+
+  // Methods canonical + aliases (added 2026-05-20, prompt 211)
+  // method_aliases has FK → method_canonical(canonical), so callers MUST
+  // upload method_canonical first.
+  'method_canonical', 'method_aliases',
+
+  // Sonnet-graded fly suitability ground truth (added 2026-05-20, prompt 211)
+  'fly_suitability_truth',
+
+  // Stranded master tables w/ existing Supabase schema (added 2026-05-20, prompt 211)
+  'weather_youtube', 'stocking_records', 'venue_clubs',
 ] as const;
 
 type AllowedTable = typeof ALLOWED_TABLES[number];
