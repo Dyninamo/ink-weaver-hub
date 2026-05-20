@@ -67,6 +67,10 @@ const SERIAL_ID_TABLES = new Set([
   'pattern_hatch_weather',
   'pattern_discovery_meta',
   'report_sources',
+  // Added 2026-05-20, prompt 211
+  'weather_youtube',
+  'stocking_records',
+  'venue_clubs',
 ]);
 
 serve(async (req) => {
