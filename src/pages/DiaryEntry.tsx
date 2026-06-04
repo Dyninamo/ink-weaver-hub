@@ -85,6 +85,12 @@ export default function DiaryEntry() {
   const [deleting, setDeleting] = useState(false);
   const [loadError, setLoadError] = useState<"not_found" | "bad_id" | "other" | null>(null);
 
+  // Prompt 218 — GPS trail (for derived catch placement) + edit dialog state.
+  const [trail, setTrail] = useState<TrailPoint[]>([]);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<"add" | "edit">("add");
+  const [editorInitial, setEditorInitial] = useState<SessionEvent | undefined>(undefined);
+
   // Load session + events
   const loadData = useCallback(async () => {
     if (!id) return;
