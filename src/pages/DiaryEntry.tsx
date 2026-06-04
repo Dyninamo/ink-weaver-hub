@@ -96,12 +96,18 @@ export default function DiaryEntry() {
     if (!id) return;
     setLoading(true);
     try {
-      const [s, e] = await Promise.all([
+      const [s, e, t] = await Promise.all([
         getSession(id),
         getSessionEvents(id),
+        getSessionTrail(id),
       ]);
       setSession(s);
-      setEvents(e);
+      // Keep events ordered by event_time (prompt 218 — back-dated catches must
+      // not sort to the end).
+      setEvents(
+        [...e].sort((a, b) => Date.parse(a.event_time) - Date.parse(b.event_time))
+      );
+      setTrail(t);
 
       // Resolve venue_id from venues_new
       if (s.venue_name) {
