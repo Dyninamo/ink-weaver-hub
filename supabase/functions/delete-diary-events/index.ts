@@ -1,19 +1,41 @@
-// Prompt 213 — delete specific session_events rows (scoped by session_id),
-// the missing delete path matched to upload-diary-events' upsert-only contract.
+// Prompt 213 — delete specific session_events rows (scoped by session_id).
+// Prompt 214 — open JWT path to ANY signed-in user (ownership-scoped).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
-import { requireAdmin } from "../_shared/admin_auth.ts";
+import { requireUser } from "../_shared/user_auth.ts";
+
+type GateOk =
+  | { ok: true; via: "secret" }
+  | { ok: true; via: "user"; userId: string };
+type GateErr = { ok: false; status: number; error: string };
+
+async function gate(req: Request): Promise<GateOk | GateErr> {
+  // Admin-secret path
+  const secret = req.headers.get("x-admin-secret");
+  if (secret) {
+    const expected = Deno.env.get("ADMIN_API_SECRET");
+    if (!expected) return { ok: false, status: 401, error: "ADMIN_API_SECRET not configured" };
+    if (secret !== expected) return { ok: false, status: 401, error: "Invalid admin secret" };
+    return { ok: true, via: "secret" };
+  }
+  // User-JWT path — any authenticated user
+  const auth = await requireUser(req, corsHeaders);
+  if (auth.error) {
+    return { ok: false, status: 401, error: "Unauthorized" };
+  }
+  return { ok: true, via: "user", userId: auth.user.id };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const auth = await requireAdmin(req);
-  if (!auth.ok) {
-    return new Response(JSON.stringify({ error: auth.error }), {
-      status: auth.status,
+  const g = await gate(req);
+  if (!g.ok) {
+    return new Response(JSON.stringify({ error: g.error }), {
+      status: g.status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -67,7 +89,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (auth.via === "user" && auth.user && sessionRow.user_id !== auth.user.id) {
+    if (g.via === "user" && sessionRow.user_id !== g.userId) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
