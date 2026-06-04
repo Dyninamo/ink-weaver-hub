@@ -27,14 +27,19 @@ import {
   getSession,
   getSessionEvents,
   getCurrentSetup,
+  getSessionTrail,
   deleteSession,
+  deleteEvent,
   calculateSessionStats,
   formatFliesOnCast,
   type FishingSession,
   type SessionEvent,
   type CurrentSetup,
   type WeatherSnapshot,
+  type TrailPoint,
 } from "@/services/diaryService";
+import CatchEditForm from "@/components/diary/CatchEditForm";
+import { Plus, Pencil } from "lucide-react";
 
 type ViewTab = "timeline" | "fish" | "stats";
 
