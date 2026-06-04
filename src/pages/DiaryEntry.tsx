@@ -535,6 +535,23 @@ export default function DiaryEntry() {
         {/* Tab content */}
         {tab === "timeline" && (
           <div className="space-y-2">
+            {!isActive && (
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] text-muted-foreground">
+                  GPS track: {trail.length} {trail.length === 1 ? "point" : "points"}
+                  {trail.length > 0 && (
+                    <>
+                      {" · "}
+                      {events.filter((e) => e.event_type === "catch" && e.latitude != null).length}
+                      /{events.filter((e) => e.event_type === "catch").length} catches located
+                    </>
+                  )}
+                </p>
+                <Button size="sm" variant="outline" onClick={openAddCatch}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add catch
+                </Button>
+              </div>
+            )}
             {events.length === 0 ? (
               <div className="text-center py-8">
                 <p className={mutedClass}>No events yet</p>
