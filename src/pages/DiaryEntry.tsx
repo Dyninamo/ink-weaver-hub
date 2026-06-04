@@ -208,7 +208,59 @@ export default function DiaryEntry() {
     });
   }
 
-  // --- Helpers ---
+  // ---- Catch add/edit/delete (prompt 218) ----
+  function openAddCatch() {
+    setEditorMode("add");
+    setEditorInitial(undefined);
+    setEditorOpen(true);
+  }
+  function openEditCatch(ev: SessionEvent) {
+    setEditorMode("edit");
+    setEditorInitial(ev);
+    setEditorOpen(true);
+  }
+  function handleEditorSaved() {
+    setEditorOpen(false);
+    void loadData();
+  }
+  async function handleDeleteCatch(ev: SessionEvent) {
+    // Soft-undo: keep the row visible until the timer elapses (mirrors
+    // deleteSession's pattern). On undo, we never actually delete.
+    const evId = ev.id;
+    const evCopy = { ...ev };
+    setEvents((curr) => curr.filter((x) => x.id !== evId));
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      if (cancelled) return;
+      try {
+        await deleteEvent(evId);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to delete catch");
+        // Re-insert + sort
+        setEvents((curr) =>
+          [...curr, evCopy].sort(
+            (a, b) => Date.parse(a.event_time) - Date.parse(b.event_time),
+          )
+        );
+      }
+    }, 6000);
+    toast("Catch deleted.", {
+      duration: 6000,
+      action: {
+        label: "UNDO",
+        onClick: () => {
+          cancelled = true;
+          window.clearTimeout(timer);
+          setEvents((curr) =>
+            [...curr, evCopy].sort(
+              (a, b) => Date.parse(a.event_time) - Date.parse(b.event_time),
+            )
+          );
+          toast.success("Restored.");
+        },
+      },
+    });
+  }
 
   function humaniseKey(k: string): string {
     return k.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').toLowerCase().trim()
