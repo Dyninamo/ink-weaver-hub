@@ -22,6 +22,7 @@ import VenuePickerOverlay from "./VenuePickerOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { acquireWakeLock, releaseWakeLock } from "@/lib/wakeLock";
+import { useSessionTrailRecorder } from "@/lib/useSessionTrailRecorder";
 import {
   endSession,
   pollSessionWeather,
