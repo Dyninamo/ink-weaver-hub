@@ -76,6 +76,9 @@ export default function ActiveSessionShell({
 
   const sessionId = session.id!;
 
+  // Prompt 216 — passive GPS trail capture while the session is live.
+  const trailRecorder = useSessionTrailRecorder(sessionId);
+
   useEffect(() => {
     logEvent("session.phase_enter", { phase, sessionId }, sessionId);
   }, [phase, sessionId]);
