@@ -1,9 +1,11 @@
-// Prompt 213 — delete specific session_events rows (scoped by session_id).
-// Prompt 214 — open JWT path to ANY signed-in user (ownership-scoped).
+// Prompt 215 — upload-diary-trail: replace-semantics trail snapshot upload.
+// Gate: X-Admin-Secret OR any signed-in user's Bearer JWT (ownership enforced).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { requireEnv, envErrorResponse } from "../_shared/env.ts";
 import { requireUser } from "../_shared/user_auth.ts";
+
+const MAX_POINTS = 5000;
 
 type GateOk =
   | { ok: true; via: "secret" }
@@ -11,7 +13,6 @@ type GateOk =
 type GateErr = { ok: false; status: number; error: string };
 
 async function gate(req: Request): Promise<GateOk | GateErr> {
-  // Admin-secret path
   const secret = req.headers.get("x-admin-secret");
   if (secret) {
     const expected = Deno.env.get("ADMIN_API_SECRET");
@@ -19,12 +20,17 @@ async function gate(req: Request): Promise<GateOk | GateErr> {
     if (secret !== expected) return { ok: false, status: 401, error: "Invalid admin secret" };
     return { ok: true, via: "secret" };
   }
-  // User-JWT path — any authenticated user
   const auth = await requireUser(req, corsHeaders);
-  if (auth.error) {
-    return { ok: false, status: 401, error: "Unauthorized" };
-  }
+  if (auth.error) return { ok: false, status: 401, error: "Unauthorized" };
   return { ok: true, via: "user", userId: auth.user.id };
+}
+
+interface InputPoint {
+  timestamp?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
+  accuracy?: unknown;
+  altitude?: unknown;
 }
 
 Deno.serve(async (req) => {
@@ -43,7 +49,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const session_id = typeof body.session_id === "string" ? body.session_id.trim() : "";
-    const event_ids: unknown = body.event_ids;
+    const points: unknown = body.points;
 
     if (!session_id) {
       return new Response(JSON.stringify({ error: "session_id required" }), {
@@ -51,13 +57,15 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (
-      !Array.isArray(event_ids) ||
-      event_ids.length === 0 ||
-      !event_ids.every((x) => typeof x === "string" && x.length > 0)
-    ) {
+    if (!Array.isArray(points)) {
+      return new Response(JSON.stringify({ error: "points must be an array" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (points.length > MAX_POINTS) {
       return new Response(
-        JSON.stringify({ error: "event_ids must be a non-empty array of strings" }),
+        JSON.stringify({ error: `points exceeds MAX_POINTS=${MAX_POINTS}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -88,7 +96,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
     if (g.via === "user" && sessionRow.user_id !== g.userId) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
@@ -96,29 +103,81 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: deleted, error: delErr } = await supabaseAdmin
-      .from("session_events")
-      .delete()
-      .eq("session_id", session_id)
-      .in("id", event_ids as string[])
-      .select("id");
+    // Validate + normalize points
+    const cleaned: Array<{
+      session_id: string;
+      timestamp: string;
+      latitude: number;
+      longitude: number;
+      accuracy: number | null;
+      altitude: number | null;
+      sort_order: number;
+    }> = [];
 
+    for (const raw of points as InputPoint[]) {
+      if (!raw || typeof raw !== "object") continue;
+      const lat = Number(raw.latitude);
+      const lon = Number(raw.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+      const tsRaw = raw.timestamp;
+      if (typeof tsRaw !== "string") continue;
+      const t = Date.parse(tsRaw);
+      if (!Number.isFinite(t)) continue;
+      const acc = raw.accuracy == null ? null : Number.isFinite(Number(raw.accuracy)) ? Number(raw.accuracy) : null;
+      const alt = raw.altitude == null ? null : Number.isFinite(Number(raw.altitude)) ? Number(raw.altitude) : null;
+      cleaned.push({
+        session_id,
+        timestamp: new Date(t).toISOString(),
+        latitude: lat,
+        longitude: lon,
+        accuracy: acc,
+        altitude: alt,
+        sort_order: 0, // assigned after sort
+      });
+    }
+
+    cleaned.sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+    cleaned.forEach((p, i) => { p.sort_order = i; });
+
+    // Replace: delete then insert
+    const { error: delErr } = await supabaseAdmin
+      .from("session_trails")
+      .delete()
+      .eq("session_id", session_id);
     if (delErr) {
-      console.error("delete error", delErr);
+      console.error("delete trail error", delErr);
       return new Response(JSON.stringify({ error: delErr.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(
-      JSON.stringify({ deleted: deleted?.length ?? 0 }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    if (cleaned.length === 0) {
+      return new Response(JSON.stringify({ inserted: 0 }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { error: insErr } = await supabaseAdmin
+      .from("session_trails")
+      .insert(cleaned);
+    if (insErr) {
+      console.error("insert trail error", insErr);
+      return new Response(JSON.stringify({ error: insErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ inserted: cleaned.length }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (err) {
     const envResp = envErrorResponse(err, corsHeaders);
     if (envResp) return envResp;
-    console.error("delete-diary-events error", err);
+    console.error("upload-diary-trail error", err);
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

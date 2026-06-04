@@ -22,6 +22,7 @@ import VenuePickerOverlay from "./VenuePickerOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { acquireWakeLock, releaseWakeLock } from "@/lib/wakeLock";
+import { useSessionTrailRecorder } from "@/lib/useSessionTrailRecorder";
 import {
   endSession,
   pollSessionWeather,
@@ -74,6 +75,9 @@ export default function ActiveSessionShell({
   } | null>(null);
 
   const sessionId = session.id!;
+
+  // Prompt 216 — passive GPS trail capture while the session is live.
+  const trailRecorder = useSessionTrailRecorder(sessionId);
 
   useEffect(() => {
     logEvent("session.phase_enter", { phase, sessionId }, sessionId);
@@ -132,6 +136,9 @@ export default function ActiveSessionShell({
     setEndSaveError(null);
     setPhase("end_syncing");
     try {
+      // Prompt 216 — flush any buffered GPS trail before sealing the session.
+      // Best-effort; failure here must not block end-session.
+      try { await trailRecorder.flush(); } catch (e) { console.warn("trail flush", e); }
       await endSession(sessionId, {});
       setEndSaveDone(true);
     } catch (err: any) {

@@ -27,14 +27,19 @@ import {
   getSession,
   getSessionEvents,
   getCurrentSetup,
+  getSessionTrail,
   deleteSession,
+  deleteEvent,
   calculateSessionStats,
   formatFliesOnCast,
   type FishingSession,
   type SessionEvent,
   type CurrentSetup,
   type WeatherSnapshot,
+  type TrailPoint,
 } from "@/services/diaryService";
+import CatchEditForm from "@/components/diary/CatchEditForm";
+import { Plus, Pencil } from "lucide-react";
 
 type ViewTab = "timeline" | "fish" | "stats";
 
@@ -80,17 +85,29 @@ export default function DiaryEntry() {
   const [deleting, setDeleting] = useState(false);
   const [loadError, setLoadError] = useState<"not_found" | "bad_id" | "other" | null>(null);
 
+  // Prompt 218 — GPS trail (for derived catch placement) + edit dialog state.
+  const [trail, setTrail] = useState<TrailPoint[]>([]);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<"add" | "edit">("add");
+  const [editorInitial, setEditorInitial] = useState<SessionEvent | undefined>(undefined);
+
   // Load session + events
   const loadData = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const [s, e] = await Promise.all([
+      const [s, e, t] = await Promise.all([
         getSession(id),
         getSessionEvents(id),
+        getSessionTrail(id),
       ]);
       setSession(s);
-      setEvents(e);
+      // Keep events ordered by event_time (prompt 218 — back-dated catches must
+      // not sort to the end).
+      setEvents(
+        [...e].sort((a, b) => Date.parse(a.event_time) - Date.parse(b.event_time))
+      );
+      setTrail(t);
 
       // Resolve venue_id from venues_new
       if (s.venue_name) {
@@ -191,7 +208,59 @@ export default function DiaryEntry() {
     });
   }
 
-  // --- Helpers ---
+  // ---- Catch add/edit/delete (prompt 218) ----
+  function openAddCatch() {
+    setEditorMode("add");
+    setEditorInitial(undefined);
+    setEditorOpen(true);
+  }
+  function openEditCatch(ev: SessionEvent) {
+    setEditorMode("edit");
+    setEditorInitial(ev);
+    setEditorOpen(true);
+  }
+  function handleEditorSaved() {
+    setEditorOpen(false);
+    void loadData();
+  }
+  async function handleDeleteCatch(ev: SessionEvent) {
+    // Soft-undo: keep the row visible until the timer elapses (mirrors
+    // deleteSession's pattern). On undo, we never actually delete.
+    const evId = ev.id;
+    const evCopy = { ...ev };
+    setEvents((curr) => curr.filter((x) => x.id !== evId));
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      if (cancelled) return;
+      try {
+        await deleteEvent(evId);
+      } catch (err: any) {
+        toast.error(err?.message || "Failed to delete catch");
+        // Re-insert + sort
+        setEvents((curr) =>
+          [...curr, evCopy].sort(
+            (a, b) => Date.parse(a.event_time) - Date.parse(b.event_time),
+          )
+        );
+      }
+    }, 6000);
+    toast("Catch deleted.", {
+      duration: 6000,
+      action: {
+        label: "UNDO",
+        onClick: () => {
+          cancelled = true;
+          window.clearTimeout(timer);
+          setEvents((curr) =>
+            [...curr, evCopy].sort(
+              (a, b) => Date.parse(a.event_time) - Date.parse(b.event_time),
+            )
+          );
+          toast.success("Restored.");
+        },
+      },
+    });
+  }
 
   function humaniseKey(k: string): string {
     return k.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').toLowerCase().trim()
@@ -466,6 +535,23 @@ export default function DiaryEntry() {
         {/* Tab content */}
         {tab === "timeline" && (
           <div className="space-y-2">
+            {!isActive && (
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] text-muted-foreground">
+                  GPS track: {trail.length} {trail.length === 1 ? "point" : "points"}
+                  {trail.length > 0 && (
+                    <>
+                      {" · "}
+                      {events.filter((e) => e.event_type === "catch" && e.latitude != null).length}
+                      /{events.filter((e) => e.event_type === "catch").length} catches located
+                    </>
+                  )}
+                </p>
+                <Button size="sm" variant="outline" onClick={openAddCatch}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add catch
+                </Button>
+              </div>
+            )}
             {events.length === 0 ? (
               <div className="text-center py-8">
                 <p className={mutedClass}>No events yet</p>
@@ -571,6 +657,18 @@ export default function DiaryEntry() {
                           }}
                         >
                           “{event.notes}”
+                        </div>
+                      )}
+                      {/* Catch edit/delete — prompt 218. Only catches, only on
+                          completed sessions (live logging stays in CatchFlow). */}
+                      {!isActive && event.event_type === "catch" && (
+                        <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                          <Button size="sm" variant="outline" onClick={() => openEditCatch(event)}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteCatch(event)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -806,6 +904,25 @@ export default function DiaryEntry() {
               Turn off in Settings ›
             </button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Catch add/edit dialog — prompt 218 */}
+      <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editorMode === "add" ? "Add catch" : "Edit catch"}</DialogTitle>
+          </DialogHeader>
+          {session && (
+            <CatchEditForm
+              mode={editorMode}
+              initial={editorInitial}
+              session={session}
+              trail={trail}
+              onSaved={handleEditorSaved}
+              onCancel={() => setEditorOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

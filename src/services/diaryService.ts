@@ -484,6 +484,38 @@ export async function deleteEvent(id: string) {
 }
 
 // ============================================================
+// SESSION TRAIL (GPS track) — prompt 217
+// ============================================================
+
+export interface TrailPoint {
+  timestamp: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+}
+
+export async function getSessionTrail(sessionId: string): Promise<TrailPoint[]> {
+  const { data, error } = await supabase
+    .from('session_trails')
+    .select('timestamp, latitude, longitude, accuracy, sort_order')
+    .eq('session_id', sessionId)
+    .order('sort_order', { ascending: true })
+    .order('timestamp', { ascending: true });
+  if (error) {
+    console.error('getSessionTrail error', error);
+    return [];
+  }
+  return (data ?? [])
+    .filter((r: any) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude) && typeof r.timestamp === 'string')
+    .map((r: any) => ({
+      timestamp: r.timestamp,
+      latitude: r.latitude,
+      longitude: r.longitude,
+      accuracy: r.accuracy ?? null,
+    }));
+}
+
+// ============================================================
 // SESSION STATS (calculated from events)
 // ============================================================
 
