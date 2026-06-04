@@ -8,8 +8,9 @@ const iso = (ms: number) => new Date(ms).toISOString();
 describe("deriveFixFromTrail", () => {
   it("returns none for empty/null/undefined trail", () => {
     const t = iso(1_700_000_000_000);
-    for (const trail of [[], null, undefined] as const) {
-      const r = deriveFixFromTrail(trail as TrailPoint[] | null | undefined, t);
+    const cases: Array<TrailPoint[] | null | undefined> = [[], null, undefined];
+    for (const trail of cases) {
+      const r = deriveFixFromTrail(trail, t);
       expect(r.latitude).toBeNull();
       expect(r.confidence).toBe("none");
     }
