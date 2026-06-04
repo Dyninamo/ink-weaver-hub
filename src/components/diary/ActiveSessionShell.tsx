@@ -136,6 +136,9 @@ export default function ActiveSessionShell({
     setEndSaveError(null);
     setPhase("end_syncing");
     try {
+      // Prompt 216 — flush any buffered GPS trail before sealing the session.
+      // Best-effort; failure here must not block end-session.
+      try { await trailRecorder.flush(); } catch (e) { console.warn("trail flush", e); }
       await endSession(sessionId, {});
       setEndSaveDone(true);
     } catch (err: any) {
