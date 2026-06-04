@@ -906,6 +906,25 @@ export default function DiaryEntry() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Catch add/edit dialog — prompt 218 */}
+      <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editorMode === "add" ? "Add catch" : "Edit catch"}</DialogTitle>
+          </DialogHeader>
+          {session && (
+            <CatchEditForm
+              mode={editorMode}
+              initial={editorInitial}
+              session={session}
+              trail={trail}
+              onSaved={handleEditorSaved}
+              onCancel={() => setEditorOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
