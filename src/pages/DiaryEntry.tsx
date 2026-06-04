@@ -659,6 +659,18 @@ export default function DiaryEntry() {
                           “{event.notes}”
                         </div>
                       )}
+                      {/* Catch edit/delete — prompt 218. Only catches, only on
+                          completed sessions (live logging stays in CatchFlow). */}
+                      {!isActive && event.event_type === "catch" && (
+                        <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+                          <Button size="sm" variant="outline" onClick={() => openEditCatch(event)}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteCatch(event)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
