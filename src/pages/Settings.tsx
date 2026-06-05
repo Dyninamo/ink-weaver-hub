@@ -369,7 +369,7 @@ export default function Settings() {
           icon={<ShieldCheck className="h-4 w-4" />}
           label="What we store"
           sub="Sessions, weather snapshots, fly choices."
-          onClick={() => toast.info("We store session details and weather snapshots only. No tracking.")}
+          onClick={() => setStorageOpen(true)}
         />
 
         {/* Help */}
@@ -378,7 +378,7 @@ export default function Settings() {
           icon={<HelpCircle className="h-4 w-4" />}
           label="How this works"
           sub="A short tour of the diary."
-          onClick={() => toast.info("Quick tour coming soon.")}
+          onClick={() => setHowOpen(true)}
         />
         <NavRow
           icon={<Mail className="h-4 w-4" />}
