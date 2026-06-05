@@ -12,6 +12,8 @@ import FlySelector from "@/components/FlySelector";
 import { enrichFliesForSelector } from "@/utils/enrichFlies";
 import type { RecommendedFly } from "@/types/flySelector";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function Results() {
   const location = useLocation();
