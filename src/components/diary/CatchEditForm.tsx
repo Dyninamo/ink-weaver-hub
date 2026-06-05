@@ -83,7 +83,9 @@ export default function CatchEditForm({
     return "weight";
   });
   const [weightLb, setWeightLb] = useState<string>(
-    initial?.weight_lb != null ? String(initial.weight_lb) : ""
+    initial?.weight_lb != null
+      ? String(initial.weight_lb + ((initial as any).weight_oz ?? 0) / 16)
+      : ""
   );
   const [lengthIn, setLengthIn] = useState<string>(
     initial?.length_inches != null ? String(initial.length_inches) : ""
