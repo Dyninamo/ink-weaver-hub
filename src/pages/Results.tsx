@@ -101,48 +101,43 @@ export default function Results() {
     }
   }
 
-  // Parse advice into sections (v2 uses ## headers)
+  // Render advice markdown with card-friendly styling
   function renderAdvice(text: string) {
     if (!text) return null;
-    const sections = text.split(/^## /m).filter(Boolean);
-    if (sections.length <= 1) {
-      // No headers — render with inline bold support
-      return (
-        <div className="space-y-2">
-          {text.split('\n').map((line, i) => {
-            if (line.startsWith('### ')) {
-              return <h3 key={i} className="font-semibold text-sm mt-3 mb-1">{line.replace('### ', '')}</h3>;
-            }
-            if (line.trim() === '') return <div key={i} className="h-1" />;
-            const parts = line.split(/(\*\*[^*]+\*\*)/g);
-            return (
-              <p key={i} className="text-sm text-muted-foreground leading-relaxed">
-                {parts.map((part, j) =>
-                  part.startsWith('**') && part.endsWith('**')
-                    ? <strong key={j} className="text-foreground">{part.slice(2, -2)}</strong>
-                    : part
-                )}
-              </p>
-            );
-          })}
-        </div>
-      );
-    }
     return (
-      <div className="space-y-4">
-        {sections.map((section, i) => {
-          const lines = section.split("\n");
-          const title = lines[0].replace(/\*\*/g, "").trim();
-          const body = lines.slice(1).join("\n").trim();
-          return (
-            <div key={i}>
-              <h3 className="font-semibold text-sm mb-1 text-foreground">{title}</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                {body}
-              </p>
-            </div>
-          );
-        })}
+      <div className="space-y-2">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            h1: ({ children }) => (
+              <h2 className="text-base font-semibold text-foreground mt-2 mb-2">{children}</h2>
+            ),
+            h2: ({ children }) => (
+              <h3 className="font-semibold text-sm mt-3 mb-1 text-foreground">{children}</h3>
+            ),
+            h3: ({ children }) => (
+              <h4 className="font-semibold text-sm mt-2 mb-1 text-foreground">{children}</h4>
+            ),
+            p: ({ children }) => (
+              <p className="text-sm text-muted-foreground leading-relaxed">{children}</p>
+            ),
+            strong: ({ children }) => (
+              <strong className="font-semibold text-foreground">{children}</strong>
+            ),
+            ul: ({ children }) => (
+              <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">{children}</ul>
+            ),
+            ol: ({ children }) => (
+              <ol className="list-decimal pl-5 text-sm text-muted-foreground space-y-1">{children}</ol>
+            ),
+            li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+            a: ({ href, children }) => (
+              <a href={href} className="underline text-primary" target="_blank" rel="noreferrer">{children}</a>
+            ),
+          }}
+        >
+          {text}
+        </ReactMarkdown>
       </div>
     );
   }
