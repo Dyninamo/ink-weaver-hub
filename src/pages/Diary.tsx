@@ -68,6 +68,27 @@ export default function Diary() {
   const [activeSession, setActiveSession] = useState<ActiveSessionLite | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [globalFishCount, setGlobalFishCount] = useState<number | null>(null);
+
+  // Fetch global fish count (catch events) for the current user — independent of pagination.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user) { setGlobalFishCount(null); return; }
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { count } = await supabase
+          .from("session_events")
+          .select("id, fishing_sessions!inner(user_id)", { count: "exact", head: true })
+          .eq("event_type", "catch")
+          .eq("fishing_sessions.user_id", user.id);
+        if (!cancelled) setGlobalFishCount(count ?? 0);
+      } catch {
+        if (!cancelled) setGlobalFishCount(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, sessions.length]);
 
   // Debounce search input (150ms)
   useEffect(() => {
