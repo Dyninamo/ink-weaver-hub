@@ -862,6 +862,9 @@ export default function DiaryEntry() {
             >
               Delete this session?
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Permanently delete this fishing session and its events
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground leading-relaxed">
