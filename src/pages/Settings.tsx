@@ -73,6 +73,8 @@ export default function Settings() {
 
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [savingBehaviour, setSavingBehaviour] = useState(false);
+  const [storageOpen, setStorageOpen] = useState(false);
+  const [howOpen, setHowOpen] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
