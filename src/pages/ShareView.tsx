@@ -31,12 +31,13 @@ export default function ShareView() {
   const [report, setReport] = useState<SharedReport | null>(null);
   const [creator, setCreator] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [resolved, setResolved] = useState(false); // gate against auth-tick refetch loop
 
   useEffect(() => {
-    if (token) {
-      fetchSharedReport();
-    }
-  }, [token, user]);
+    if (!token || resolved) return;
+    fetchSharedReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, user, resolved]);
 
   const fetchSharedReport = async () => {
     try {
@@ -44,15 +45,11 @@ export default function ShareView() {
       setError(null);
 
       const includeFullContent = !!user;
-      
-      // Get auth token if user is logged in
+
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       const { data, error: functionError } = await supabase.functions.invoke('get-shared-report', {
-        body: { 
-          token,
-          includeFullContent 
-        },
+        body: { token, includeFullContent },
         headers: session?.access_token ? {
           Authorization: `Bearer ${session.access_token}`,
         } : undefined,
@@ -62,14 +59,14 @@ export default function ShareView() {
 
       if (data.error) {
         setError(data.error);
+        setResolved(true);
         return;
       }
 
       setReport(data.query);
       setCreator(data.shareInfo.created_by);
+      setResolved(true);
     } catch (err: any) {
-      console.error('Error fetching shared report:', err);
-      // FunctionsHttpError exposes the Response directly on err.context
       const response: Response | undefined = err?.context;
       const status = response?.status ?? err?.status;
       let bodyError: string | null = null;
@@ -81,12 +78,20 @@ export default function ShareView() {
         } catch { /* body not JSON */ }
       }
       const msg = String(err?.message || '');
-      if (status === 404 || bodyError === 'token_not_found' || /not.found|expired|invalid.token/i.test(msg)) {
+      const isNotFound = status === 404 || bodyError === 'token_not_found' || /not.found|expired|invalid.token/i.test(msg);
+      if (isNotFound) {
+        // Normal user-facing condition — log quietly, don't retry.
+        console.info('Share link not found/expired:', token);
         setError("This share link has expired or was never valid.");
+        setResolved(true);
       } else if (status === 401 || status === 403) {
+        console.warn('Share link access denied:', status);
         setError("You don't have access to this report. Sign in if you have an invite.");
+        setResolved(true);
       } else {
+        console.error('Error fetching shared report:', err);
         setError("Couldn't load this report. Try again in a moment.");
+        // Transient — allow retry on next auth tick by NOT setting resolved.
       }
     } finally {
       setLoading(false);
