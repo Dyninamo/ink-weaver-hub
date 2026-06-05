@@ -196,12 +196,6 @@ export default function Diary() {
     });
   }
 
-  // Aggregate stats for header subtitle
-  const totalFishAcrossLoaded = sessions.reduce(
-    (acc, s) => acc + (s.stats?.totalFish ?? 0),
-    0
-  );
-
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
@@ -216,7 +210,7 @@ export default function Diary() {
                 className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mt-1 font-medium"
               >
                 {totalCount} session{totalCount !== 1 ? "s" : ""}
-                {totalFishAcrossLoaded > 0 ? ` · ${totalFishAcrossLoaded} fish` : ""}
+                {stats.totalFish > 0 ? ` · ${stats.totalFish} fish` : ""}
               </p>
             )}
           </div>
