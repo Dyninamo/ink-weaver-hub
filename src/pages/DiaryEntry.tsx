@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   ArrowLeft, Fish, Circle, RefreshCw, Star, MapPin,
@@ -861,6 +862,9 @@ export default function DiaryEntry() {
             >
               Delete this session?
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Permanently delete this fishing session and its events
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -912,6 +916,9 @@ export default function DiaryEntry() {
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editorMode === "add" ? "Add catch" : "Edit catch"}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {editorMode === "add" ? "Add a catch to this session" : "Edit catch details"}
+            </DialogDescription>
           </DialogHeader>
           {session && (
             <CatchEditForm

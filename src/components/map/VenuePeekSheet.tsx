@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Navigation, ChevronRight } from 'lucide-react';
 import { ARCHETYPE_LABELS, REGIONS, STILLWATER_TYPES, VenuePin } from './types';
 
@@ -24,6 +24,8 @@ export default function VenuePeekSheet({ venue, onClose }: Props) {
         className="rounded-t-xl border-t p-0"
         style={{ background: 'var(--paper-50)', borderColor: 'var(--paper-200)' }}
       >
+        <SheetTitle className="sr-only">{venue.full_name}</SheetTitle>
+        <SheetDescription className="sr-only">Venue details and quick actions</SheetDescription>
         <div className="venue-detail-surface" style={{ minHeight: 0 }}>
           <div className="venue-hero" style={{ borderBottom: 'none', paddingBottom: 'var(--space-3)' }}>
             {archetypeFriendly && <div className="archetype">{archetypeFriendly}</div>}

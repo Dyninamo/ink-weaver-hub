@@ -68,6 +68,27 @@ export default function Diary() {
   const [activeSession, setActiveSession] = useState<ActiveSessionLite | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [globalFishCount, setGlobalFishCount] = useState<number | null>(null);
+
+  // Fetch global fish count (catch events) for the current user — independent of pagination.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user) { setGlobalFishCount(null); return; }
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { count } = await supabase
+          .from("session_events")
+          .select("id, fishing_sessions!inner(user_id)", { count: "exact", head: true })
+          .eq("event_type", "catch")
+          .eq("fishing_sessions.user_id", user.id);
+        if (!cancelled) setGlobalFishCount(count ?? 0);
+      } catch {
+        if (!cancelled) setGlobalFishCount(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, sessions.length]);
 
   // Debounce search input (150ms)
   useEffect(() => {
@@ -196,12 +217,6 @@ export default function Diary() {
     });
   }
 
-  // Aggregate stats for header subtitle
-  const totalFishAcrossLoaded = sessions.reduce(
-    (acc, s) => acc + (s.stats?.totalFish ?? 0),
-    0
-  );
-
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[420px] mx-auto p-4 space-y-4">
@@ -216,7 +231,7 @@ export default function Diary() {
                 className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mt-1 font-medium"
               >
                 {totalCount} session{totalCount !== 1 ? "s" : ""}
-                {totalFishAcrossLoaded > 0 ? ` · ${totalFishAcrossLoaded} fish` : ""}
+                {globalFishCount != null && globalFishCount > 0 ? ` · ${globalFishCount} fish` : ""}
               </p>
             )}
           </div>

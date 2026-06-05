@@ -73,6 +73,8 @@ export default function Settings() {
 
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [savingBehaviour, setSavingBehaviour] = useState(false);
+  const [storageOpen, setStorageOpen] = useState(false);
+  const [howOpen, setHowOpen] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -367,7 +369,7 @@ export default function Settings() {
           icon={<ShieldCheck className="h-4 w-4" />}
           label="What we store"
           sub="Sessions, weather snapshots, fly choices."
-          onClick={() => toast.info("We store session details and weather snapshots only. No tracking.")}
+          onClick={() => setStorageOpen(true)}
         />
 
         {/* Help */}
@@ -376,7 +378,7 @@ export default function Settings() {
           icon={<HelpCircle className="h-4 w-4" />}
           label="How this works"
           sub="A short tour of the diary."
-          onClick={() => toast.info("Quick tour coming soon.")}
+          onClick={() => setHowOpen(true)}
         />
         <NavRow
           icon={<Mail className="h-4 w-4" />}
@@ -468,6 +470,69 @@ export default function Settings() {
             <Button onClick={saveDefaults} disabled={savingDefaults}>
               {savingDefaults ? "Saving…" : "Save"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* What we store — privacy panel */}
+      <Dialog open={storageOpen} onOpenChange={setStorageOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>What we store</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+            <div>
+              <p className="font-medium text-foreground mb-1">We store</p>
+              <ul className="list-disc pl-5 space-y-0.5">
+                <li>Your fishing sessions (venue, date, duration)</li>
+                <li>Events you log: catches, blanks, fly changes</li>
+                <li>Weather snapshots tied to each session</li>
+                <li>Your rig and fly selections</li>
+                <li>Account profile (name, email)</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-medium text-foreground mb-1">We don't</p>
+              <ul className="list-disc pl-5 space-y-0.5">
+                <li>Sell or share your location data</li>
+                <li>Track you across other sites</li>
+                <li>Use third-party advertising trackers</li>
+              </ul>
+            </div>
+            <p className="text-xs">Questions? hello@itscatching.uk</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setStorageOpen(false)}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* How this works — diary explainer */}
+      <Dialog open={howOpen} onOpenChange={setHowOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>How the diary works</DialogTitle>
+          </DialogHeader>
+          <ol className="space-y-3 text-sm text-muted-foreground leading-relaxed list-decimal pl-5">
+            <li>
+              <span className="text-foreground font-medium">Start a session.</span>{" "}
+              Pick a venue, build your rig (rod, line, leader, flies), and tap start.
+            </li>
+            <li>
+              <span className="text-foreground font-medium">Log as you fish.</span>{" "}
+              Tap to record catches, blanks, or fly changes — weather is captured automatically.
+            </li>
+            <li>
+              <span className="text-foreground font-medium">Review afterwards.</span>{" "}
+              Open the timeline to see every session with stats, top flies, and conditions.
+            </li>
+            <li>
+              <span className="text-foreground font-medium">Get smarter advice.</span>{" "}
+              Your history feeds into venue-specific recommendations on Results.
+            </li>
+          </ol>
+          <DialogFooter>
+            <Button onClick={() => setHowOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
