@@ -210,7 +210,7 @@ export default function Diary() {
                 className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mt-1 font-medium"
               >
                 {totalCount} session{totalCount !== 1 ? "s" : ""}
-                {stats.totalFish > 0 ? ` · ${stats.totalFish} fish` : ""}
+                {globalFishCount != null && globalFishCount > 0 ? ` · ${globalFishCount} fish` : ""}
               </p>
             )}
           </div>
