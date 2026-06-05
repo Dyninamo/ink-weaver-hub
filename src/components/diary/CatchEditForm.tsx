@@ -155,11 +155,27 @@ export default function CatchEditForm({
         measurement_mode: measureMode,
       };
       if (measureMode === "weight") {
-        payload.weight_lb = weightLb ? Number(weightLb) : null;
+        const f = parseFloat(weightLb);
+        let weight_lb: number | null = null;
+        let weight_oz: number | null = null;
+        let weight_display: string | null = null;
+        if (Number.isFinite(f) && f > 0) {
+          weight_lb = Math.floor(f);
+          weight_oz = Math.round((f - weight_lb) * 16);
+          if (weight_oz >= 16) { weight_lb += 1; weight_oz = 0; }
+          weight_display = weight_oz === 0 ? `${weight_lb} lb` : `${weight_lb} lb ${weight_oz} oz`;
+        }
+        payload.weight_lb = weight_lb;
+        payload.weight_oz = weight_oz;
+        payload.weight_display = weight_display;
         payload.length_inches = null;
       } else {
-        payload.length_inches = lengthIn ? Number(lengthIn) : null;
+        const f = parseFloat(lengthIn);
+        const length_inches = Number.isFinite(f) && f > 0 ? f : null;
+        payload.length_inches = length_inches;
+        payload.weight_display = length_inches != null ? `${length_inches} in` : null;
         payload.weight_lb = null;
+        payload.weight_oz = null;
       }
 
       if (mode === "add") {
