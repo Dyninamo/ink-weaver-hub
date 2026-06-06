@@ -88,18 +88,18 @@ Deno.serve(async (req) => {
 
     let deleted: number | null = null;
     if (delete_where_not_null) {
-      const { data: delData, error: delError } = await supabaseAdmin
+      const { error: delError, count: delCount } = await supabaseAdmin
         .from(table)
         .delete({ count: "exact" })
-        .not(delete_where_not_null, "is", null)
-        .select("*", { count: "exact", head: true });
+        .not(delete_where_not_null, "is", null);
       if (delError) {
         console.error(`[admin-upsert] ${table} delete error:`, delError);
         const status = /permission|denied|violat/i.test(delError.message) ? 400 : 500;
         return jsonResp({ error: delError.message, table, deleted: 0, upserted: 0 }, status);
       }
-      deleted = Array.isArray(delData) ? delData.length : 0;
+      deleted = delCount ?? 0;
     }
+
 
     const query = supabaseAdmin.from(table).upsert(
       rows,
