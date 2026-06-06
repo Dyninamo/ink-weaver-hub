@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       return jsonResp({ error: "Invalid JSON body" }, 400);
     }
 
-    const { table, rows, on_conflict } = body ?? {};
+    const { table, rows, on_conflict, delete_where_not_null } = body ?? {};
 
     if (typeof table !== "string" || !table) {
       return jsonResp({ error: "table (string) required" }, 400);
@@ -74,12 +74,32 @@ Deno.serve(async (req) => {
     if (on_conflict !== undefined && typeof on_conflict !== "string") {
       return jsonResp({ error: "on_conflict must be a string if provided" }, 400);
     }
+    if (delete_where_not_null !== undefined) {
+      if (typeof delete_where_not_null !== "string" || !/^[a-z_][a-z0-9_]*$/i.test(delete_where_not_null)) {
+        return jsonResp({ error: "delete_where_not_null must be a plain column identifier" }, 400);
+      }
+    }
 
     const supabaseAdmin = createClient(
       requireEnv("SUPABASE_URL"),
       requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
+
+    let deleted: number | null = null;
+    if (delete_where_not_null) {
+      const { data: delData, error: delError } = await supabaseAdmin
+        .from(table)
+        .delete({ count: "exact" })
+        .not(delete_where_not_null, "is", null)
+        .select("*", { count: "exact", head: true });
+      if (delError) {
+        console.error(`[admin-upsert] ${table} delete error:`, delError);
+        const status = /permission|denied|violat/i.test(delError.message) ? 400 : 500;
+        return jsonResp({ error: delError.message, table, deleted: 0, upserted: 0 }, status);
+      }
+      deleted = Array.isArray(delData) ? delData.length : 0;
+    }
 
     const query = supabaseAdmin.from(table).upsert(
       rows,
@@ -90,10 +110,11 @@ Deno.serve(async (req) => {
     if (error) {
       console.error(`[admin-upsert] ${table} error:`, error);
       const status = /permission|denied|violat/i.test(error.message) ? 400 : 500;
-      return jsonResp({ error: error.message, table, upserted: 0 }, status);
+      return jsonResp({ error: error.message, table, deleted, upserted: 0 }, status);
     }
 
-    return jsonResp({ table, upserted: rows.length }, 200);
+    return jsonResp({ table, deleted, upserted: rows.length }, 200);
+
   } catch (err) {
     const envResp = envErrorResponse(err, corsHeaders);
     if (envResp) return envResp;
