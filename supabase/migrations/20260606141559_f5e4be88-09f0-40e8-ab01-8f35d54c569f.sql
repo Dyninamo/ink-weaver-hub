@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Anon can insert session_weather_log" ON public.session_weather_log;
