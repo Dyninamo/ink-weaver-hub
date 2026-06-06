@@ -3761,22 +3761,16 @@ export type Database = {
           id: string
           shared_report_id: string
           viewed_at: string | null
-          viewer_email: string | null
-          viewer_ip: string | null
         }
         Insert: {
           id?: string
           shared_report_id: string
           viewed_at?: string | null
-          viewer_email?: string | null
-          viewer_ip?: string | null
         }
         Update: {
           id?: string
           shared_report_id?: string
           viewed_at?: string | null
-          viewer_email?: string | null
-          viewer_ip?: string | null
         }
         Relationships: [
           {
