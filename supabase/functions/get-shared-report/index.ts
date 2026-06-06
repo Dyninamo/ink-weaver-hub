@@ -124,21 +124,14 @@ serve(async (req) => {
 
     // Track view and return appropriate content based on authentication
     if (includeFullContent && authenticatedUserId) {
-      // Record detailed view for authenticated users
-      const forwardedFor = req.headers.get('x-forwarded-for');
-      const viewerIp = forwardedFor ? forwardedFor.split(',')[0] : 'unknown';
-
-      // Get viewer's email
-      const { data: viewerData } = await supabaseAdmin.auth.admin.getUserById(authenticatedUserId);
-      const viewerEmail = viewerData?.user?.email || null;
-
+      // Record the view without storing viewer PII (IP / email).
+      // Columns `viewer_ip` and `viewer_email` were dropped (security #14).
       await supabaseAdmin
         .from('share_views')
         .insert({
           shared_report_id: sharedReport.id,
-          viewer_ip: viewerIp,
-          viewer_email: viewerEmail,
         });
+
 
       // Return full content
       responseData = {
