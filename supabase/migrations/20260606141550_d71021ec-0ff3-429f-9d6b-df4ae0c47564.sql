@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "anon_delete_cache" ON public.query_cache;
