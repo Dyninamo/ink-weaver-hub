@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "ves_read_authenticated" ON public.venue_email_searches;
