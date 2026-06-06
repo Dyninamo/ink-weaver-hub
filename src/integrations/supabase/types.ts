@@ -5910,7 +5910,8 @@ export type Database = {
       }
       verification_codes: {
         Row: {
-          code: string
+          code: string | null
+          code_hash: string | null
           created_at: string | null
           expires_at: string
           id: string
@@ -5919,7 +5920,8 @@ export type Database = {
           verified: boolean | null
         }
         Insert: {
-          code: string
+          code?: string | null
+          code_hash?: string | null
           created_at?: string | null
           expires_at: string
           id?: string
@@ -5928,7 +5930,8 @@ export type Database = {
           verified?: boolean | null
         }
         Update: {
-          code?: string
+          code?: string | null
+          code_hash?: string | null
           created_at?: string | null
           expires_at?: string
           id?: string
@@ -6697,6 +6700,7 @@ export type Database = {
       }
       increment_share_view: { Args: { p_token: string }; Returns: undefined }
       is_group_admin: { Args: { target_group_id: string }; Returns: boolean }
+      purge_expired_verification_codes: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
