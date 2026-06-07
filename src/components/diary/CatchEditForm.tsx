@@ -130,10 +130,13 @@ export default function CatchEditForm({
   const resolvedAcc = usedTrail ? fix.accuracy : (initial as any)?.gps_accuracy ?? fix.accuracy;
 
   const speciesFinal = speciesPick === "Other" ? speciesOther.trim() : speciesPick;
-  const sizeOk =
-    (measureMode === "weight" && (weightLb === "" || Number(weightLb) > 0)) ||
-    (measureMode === "length" && (lengthIn === "" || Number(lengthIn) > 0));
-  const canSave = !!speciesFinal && sizeOk && !saving;
+  // Prompt 234 — shared bounds. Empty is allowed; non-empty must parse.
+  const weightParsed = useMemo(() => parseWeight(weightLb), [weightLb]);
+  const lengthParsed = useMemo(() => parseLength(lengthIn), [lengthIn]);
+  const sizeError =
+    measureMode === "weight" ? (weightLb ? weightParsed.error : null)
+                             : (lengthIn ? lengthParsed.error : null);
+  const canSave = !!speciesFinal && !sizeError && !saving;
 
   async function handleSave() {
     if (!canSave) return;
