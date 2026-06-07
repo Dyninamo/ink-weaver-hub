@@ -204,7 +204,7 @@ export default function Results() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-semibold truncate">{state.venue}</h1>
+            <h1 className="text-lg font-semibold truncate">{displayVenue(state.venue)}</h1>
             <p className="text-sm text-muted-foreground">
               {state.date ? (state.date.includes('-') ? formatDate(state.date) : state.date) : ""}{season ? ` · ${season}` : ""}
             </p>

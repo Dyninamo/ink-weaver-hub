@@ -409,7 +409,7 @@ const Dashboard = () => {
                           <Fish className="w-5 h-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground truncate">{query.venue}</h3>
+                          <h3 className="font-semibold text-foreground truncate">{displayVenue(query.venue)}</h3>
                           <p className="text-sm text-muted-foreground">
                             {format(new Date(query.query_date), "MMM d, yyyy")}
                           </p>
