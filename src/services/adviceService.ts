@@ -181,6 +181,13 @@ export async function getAdviceV2(
     if (body?.error === 'service_misconfigured') {
       throw new ServiceMisconfiguredError(body.message)
     }
+    if (body?.error === 'venue_not_found') {
+      throw new VenueNotFoundError(
+        (body as any).submitted ?? venue,
+        ((body as any).suggestions ?? []) as { venue_id: string; name: string }[],
+        body.message,
+      )
+    }
     throw new AdviceServiceError(error.message || 'Failed to get advice v2')
   }
   return data as AdviceV2Response
@@ -237,6 +244,11 @@ export async function getFishingAdvice(
     if (err instanceof ServiceMisconfiguredError) {
       // v1 (get-fishing-advice) shares the same service-role secret — no point in falling back.
       logEvent('advice.service_misconfigured', { venue, date })
+      throw err
+    }
+    if (err instanceof VenueNotFoundError) {
+      // Don't fall back — v1 would generate ungrounded advice. Surface to UI.
+      logEvent('advice.venue_not_found', { venue, date, suggestions: err.suggestions.length })
       throw err
     }
     logEvent('advice.fallback_v1', { venue, date, error: (err as Error).message })
