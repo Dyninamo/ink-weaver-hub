@@ -208,26 +208,18 @@ export default function CatchFlow({
     if (!rod || !canSave) return;
     setSaving(true);
     try {
-      // 1. Build weight/length payload first — fail fast on bad input, before
-      //    touching the DB. (prompt 166)
+      // 1. Build weight/length payload via shared parser (prompt 234).
       let weight_lb: number | null = null;
       let weight_oz: number | null = null;
       let length_inches: number | null = null;
       let weight_display: string | null = null;
-      if (measureMode === "weight" && weightLbDecimal) {
-        const f = parseFloat(weightLbDecimal);
-        if (!isNaN(f) && f > 0) {
-          weight_lb = Math.floor(f);
-          weight_oz = Math.round((f - weight_lb) * 16);
-          if (weight_oz >= 16) { weight_lb += 1; weight_oz = 0; }
-          weight_display = weight_oz === 0 ? `${weight_lb} lb` : `${weight_lb} lb ${weight_oz} oz`;
-        }
-      } else if (measureMode === "length" && lengthIn) {
-        const f = parseFloat(lengthIn);
-        if (!isNaN(f) && f > 0) {
-          length_inches = f;
-          weight_display = `${f} in`;
-        }
+      if (measureMode === "weight" && weightParsed.ok) {
+        weight_lb = weightParsed.lb;
+        weight_oz = weightParsed.oz;
+        weight_display = weightParsed.display;
+      } else if (measureMode === "length" && lengthParsed.ok) {
+        length_inches = lengthParsed.inches;
+        weight_display = lengthParsed.display;
       }
 
       // 2. Write the catch row FIRST. If it fails, no journal/rod state has
