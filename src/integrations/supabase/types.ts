@@ -3228,6 +3228,7 @@ export type Database = {
           change_from: Json | null
           change_reason: string | null
           change_to: Json | null
+          client_event_id: string | null
           created_at: string | null
           depth_zone: string | null
           dropper_position: string | null
@@ -3288,6 +3289,7 @@ export type Database = {
           change_from?: Json | null
           change_reason?: string | null
           change_to?: Json | null
+          client_event_id?: string | null
           created_at?: string | null
           depth_zone?: string | null
           dropper_position?: string | null
@@ -3348,6 +3350,7 @@ export type Database = {
           change_from?: Json | null
           change_reason?: string | null
           change_to?: Json | null
+          client_event_id?: string | null
           created_at?: string | null
           depth_zone?: string | null
           dropper_position?: string | null
