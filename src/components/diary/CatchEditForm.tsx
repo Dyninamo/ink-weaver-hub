@@ -17,6 +17,7 @@ import {
   type TrailPoint,
 } from "@/services/diaryService";
 import { deriveFixFromTrail, type DerivedFix } from "@/lib/deriveFix";
+import { parseWeight, parseLength } from "@/lib/parseSize";
 import { cn } from "@/lib/utils";
 
 const POSITIONS = ["point", "middle", "top dropper", "bob"];
