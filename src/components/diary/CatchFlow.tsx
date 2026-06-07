@@ -495,13 +495,12 @@ export default function CatchFlow({
             {measureMode === "weight" ? (
               <div className="flex items-center gap-2">
                 <input
-                  type="number"
+                  type="text"
                   inputMode="decimal"
-                  step="0.1"
-                  min="0"
                   placeholder="—"
                   value={weightLbDecimal}
                   onChange={(e) => setWeightLbDecimal(e.target.value)}
+                  aria-invalid={!!sizeError}
                   className="flex-1 h-12 rounded-md border border-input bg-background px-3 text-xl md:text-2xl font-mono text-center"
                 />
                 <span className="text-base text-muted-foreground">lb</span>
@@ -509,17 +508,19 @@ export default function CatchFlow({
             ) : (
               <div className="flex items-center gap-2">
                 <input
-                  type="number"
+                  type="text"
                   inputMode="decimal"
-                  step="0.5"
-                  min="0"
                   placeholder="—"
                   value={lengthIn}
                   onChange={(e) => setLengthIn(e.target.value)}
+                  aria-invalid={!!sizeError}
                   className="flex-1 h-12 rounded-md border border-input bg-background px-3 text-xl md:text-2xl font-mono text-center"
                 />
                 <span className="text-base text-muted-foreground">in</span>
               </div>
+            )}
+            {sizeError && (
+              <p className="mt-1 text-xs text-destructive">{sizeError}</p>
             )}
           </section>
 
