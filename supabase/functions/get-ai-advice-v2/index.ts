@@ -557,22 +557,40 @@ Use UK fly fishing terminology. Be conversational but concrete. Don't invent ven
     // (DB only, no Anthropic call on this path).
     if (!venueId) {
       const trimmed = venue_name.trim();
-      const firstWords = trimmed.split(/\s+/).slice(0, 2).join(" ");
       const suggestionMap = new Map<string, { venue_id: string; name: string }>();
-      for (const term of [trimmed, firstWords].filter((t, i, arr) => t && arr.indexOf(t) === i)) {
-        const { data: matches } = await supabase
-          .from("venues_new")
-          .select("venue_id, name")
-          .ilike("name", `%${term}%`)
-          .limit(5);
-        for (const m of (matches ?? []) as any[]) {
+
+      // Prompt 240 — prefer trigram-similarity RPC so single-letter typos
+      // (e.g. "Grafam Water" → "Grafham Water") still surface.
+      try {
+        const { data: trgmMatches, error: rpcErr } = await supabase.rpc(
+          "suggest_venues",
+          { q: trimmed, lim: 5 }
+        );
+        if (rpcErr) throw rpcErr;
+        for (const m of (trgmMatches ?? []) as any[]) {
           if (!suggestionMap.has(m.venue_id)) {
             suggestionMap.set(m.venue_id, { venue_id: m.venue_id, name: m.name });
           }
+        }
+      } catch (e) {
+        console.warn("suggest_venues RPC failed, falling back to ilike:", e);
+        const firstWords = trimmed.split(/\s+/).slice(0, 2).join(" ");
+        for (const term of [trimmed, firstWords].filter((t, i, arr) => t && arr.indexOf(t) === i)) {
+          const { data: matches } = await supabase
+            .from("venues_new")
+            .select("venue_id, name")
+            .ilike("name", `%${term}%`)
+            .limit(5);
+          for (const m of (matches ?? []) as any[]) {
+            if (!suggestionMap.has(m.venue_id)) {
+              suggestionMap.set(m.venue_id, { venue_id: m.venue_id, name: m.name });
+            }
+            if (suggestionMap.size >= 5) break;
+          }
           if (suggestionMap.size >= 5) break;
         }
-        if (suggestionMap.size >= 5) break;
       }
+
       return new Response(
         JSON.stringify({
           error: "venue_not_found",
