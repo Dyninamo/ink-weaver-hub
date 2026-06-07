@@ -80,6 +80,13 @@ export default function ActiveSessionShell({
 
   // Prompt 216 — passive GPS trail capture while the session is live.
   const trailRecorder = useSessionTrailRecorder(sessionId);
+  const online = useOnlineStatus();
+  const [queueDepth, setQueueDepth] = useState<number>(() => pendingCount(sessionId));
+  useEffect(() => {
+    installAutoFlush();
+    const unsub = onQueueChange(() => setQueueDepth(pendingCount(sessionId)));
+    return unsub;
+  }, [sessionId]);
 
   useEffect(() => {
     logEvent("session.phase_enter", { phase, sessionId }, sessionId);
