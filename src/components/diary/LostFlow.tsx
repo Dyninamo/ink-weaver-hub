@@ -88,7 +88,14 @@ export default function LostFlow({
       onSaved();
     } catch (err: any) {
       logEvent("error", { context: "lost_save", message: err?.message ?? String(err) }, sessionId);
-      toast.error(err.message || "Failed to save");
+      if (err?.queued) {
+        toast.success("Saved offline — will sync when you're back online");
+        onSaved();
+      } else if (isOfflineError(err)) {
+        toast.error("Couldn't save — you're offline. Tap to retry.");
+      } else {
+        toast.error(err.message || "Failed to save");
+      }
     } finally {
       setSaving(false);
     }
