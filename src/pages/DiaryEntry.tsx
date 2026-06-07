@@ -41,6 +41,7 @@ import {
 } from "@/services/diaryService";
 import CatchEditForm from "@/components/diary/CatchEditForm";
 import { Plus, Pencil } from "lucide-react";
+import { displayNote } from "@/lib/displayNote";
 
 type ViewTab = "timeline" | "fish" | "stats";
 
@@ -649,17 +650,20 @@ export default function DiaryEntry() {
                       {event.rig_position && <p>Position: {event.rig_position}</p>}
                       {event.blank_reason && <p>Reason: {event.blank_reason}</p>}
                       {event.change_reason && <p>Reason: {event.change_reason}</p>}
-                      {event.notes && (
-                        <div
-                          className="mt-2 px-3 py-2 rounded-sm border-l-2 italic text-[13px] leading-relaxed text-foreground/80"
-                          style={{
-                            background: "var(--paper-100, hsl(var(--muted) / 0.5))",
-                            borderLeftColor: "var(--ink-300, hsl(var(--border)))",
-                          }}
-                        >
-                          “{event.notes}”
-                        </div>
-                      )}
+                      {(() => {
+                        const noteText = displayNote(event.notes);
+                        return noteText ? (
+                          <div
+                            className="mt-2 px-3 py-2 rounded-sm border-l-2 italic text-[13px] leading-relaxed text-foreground/80"
+                            style={{
+                              background: "var(--paper-100, hsl(var(--muted) / 0.5))",
+                              borderLeftColor: "var(--ink-300, hsl(var(--border)))",
+                            }}
+                          >
+                            “{noteText}”
+                          </div>
+                        ) : null;
+                      })()}
                       {/* Catch edit/delete — prompt 218. Only catches, only on
                           completed sessions (live logging stays in CatchFlow). */}
                       {!isActive && event.event_type === "catch" && (
