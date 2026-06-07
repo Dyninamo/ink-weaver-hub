@@ -136,7 +136,15 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error getting fishing advice:", err);
 
-      if (err instanceof ServiceMisconfiguredError) {
+      if (err instanceof VenueNotFoundError) {
+        // Prompt 237 — surface the not-found state instead of an authoritative card.
+        setVenueNotFound({
+          submitted: err.submitted,
+          suggestions: err.suggestions,
+          dateString,
+          waterTypeOverride,
+        });
+      } else if (err instanceof ServiceMisconfiguredError) {
         setError(err.message);
         toast({
           variant: "destructive",
