@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { addEvent, type CurrentSetup } from "@/services/diaryService";
 import { toast } from "sonner";
 import { logEvent } from "@/services/eventLogger";
+import { isOfflineError } from "@/hooks/useOnlineStatus";
 
 const CONFIDENCE_LEVELS = [
   { value: "Dead", label: "Dead", color: "#5A6A7A" },
