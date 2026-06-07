@@ -34,6 +34,13 @@ const Dashboard = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedQueryIds, setSelectedQueryIds] = useState<Set<string>>(new Set());
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  // Prompt 237 — unknown-venue state (suggestions returned by edge fn 422)
+  const [venueNotFound, setVenueNotFound] = useState<{
+    submitted: string;
+    suggestions: { venue_id: string; name: string }[];
+    dateString: string;
+    waterTypeOverride?: "stillwater" | "river";
+  } | null>(null);
 
   // Fetch recent queries on mount
   useEffect(() => {
