@@ -71,8 +71,15 @@ function RecentBody({ event }: { event: SessionEvent }) {
   }
   if (event.event_type === "change") {
     const to = event.change_to as Record<string, any> | null;
+    // Prompt 233 — change_to leaves can be nested objects (e.g. { point: { pattern, size } }).
+    // Flatten to a readable label; skip values that aren't stringifiable.
+    const flatten = (v: any): string | null => {
+      if (v == null) return null;
+      if (typeof v === "object") return v.pattern ?? v.fly ?? v.name ?? null;
+      return String(v);
+    };
     const summary = to
-      ? Object.values(to).filter(Boolean).join(" · ")
+      ? (Object.values(to).map(flatten).filter(Boolean).join(" · ") || "Setup change")
       : "Setup change";
     return (
       <>

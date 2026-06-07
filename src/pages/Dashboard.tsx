@@ -185,11 +185,15 @@ const Dashboard = () => {
     try {
       setIsLoadingQuery(true);
       const query = await getQueryById(queryId);
+      // Prompt 233 Fix C — Results reads `state.advice_text` (string) and
+      // `state.adviceV2` (structured). The queries table only persists
+      // `advice_text`, `recommended_locations`, `weather_data` — no structured
+      // v2 payload — so pass what we have on the keys Results expects.
       navigate("/results", {
         state: {
           venue: query.venue,
           date: format(new Date(query.query_date), "PPP"),
-          advice: query.advice_text,
+          advice_text: query.advice_text,
           locations: query.recommended_locations,
           weatherData: query.weather_data,
           queryId: query.id,
