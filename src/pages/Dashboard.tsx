@@ -329,6 +329,67 @@ const Dashboard = () => {
               </Alert>
             )}
 
+            {/* Prompt 237 — Unknown venue state */}
+            {venueNotFound && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-3">
+                    <div>
+                      We couldn't find <strong>{venueNotFound.submitted}</strong>.
+                      {venueNotFound.suggestions.length > 0
+                        ? " Did you mean:"
+                        : " Try picking a venue from the search below, or use a Home archetype."}
+                    </div>
+                    {venueNotFound.suggestions.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {venueNotFound.suggestions.map((s) => (
+                          <Button
+                            key={s.venue_id}
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                              handleAdviceRequest(
+                                s.venue_id,
+                                s.name,
+                                venueNotFound.dateString,
+                                venueNotFound.waterTypeOverride,
+                              )
+                            }
+                          >
+                            {s.name}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          handleAdviceRequest("__home__", "__home__", venueNotFound.dateString, "river")
+                        }
+                      >
+                        Use Home (River)
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          handleAdviceRequest("__home__", "__home__", venueNotFound.dateString, "stillwater")
+                        }
+                      >
+                        Use Home (Stillwater)
+                      </Button>
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Venue Search */}
             <VenueSearch onAdviceRequest={handleAdviceRequest} isLoading={isLoading} loadingMessage={loadingMessage} />
           </CardContent>
