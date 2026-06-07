@@ -264,7 +264,14 @@ export default function ChangeFlow({
       onSaved(next);
     } catch (err: any) {
       logEvent("error", { context: "change_save", field, message: err?.message ?? String(err) }, sessionId);
-      toast.error(err?.message || "Failed to save change");
+      if (err?.queued) {
+        toast.success("Saved offline — will sync when you're back online");
+        onSaved(next);
+      } else if (isOfflineError(err)) {
+        toast.error("Couldn't save — you're offline. Tap to retry.");
+      } else {
+        toast.error(err?.message || "Failed to save change");
+      }
     } finally {
       setSaving(false);
     }
