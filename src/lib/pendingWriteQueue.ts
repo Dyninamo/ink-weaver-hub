@@ -38,7 +38,7 @@ export function listPending(sessionId?: string): PendingEvent[] {
 }
 
 export function pendingCount(sessionId?: string): number {
-  return listPending(sessionId).length;
+  return listPending(sessionId).filter((p) => !p.failed).length;
 }
 
 export function enqueue(p: Omit<PendingEvent, "queued_at" | "attempts">) {
