@@ -74,6 +74,7 @@ const Dashboard = () => {
   ) => {
     setError(null);
     setWeatherWarning(false);
+    setVenueNotFound(null);
     setIsLoading(true);
 
     const isHomeSentinel = venueId === "__home__";
