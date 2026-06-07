@@ -23,6 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { acquireWakeLock, releaseWakeLock } from "@/lib/wakeLock";
 import { useSessionTrailRecorder } from "@/lib/useSessionTrailRecorder";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { installAutoFlush, onChange as onQueueChange, pendingCount } from "@/lib/pendingWriteQueue";
 import {
   endSession,
   pollSessionWeather,
