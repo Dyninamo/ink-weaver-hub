@@ -167,19 +167,18 @@ export default function CatchFlow({
   const hideDepth = allowedDepths.length === 1 && depthZone === allowedDepths[0];
 
   const speciesEffective = showOther ? otherSpeciesText.trim() : species;
-  const sizeLabel = (() => {
-    if (measureMode === "weight" && weightLbDecimal) {
-      const f = parseFloat(weightLbDecimal);
-      if (!isNaN(f) && f > 0) return `${f} lb`;
-    }
-    if (measureMode === "length" && lengthIn) {
-      const f = parseFloat(lengthIn);
-      if (!isNaN(f) && f > 0) return `${f} in`;
-    }
-    return null;
-  })();
 
-  const canSave = hasFly && !!speciesEffective && !saving;
+  // Prompt 234 — shared validation. Empty is allowed (size is optional);
+  // any non-empty value must pass parseWeight/parseLength.
+  const weightParsed = useMemo(() => parseWeight(weightLbDecimal), [weightLbDecimal]);
+  const lengthParsed = useMemo(() => parseLength(lengthIn), [lengthIn]);
+  const sizeError =
+    measureMode === "weight"
+      ? (weightLbDecimal ? weightParsed.error : null)
+      : (lengthIn ? lengthParsed.error : null);
+  const sizeLabel = measureMode === "weight" ? weightParsed.display : lengthParsed.display;
+
+  const canSave = hasFly && !!speciesEffective && !saving && !sizeError;
   const dirty = hasFly && (!!speciesEffective || !!sizeLabel || flyCorrections.length > 0 || notes.trim().length > 0);
 
   const ctaLabel = (() => {
