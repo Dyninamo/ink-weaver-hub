@@ -192,7 +192,14 @@ export default function CatchEditForm({
       onSaved();
     } catch (err: any) {
       console.error("save catch", err);
-      toast.error(err?.message || "Failed to save");
+      if (err?.queued) {
+        toast.success("Saved offline — will sync when you're back online");
+        onSaved();
+      } else if (isOfflineError(err)) {
+        toast.error("Couldn't save — you're offline. Tap to retry.");
+      } else {
+        toast.error(err?.message || "Failed to save");
+      }
     } finally {
       setSaving(false);
     }
