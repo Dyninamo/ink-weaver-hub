@@ -27,6 +27,7 @@ import { addEvent, type WeatherSnapshot } from "@/services/diaryService";
 import { retrievesForStyle, depthsForStyle } from "@/services/styleRules";
 import { positionsForFlyCount, positionLabel, type FlyPosition } from "@/components/diary/setup/vocabulary";
 import { parseWeight, parseLength } from "@/lib/parseSize";
+import { isOfflineError } from "@/hooks/useOnlineStatus";
 
 // -------- Species vocabulary (prompt 142 §3) --------
 const SPECIES_BY_VENUE: Record<"stillwater" | "river", string[]> = {
