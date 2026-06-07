@@ -147,6 +147,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Initial session
     const initializeAuth = async () => {
       try {
+        // Prompt 238 — if booting offline, don't issue a network call;
+        // onAuthStateChange will catch up once connectivity returns.
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+          safeSetSession(null);
+          safeSetUser(null);
+          return;
+        }
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         if (error) {
           console.error("Error getting session:", error);

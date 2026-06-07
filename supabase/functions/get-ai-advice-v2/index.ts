@@ -549,6 +549,42 @@ Use UK fly fishing terminology. Be conversational but concrete. Don't invent ven
 
     const venueId = (venue as any)?.venue_id ?? null;
 
+    // ── Prompt 237 — Unknown venue guard ───────────────────────
+    // If the name doesn't resolve in venues_new AND this isn't the Home
+    // sentinel (handled earlier), do NOT proceed to AI generation —
+    // we'd produce a confident, authoritative card with no grounding.
+    // Return a structured 422 with cheap fuzzy "did you mean…?" suggestions
+    // (DB only, no Anthropic call on this path).
+    if (!venueId) {
+      const trimmed = venue_name.trim();
+      const firstWords = trimmed.split(/\s+/).slice(0, 2).join(" ");
+      const suggestionMap = new Map<string, { venue_id: string; name: string }>();
+      for (const term of [trimmed, firstWords].filter((t, i, arr) => t && arr.indexOf(t) === i)) {
+        const { data: matches } = await supabase
+          .from("venues_new")
+          .select("venue_id, name")
+          .ilike("name", `%${term}%`)
+          .limit(5);
+        for (const m of (matches ?? []) as any[]) {
+          if (!suggestionMap.has(m.venue_id)) {
+            suggestionMap.set(m.venue_id, { venue_id: m.venue_id, name: m.name });
+          }
+          if (suggestionMap.size >= 5) break;
+        }
+        if (suggestionMap.size >= 5) break;
+      }
+      return new Response(
+        JSON.stringify({
+          error: "venue_not_found",
+          message: "We couldn't find that venue. Pick one from search, or choose Home (River) / Home (Stillwater) for archetype advice.",
+          submitted: venue_name,
+          suggestions: Array.from(suggestionMap.values()).slice(0, 5),
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+
     // Prompt 207 — fetch baked venue slice (canonical advice corpus shared
     // with master/RN). When present, drives tactical grounding; when absent
     // (new venues, onboarding-in-flight), falls through to existing path.
