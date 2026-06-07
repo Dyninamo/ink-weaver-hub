@@ -4,8 +4,10 @@
 // enforced server-side via the `client_event_id` UUID + unique index added
 // in the same migration.
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const KEY = "diary.pending_events.v1";
+const MAX_ATTEMPTS = 5;
 
 export interface PendingEvent {
   client_event_id: string;
@@ -14,6 +16,7 @@ export interface PendingEvent {
   queued_at: string;        // ISO
   attempts: number;
   last_error?: string | null;
+  failed?: boolean;         // non-retryable; kept for inspection, skipped on flush
 }
 
 function read(): PendingEvent[] {
