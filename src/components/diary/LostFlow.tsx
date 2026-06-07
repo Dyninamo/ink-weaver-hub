@@ -6,6 +6,7 @@ import { addEvent, type CurrentSetup } from "@/services/diaryService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { logEvent } from "@/services/eventLogger";
+import { isOfflineError } from "@/hooks/useOnlineStatus";
 
 // RN canonical 3 stages (per prompt 149 §1). Causes (throwing_hook / bite_off /
 // snag) are captured as free-text notes. Historic rows with the old vocabulary
