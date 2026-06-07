@@ -6704,6 +6704,15 @@ export type Database = {
       increment_share_view: { Args: { p_token: string }; Returns: undefined }
       is_group_admin: { Args: { target_group_id: string }; Returns: boolean }
       purge_expired_verification_codes: { Args: never; Returns: number }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      suggest_venues: {
+        Args: { lim?: number; q: string }
+        Returns: {
+          name: string
+          venue_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
