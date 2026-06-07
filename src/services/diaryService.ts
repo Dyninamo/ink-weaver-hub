@@ -439,19 +439,53 @@ export async function addEvent(event: Partial<SessionEvent>) {
     .select('*', { count: 'exact', head: true })
     .eq('session_id', event.session_id!);
 
+  // Prompt 235 Part B — attach a client-generated UUID so a retry after a
+  // partial offline failure can't create duplicates. Server has a unique
+  // index on client_event_id (nullable).
+  const client_event_id = (event as any).client_event_id
+    ?? (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : undefined);
+
   const normalised = {
     ...event,
     rig_position: normalizeRigPosition(event.rig_position),
     sort_order: (count || 0) + 1,
+    client_event_id,
   };
 
-  const { data, error } = await supabase
-    .from('session_events')
-    .insert(normalised as any)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as unknown as SessionEvent;
+  try {
+    const { data, error } = await supabase
+      .from('session_events')
+      .insert(normalised as any)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as unknown as SessionEvent;
+  } catch (err: any) {
+    // Network / offline failure → queue for later flush. Re-throw so the
+    // caller's toast still surfaces, but the write is durable.
+    const msg = err?.message ?? String(err);
+    const isNet = (typeof navigator !== "undefined" && navigator.onLine === false)
+      || /Failed to fetch|NetworkError|ERR_/i.test(msg);
+    if (isNet && client_event_id && event.session_id) {
+      try {
+        const { enqueue } = await import("@/lib/pendingWriteQueue");
+        enqueue({
+          client_event_id,
+          session_id: String(event.session_id),
+          payload: normalised as any,
+          last_error: msg,
+        });
+        const queueErr: any = new Error("offline_queued");
+        queueErr.queued = true;
+        queueErr.cause = err;
+        throw queueErr;
+      } catch (inner) {
+        if ((inner as any)?.queued) throw inner;
+        // Fall through to original error
+      }
+    }
+    throw err;
+  }
 }
 
 export async function getSessionEvents(sessionId: string) {

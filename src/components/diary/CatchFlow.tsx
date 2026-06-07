@@ -26,6 +26,8 @@ import FlyPicker from "./FlyPicker";
 import { addEvent, type WeatherSnapshot } from "@/services/diaryService";
 import { retrievesForStyle, depthsForStyle } from "@/services/styleRules";
 import { positionsForFlyCount, positionLabel, type FlyPosition } from "@/components/diary/setup/vocabulary";
+import { parseWeight, parseLength } from "@/lib/parseSize";
+import { isOfflineError } from "@/hooks/useOnlineStatus";
 
 // -------- Species vocabulary (prompt 142 §3) --------
 const SPECIES_BY_VENUE: Record<"stillwater" | "river", string[]> = {
@@ -166,19 +168,18 @@ export default function CatchFlow({
   const hideDepth = allowedDepths.length === 1 && depthZone === allowedDepths[0];
 
   const speciesEffective = showOther ? otherSpeciesText.trim() : species;
-  const sizeLabel = (() => {
-    if (measureMode === "weight" && weightLbDecimal) {
-      const f = parseFloat(weightLbDecimal);
-      if (!isNaN(f) && f > 0) return `${f} lb`;
-    }
-    if (measureMode === "length" && lengthIn) {
-      const f = parseFloat(lengthIn);
-      if (!isNaN(f) && f > 0) return `${f} in`;
-    }
-    return null;
-  })();
 
-  const canSave = hasFly && !!speciesEffective && !saving;
+  // Prompt 234 — shared validation. Empty is allowed (size is optional);
+  // any non-empty value must pass parseWeight/parseLength.
+  const weightParsed = useMemo(() => parseWeight(weightLbDecimal), [weightLbDecimal]);
+  const lengthParsed = useMemo(() => parseLength(lengthIn), [lengthIn]);
+  const sizeError =
+    measureMode === "weight"
+      ? (weightLbDecimal ? weightParsed.error : null)
+      : (lengthIn ? lengthParsed.error : null);
+  const sizeLabel = measureMode === "weight" ? weightParsed.display : lengthParsed.display;
+
+  const canSave = hasFly && !!speciesEffective && !saving && !sizeError;
   const dirty = hasFly && (!!speciesEffective || !!sizeLabel || flyCorrections.length > 0 || notes.trim().length > 0);
 
   const ctaLabel = (() => {
@@ -208,26 +209,18 @@ export default function CatchFlow({
     if (!rod || !canSave) return;
     setSaving(true);
     try {
-      // 1. Build weight/length payload first — fail fast on bad input, before
-      //    touching the DB. (prompt 166)
+      // 1. Build weight/length payload via shared parser (prompt 234).
       let weight_lb: number | null = null;
       let weight_oz: number | null = null;
       let length_inches: number | null = null;
       let weight_display: string | null = null;
-      if (measureMode === "weight" && weightLbDecimal) {
-        const f = parseFloat(weightLbDecimal);
-        if (!isNaN(f) && f > 0) {
-          weight_lb = Math.floor(f);
-          weight_oz = Math.round((f - weight_lb) * 16);
-          if (weight_oz >= 16) { weight_lb += 1; weight_oz = 0; }
-          weight_display = weight_oz === 0 ? `${weight_lb} lb` : `${weight_lb} lb ${weight_oz} oz`;
-        }
-      } else if (measureMode === "length" && lengthIn) {
-        const f = parseFloat(lengthIn);
-        if (!isNaN(f) && f > 0) {
-          length_inches = f;
-          weight_display = `${f} in`;
-        }
+      if (measureMode === "weight" && weightParsed.ok) {
+        weight_lb = weightParsed.lb;
+        weight_oz = weightParsed.oz;
+        weight_display = weightParsed.display;
+      } else if (measureMode === "length" && lengthParsed.ok) {
+        length_inches = lengthParsed.inches;
+        weight_display = lengthParsed.display;
       }
 
       // 2. Write the catch row FIRST. If it fails, no journal/rod state has
@@ -318,7 +311,14 @@ export default function CatchFlow({
     } catch (err: any) {
       logEvent("error", { context: "catch_save", message: err?.message ?? String(err) }, sessionId);
       console.error("Catch save failed:", err);
-      toast.error(err?.message || "Failed to save catch");
+      if (err?.queued) {
+        toast.success("Saved offline — will sync when you're back online");
+        onSaved();
+      } else if (isOfflineError(err)) {
+        toast.error("Couldn't save — you're offline. Tap to retry.");
+      } else {
+        toast.error(err?.message || "Failed to save catch");
+      }
       // Don't dismiss — preserve user input.
     } finally {
       setSaving(false);
@@ -503,13 +503,12 @@ export default function CatchFlow({
             {measureMode === "weight" ? (
               <div className="flex items-center gap-2">
                 <input
-                  type="number"
+                  type="text"
                   inputMode="decimal"
-                  step="0.1"
-                  min="0"
                   placeholder="—"
                   value={weightLbDecimal}
                   onChange={(e) => setWeightLbDecimal(e.target.value)}
+                  aria-invalid={!!sizeError}
                   className="flex-1 h-12 rounded-md border border-input bg-background px-3 text-xl md:text-2xl font-mono text-center"
                 />
                 <span className="text-base text-muted-foreground">lb</span>
@@ -517,17 +516,19 @@ export default function CatchFlow({
             ) : (
               <div className="flex items-center gap-2">
                 <input
-                  type="number"
+                  type="text"
                   inputMode="decimal"
-                  step="0.5"
-                  min="0"
                   placeholder="—"
                   value={lengthIn}
                   onChange={(e) => setLengthIn(e.target.value)}
+                  aria-invalid={!!sizeError}
                   className="flex-1 h-12 rounded-md border border-input bg-background px-3 text-xl md:text-2xl font-mono text-center"
                 />
                 <span className="text-base text-muted-foreground">in</span>
               </div>
+            )}
+            {sizeError && (
+              <p className="mt-1 text-xs text-destructive">{sizeError}</p>
             )}
           </section>
 

@@ -11,6 +11,7 @@ import { addEvent, type CurrentSetup, type FliesOnCast, type FlyOnCast } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { logEvent } from "@/services/eventLogger";
+import { isOfflineError } from "@/hooks/useOnlineStatus";
 import FlyPicker from "./FlyPicker";
 import LeaderPicker, { type LeaderValue, EMPTY_LEADER } from "./LeaderPicker";
 import SpotPicker from "./SpotPicker";
@@ -157,8 +158,8 @@ export default function ChangeFlow({
       return;
     }
     setSaving(true);
+    const next: CurrentSetup = { ...currentSetup };
     try {
-      const next: CurrentSetup = { ...currentSetup };
       const fromBlob: Record<string, any> = {};
       const toBlob: Record<string, any> = {};
 
@@ -263,7 +264,14 @@ export default function ChangeFlow({
       onSaved(next);
     } catch (err: any) {
       logEvent("error", { context: "change_save", field, message: err?.message ?? String(err) }, sessionId);
-      toast.error(err?.message || "Failed to save change");
+      if (err?.queued) {
+        toast.success("Saved offline — will sync when you're back online");
+        onSaved(next);
+      } else if (isOfflineError(err)) {
+        toast.error("Couldn't save — you're offline. Tap to retry.");
+      } else {
+        toast.error(err?.message || "Failed to save change");
+      }
     } finally {
       setSaving(false);
     }

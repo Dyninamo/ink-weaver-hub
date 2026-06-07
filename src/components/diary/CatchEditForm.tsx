@@ -17,6 +17,8 @@ import {
   type TrailPoint,
 } from "@/services/diaryService";
 import { deriveFixFromTrail, type DerivedFix } from "@/lib/deriveFix";
+import { parseWeight, parseLength } from "@/lib/parseSize";
+import { isOfflineError } from "@/hooks/useOnlineStatus";
 import { cn } from "@/lib/utils";
 
 const POSITIONS = ["point", "middle", "top dropper", "bob"];
@@ -129,10 +131,13 @@ export default function CatchEditForm({
   const resolvedAcc = usedTrail ? fix.accuracy : (initial as any)?.gps_accuracy ?? fix.accuracy;
 
   const speciesFinal = speciesPick === "Other" ? speciesOther.trim() : speciesPick;
-  const sizeOk =
-    (measureMode === "weight" && (weightLb === "" || Number(weightLb) > 0)) ||
-    (measureMode === "length" && (lengthIn === "" || Number(lengthIn) > 0));
-  const canSave = !!speciesFinal && sizeOk && !saving;
+  // Prompt 234 — shared bounds. Empty is allowed; non-empty must parse.
+  const weightParsed = useMemo(() => parseWeight(weightLb), [weightLb]);
+  const lengthParsed = useMemo(() => parseLength(lengthIn), [lengthIn]);
+  const sizeError =
+    measureMode === "weight" ? (weightLb ? weightParsed.error : null)
+                             : (lengthIn ? lengthParsed.error : null);
+  const canSave = !!speciesFinal && !sizeError && !saving;
 
   async function handleSave() {
     if (!canSave) return;
@@ -155,25 +160,24 @@ export default function CatchEditForm({
         measurement_mode: measureMode,
       };
       if (measureMode === "weight") {
-        const f = parseFloat(weightLb);
-        let weight_lb: number | null = null;
-        let weight_oz: number | null = null;
-        let weight_display: string | null = null;
-        if (Number.isFinite(f) && f > 0) {
-          weight_lb = Math.floor(f);
-          weight_oz = Math.round((f - weight_lb) * 16);
-          if (weight_oz >= 16) { weight_lb += 1; weight_oz = 0; }
-          weight_display = weight_oz === 0 ? `${weight_lb} lb` : `${weight_lb} lb ${weight_oz} oz`;
+        if (weightParsed.ok) {
+          payload.weight_lb = weightParsed.lb;
+          payload.weight_oz = weightParsed.oz;
+          payload.weight_display = weightParsed.display;
+        } else {
+          payload.weight_lb = null;
+          payload.weight_oz = null;
+          payload.weight_display = null;
         }
-        payload.weight_lb = weight_lb;
-        payload.weight_oz = weight_oz;
-        payload.weight_display = weight_display;
         payload.length_inches = null;
       } else {
-        const f = parseFloat(lengthIn);
-        const length_inches = Number.isFinite(f) && f > 0 ? f : null;
-        payload.length_inches = length_inches;
-        payload.weight_display = length_inches != null ? `${length_inches} in` : null;
+        if (lengthParsed.ok) {
+          payload.length_inches = lengthParsed.inches;
+          payload.weight_display = lengthParsed.display;
+        } else {
+          payload.length_inches = null;
+          payload.weight_display = null;
+        }
         payload.weight_lb = null;
         payload.weight_oz = null;
       }
@@ -188,7 +192,14 @@ export default function CatchEditForm({
       onSaved();
     } catch (err: any) {
       console.error("save catch", err);
-      toast.error(err?.message || "Failed to save");
+      if (err?.queued) {
+        toast.success("Saved offline — will sync when you're back online");
+        onSaved();
+      } else if (isOfflineError(err)) {
+        toast.error("Couldn't save — you're offline. Tap to retry.");
+      } else {
+        toast.error(err?.message || "Failed to save");
+      }
     } finally {
       setSaving(false);
     }
@@ -282,19 +293,24 @@ export default function CatchEditForm({
         </div>
         {measureMode === "weight" ? (
           <Input
+            type="text"
             inputMode="decimal"
             placeholder="lb"
             value={weightLb}
+            aria-invalid={!!sizeError}
             onChange={(e) => setWeightLb(e.target.value)}
           />
         ) : (
           <Input
+            type="text"
             inputMode="decimal"
             placeholder="inches"
             value={lengthIn}
+            aria-invalid={!!sizeError}
             onChange={(e) => setLengthIn(e.target.value)}
           />
         )}
+        {sizeError && <p className="text-xs text-destructive">{sizeError}</p>}
       </div>
 
       {/* Fly */}

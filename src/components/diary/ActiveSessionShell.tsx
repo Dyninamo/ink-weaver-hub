@@ -23,6 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveSession } from "@/contexts/ActiveSessionContext";
 import { acquireWakeLock, releaseWakeLock } from "@/lib/wakeLock";
 import { useSessionTrailRecorder } from "@/lib/useSessionTrailRecorder";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { installAutoFlush, onChange as onQueueChange, pendingCount } from "@/lib/pendingWriteQueue";
 import {
   endSession,
   pollSessionWeather,
@@ -78,6 +80,13 @@ export default function ActiveSessionShell({
 
   // Prompt 216 — passive GPS trail capture while the session is live.
   const trailRecorder = useSessionTrailRecorder(sessionId);
+  const online = useOnlineStatus();
+  const [queueDepth, setQueueDepth] = useState<number>(() => pendingCount(sessionId));
+  useEffect(() => {
+    installAutoFlush();
+    const unsub = onQueueChange(() => setQueueDepth(pendingCount(sessionId)));
+    return unsub;
+  }, [sessionId]);
 
   useEffect(() => {
     logEvent("session.phase_enter", { phase, sessionId }, sessionId);
@@ -361,6 +370,14 @@ export default function ActiveSessionShell({
 
   return (
     <main role="main" aria-live="polite" className="almanack-surface min-h-screen">
+      {(!online || queueDepth > 0) && (
+        <div
+          role="status"
+          className="sticky top-0 z-40 w-full text-center text-xs font-medium py-1.5 bg-destructive text-destructive-foreground"
+        >
+          {!online ? "Offline — saves are queued" : `Syncing ${queueDepth} queued event${queueDepth === 1 ? "" : "s"}…`}
+        </div>
+      )}
       <div className="max-w-[440px] mx-auto">
         {body}
       </div>
