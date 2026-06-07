@@ -370,6 +370,14 @@ export default function ActiveSessionShell({
 
   return (
     <main role="main" aria-live="polite" className="almanack-surface min-h-screen">
+      {(!online || queueDepth > 0) && (
+        <div
+          role="status"
+          className="sticky top-0 z-40 w-full text-center text-xs font-medium py-1.5 bg-destructive text-destructive-foreground"
+        >
+          {!online ? "Offline — saves are queued" : `Syncing ${queueDepth} queued event${queueDepth === 1 ? "" : "s"}…`}
+        </div>
+      )}
       <div className="max-w-[440px] mx-auto">
         {body}
       </div>
