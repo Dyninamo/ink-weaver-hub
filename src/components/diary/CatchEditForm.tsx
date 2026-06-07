@@ -18,6 +18,7 @@ import {
 } from "@/services/diaryService";
 import { deriveFixFromTrail, type DerivedFix } from "@/lib/deriveFix";
 import { parseWeight, parseLength } from "@/lib/parseSize";
+import { isOfflineError } from "@/hooks/useOnlineStatus";
 import { cn } from "@/lib/utils";
 
 const POSITIONS = ["point", "middle", "top dropper", "bob"];
