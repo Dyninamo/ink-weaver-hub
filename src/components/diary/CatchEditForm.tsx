@@ -285,19 +285,24 @@ export default function CatchEditForm({
         </div>
         {measureMode === "weight" ? (
           <Input
+            type="text"
             inputMode="decimal"
             placeholder="lb"
             value={weightLb}
+            aria-invalid={!!sizeError}
             onChange={(e) => setWeightLb(e.target.value)}
           />
         ) : (
           <Input
+            type="text"
             inputMode="decimal"
             placeholder="inches"
             value={lengthIn}
+            aria-invalid={!!sizeError}
             onChange={(e) => setLengthIn(e.target.value)}
           />
         )}
+        {sizeError && <p className="text-xs text-destructive">{sizeError}</p>}
       </div>
 
       {/* Fly */}
