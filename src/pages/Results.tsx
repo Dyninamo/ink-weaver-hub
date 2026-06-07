@@ -14,6 +14,7 @@ import type { RecommendedFly } from "@/types/flySelector";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { displayVenue } from "@/lib/venueLabel";
 
 export default function Results() {
   const location = useLocation();

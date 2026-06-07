@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import DebugPanel from "@/components/DebugPanel";
 
 import VenueSearch from "@/components/VenueSearch";
-import { getFishingAdvice, AdviceServiceError, ServiceMisconfiguredError, type FishingAdviceResponse } from "@/services/adviceService";
+import { getFishingAdvice, AdviceServiceError, ServiceMisconfiguredError, VenueNotFoundError, type FishingAdviceResponse } from "@/services/adviceService";
+import { displayVenue } from "@/lib/venueLabel";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getRecentQueries, getQueryById, QueryServiceError } from "@/services/queryService";
