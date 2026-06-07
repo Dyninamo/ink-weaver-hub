@@ -72,7 +72,7 @@ export async function flushQueue(): Promise<{ ok: number; failed: number }> {
   let ok = 0;
   let failed = 0;
   try {
-    const items = read();
+    const items = read().filter((it) => !it.failed);
     for (const item of items) {
       try {
         // Upsert on client_event_id so a partial-success retry can't duplicate.
@@ -83,19 +83,44 @@ export async function flushQueue(): Promise<{ ok: number; failed: number }> {
         remove(item.client_event_id);
         ok += 1;
       } catch (err: any) {
+        const msg = err?.message ?? String(err);
         item.attempts += 1;
-        item.last_error = err?.message ?? String(err);
-        // Persist updated attempts/last_error.
+        item.last_error = msg;
+
+        const isNetwork = /Failed to fetch|NetworkError|ERR_/i.test(msg);
+        // PostgREST returns code strings like 42P10, 23505, 23514, PGRST… for
+        // non-retryable schema/constraint/validation failures.
+        const code = err?.code ?? "";
+        const isClientError =
+          /^(4\d{2}|22|23|42|PGRST)/.test(String(code)) ||
+          /duplicate key|violates|constraint|invalid input|no unique or exclusion/i.test(msg);
+
+        if (!isNetwork && (isClientError || item.attempts >= MAX_ATTEMPTS)) {
+          item.failed = true;
+          try {
+            toast.error("Couldn't sync a queued event", {
+              description: msg.slice(0, 160),
+            });
+          } catch {}
+        }
+
+        // Persist updated attempts/last_error/failed.
         write(read().map((it) => it.client_event_id === item.client_event_id ? item : it));
         failed += 1;
-        // Stop flushing on first network failure — likely all will fail.
-        if (/Failed to fetch|NetworkError|ERR_/i.test(item.last_error ?? "")) break;
+
+        // Stop flushing on network failure — likely all will fail. Continue
+        // past client errors so one bad item can't wedge the rest.
+        if (isNetwork) break;
       }
     }
   } finally {
     flushing = false;
   }
   return { ok, failed };
+}
+
+export function clearFailed() {
+  write(read().filter((it) => !it.failed));
 }
 
 // One-shot listener install — called from app shell.
