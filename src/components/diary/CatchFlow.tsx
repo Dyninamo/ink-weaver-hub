@@ -311,7 +311,14 @@ export default function CatchFlow({
     } catch (err: any) {
       logEvent("error", { context: "catch_save", message: err?.message ?? String(err) }, sessionId);
       console.error("Catch save failed:", err);
-      toast.error(err?.message || "Failed to save catch");
+      if (err?.queued) {
+        toast.success("Saved offline — will sync when you're back online");
+        onSaved();
+      } else if (isOfflineError(err)) {
+        toast.error("Couldn't save — you're offline. Tap to retry.");
+      } else {
+        toast.error(err?.message || "Failed to save catch");
+      }
       // Don't dismiss — preserve user input.
     } finally {
       setSaving(false);
