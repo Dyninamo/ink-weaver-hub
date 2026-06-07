@@ -39,6 +39,18 @@ export class ServiceMisconfiguredError extends AdviceServiceError {
   }
 }
 
+// Prompt 237 — server returned 422 venue_not_found.
+export class VenueNotFoundError extends AdviceServiceError {
+  readonly submitted: string
+  readonly suggestions: { venue_id: string; name: string }[]
+  constructor(submitted: string, suggestions: { venue_id: string; name: string }[], message?: string) {
+    super(message ?? `We couldn't find "${submitted}".`, 'VENUE_NOT_FOUND')
+    this.name = 'VenueNotFoundError'
+    this.submitted = submitted
+    this.suggestions = suggestions
+  }
+}
+
 // Reads a Supabase functions.invoke error and returns the parsed response body, or null.
 async function readFunctionErrorBody(err: unknown): Promise<{ error?: string; message?: string } | null> {
   try {
