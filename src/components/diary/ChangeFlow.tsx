@@ -11,6 +11,7 @@ import { addEvent, type CurrentSetup, type FliesOnCast, type FlyOnCast } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { logEvent } from "@/services/eventLogger";
+import { isOfflineError } from "@/hooks/useOnlineStatus";
 import FlyPicker from "./FlyPicker";
 import LeaderPicker, { type LeaderValue, EMPTY_LEADER } from "./LeaderPicker";
 import SpotPicker from "./SpotPicker";
