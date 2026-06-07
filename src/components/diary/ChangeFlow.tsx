@@ -158,8 +158,8 @@ export default function ChangeFlow({
       return;
     }
     setSaving(true);
+    const next: CurrentSetup = { ...currentSetup };
     try {
-      const next: CurrentSetup = { ...currentSetup };
       const fromBlob: Record<string, any> = {};
       const toBlob: Record<string, any> = {};
 
