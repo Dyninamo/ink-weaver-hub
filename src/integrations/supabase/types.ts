@@ -2561,7 +2561,7 @@ export type Database = {
           wind_speed_change: number | null
           wind_speed_max_week: number | null
           wind_speed_mean_week: number | null
-          wind_speed_ms: number | null
+          wind_speed_mps: number | null
           wind_speed_std: number | null
           year: number | null
         }
@@ -2615,7 +2615,7 @@ export type Database = {
           wind_speed_change?: number | null
           wind_speed_max_week?: number | null
           wind_speed_mean_week?: number | null
-          wind_speed_ms?: number | null
+          wind_speed_mps?: number | null
           wind_speed_std?: number | null
           year?: number | null
         }
@@ -2669,7 +2669,7 @@ export type Database = {
           wind_speed_change?: number | null
           wind_speed_max_week?: number | null
           wind_speed_mean_week?: number | null
-          wind_speed_ms?: number | null
+          wind_speed_mps?: number | null
           wind_speed_std?: number | null
           year?: number | null
         }
@@ -6126,7 +6126,7 @@ export type Database = {
           t_min_day: number | null
           wind_dir_compass: string | null
           wind_dir_deg: number | null
-          wind_speed_ms: number | null
+          wind_speed_mps: number | null
         }
         Insert: {
           date: string
@@ -6139,7 +6139,7 @@ export type Database = {
           t_min_day?: number | null
           wind_dir_compass?: string | null
           wind_dir_deg?: number | null
-          wind_speed_ms?: number | null
+          wind_speed_mps?: number | null
         }
         Update: {
           date?: string
@@ -6152,7 +6152,7 @@ export type Database = {
           t_min_day?: number | null
           wind_dir_compass?: string | null
           wind_dir_deg?: number | null
-          wind_speed_ms?: number | null
+          wind_speed_mps?: number | null
         }
         Relationships: []
       }
