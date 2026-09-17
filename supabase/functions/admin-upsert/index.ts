@@ -33,11 +33,13 @@ const ALLOWED_TABLES = new Set<string>([
   "venue_slices",
   "station_registry",
   "venue_station_map",
+  "youtube_atoms",
 ]);
 
 const MAX_ROWS = 1000;
 const MAX_IDS = 1000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const INT_RE = /^[1-9][0-9]{0,18}$/;
 
 function jsonResp(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
