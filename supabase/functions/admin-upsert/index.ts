@@ -36,6 +36,8 @@ const ALLOWED_TABLES = new Set<string>([
 ]);
 
 const MAX_ROWS = 1000;
+const MAX_IDS = 1000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function jsonResp(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
@@ -62,7 +64,7 @@ Deno.serve(async (req) => {
       return jsonResp({ error: "Invalid JSON body" }, 400);
     }
 
-    const { table, rows, on_conflict, delete_where_not_null } = body ?? {};
+    const { table, rows, on_conflict, delete_where_not_null, delete_ids } = body ?? {};
 
     if (typeof table !== "string" || !table) {
       return jsonResp({ error: "table (string) required" }, 400);
@@ -70,11 +72,32 @@ Deno.serve(async (req) => {
     if (!ALLOWED_TABLES.has(table)) {
       return jsonResp({ error: `table '${table}' not in allowlist` }, 400);
     }
-    if (!Array.isArray(rows) || rows.length === 0) {
+    const hasDeleteIds = delete_ids !== undefined;
+    if (hasDeleteIds && delete_where_not_null !== undefined) {
+      return jsonResp({ error: "delete_ids and delete_where_not_null are mutually exclusive" }, 400);
+    }
+    const hasRows = rows !== undefined && rows !== null;
+    if (!hasRows && !hasDeleteIds && delete_where_not_null === undefined) {
       return jsonResp({ error: "rows must be a non-empty array" }, 400);
     }
-    if (rows.length > MAX_ROWS) {
-      return jsonResp({ error: `rows exceeds MAX_ROWS (${MAX_ROWS})` }, 400);
+    if (hasRows) {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return jsonResp({ error: "rows must be a non-empty array" }, 400);
+      }
+      if (rows.length > MAX_ROWS) {
+        return jsonResp({ error: `rows exceeds MAX_ROWS (${MAX_ROWS})` }, 400);
+      }
+    }
+    if (hasDeleteIds) {
+      if (!Array.isArray(delete_ids) || delete_ids.length === 0) {
+        return jsonResp({ error: "delete_ids must be a non-empty array" }, 400);
+      }
+      if (delete_ids.length > MAX_IDS) {
+        return jsonResp({ error: `delete_ids exceeds MAX_IDS (${MAX_IDS})` }, 400);
+      }
+      if (!delete_ids.every((v: unknown) => typeof v === "string" && UUID_RE.test(v))) {
+        return jsonResp({ error: "delete_ids must contain only UUID strings" }, 400);
+      }
     }
     if (on_conflict !== undefined && typeof on_conflict !== "string") {
       return jsonResp({ error: "on_conflict must be a string if provided" }, 400);
@@ -103,6 +126,23 @@ Deno.serve(async (req) => {
         return jsonResp({ error: delError.message, table, deleted: 0, upserted: 0 }, status);
       }
       deleted = delCount ?? 0;
+    }
+
+    if (hasDeleteIds) {
+      const { error: delError, count: delCount } = await supabaseAdmin
+        .from(table)
+        .delete({ count: "exact" })
+        .in("id", delete_ids as string[]);
+      if (delError) {
+        console.error(`[admin-upsert] ${table} delete_ids error:`, delError);
+        const status = /permission|denied|violat/i.test(delError.message) ? 400 : 500;
+        return jsonResp({ error: delError.message, table, deleted: 0, upserted: 0 }, status);
+      }
+      deleted = delCount ?? 0;
+    }
+
+    if (!hasRows) {
+      return jsonResp({ table, deleted, upserted: 0 }, 200);
     }
 
 
