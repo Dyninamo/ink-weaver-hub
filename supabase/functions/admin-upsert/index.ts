@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
       return jsonResp({ error: `table '${table}' not in allowlist` }, 400);
     }
     const hasDeleteIds = delete_ids !== undefined;
+    let deleteIdList: Array<string | number> = [];
     if (hasDeleteIds && delete_where_not_null !== undefined) {
       return jsonResp({ error: "delete_ids and delete_where_not_null are mutually exclusive" }, 400);
     }
