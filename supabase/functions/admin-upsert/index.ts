@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
       const { error: delError, count: delCount } = await supabaseAdmin
         .from(table)
         .delete({ count: "exact" })
-        .in("id", delete_ids as string[]);
+        .in("id", deleteIdList);
       if (delError) {
         console.error(`[admin-upsert] ${table} delete_ids error:`, delError);
         const status = /permission|denied|violat/i.test(delError.message) ? 400 : 500;
