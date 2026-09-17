@@ -33,11 +33,13 @@ const ALLOWED_TABLES = new Set<string>([
   "venue_slices",
   "station_registry",
   "venue_station_map",
+  "youtube_atoms",
 ]);
 
 const MAX_ROWS = 1000;
 const MAX_IDS = 1000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const INT_RE = /^[1-9][0-9]{0,18}$/;
 
 function jsonResp(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
@@ -73,6 +75,7 @@ Deno.serve(async (req) => {
       return jsonResp({ error: `table '${table}' not in allowlist` }, 400);
     }
     const hasDeleteIds = delete_ids !== undefined;
+    let deleteIdList: Array<string | number> = [];
     if (hasDeleteIds && delete_where_not_null !== undefined) {
       return jsonResp({ error: "delete_ids and delete_where_not_null are mutually exclusive" }, 400);
     }
@@ -95,9 +98,26 @@ Deno.serve(async (req) => {
       if (delete_ids.length > MAX_IDS) {
         return jsonResp({ error: `delete_ids exceeds MAX_IDS (${MAX_IDS})` }, 400);
       }
-      if (!delete_ids.every((v: unknown) => typeof v === "string" && UUID_RE.test(v))) {
-        return jsonResp({ error: "delete_ids must contain only UUID strings" }, 400);
+      const allUuid = delete_ids.every(
+        (v: unknown) => typeof v === "string" && UUID_RE.test(v),
+      );
+      const allInt = delete_ids.every(
+        (v: unknown) =>
+          (typeof v === "number" && Number.isSafeInteger(v) && v > 0) ||
+          (typeof v === "string" && INT_RE.test(v)),
+      );
+      if (!allUuid && !allInt) {
+        return jsonResp(
+          {
+            error:
+              "delete_ids must be all UUID strings or all positive integers, not a mix",
+          },
+          400,
+        );
       }
+      deleteIdList = allUuid
+        ? (delete_ids as string[])
+        : (delete_ids as Array<string | number>).map((v) => Number(v));
     }
     if (on_conflict !== undefined && typeof on_conflict !== "string") {
       return jsonResp({ error: "on_conflict must be a string if provided" }, 400);
@@ -132,7 +152,7 @@ Deno.serve(async (req) => {
       const { error: delError, count: delCount } = await supabaseAdmin
         .from(table)
         .delete({ count: "exact" })
-        .in("id", delete_ids as string[]);
+        .in("id", deleteIdList);
       if (delError) {
         console.error(`[admin-upsert] ${table} delete_ids error:`, delError);
         const status = /permission|denied|violat/i.test(delError.message) ? 400 : 500;
