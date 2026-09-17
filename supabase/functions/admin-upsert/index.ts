@@ -97,9 +97,26 @@ Deno.serve(async (req) => {
       if (delete_ids.length > MAX_IDS) {
         return jsonResp({ error: `delete_ids exceeds MAX_IDS (${MAX_IDS})` }, 400);
       }
-      if (!delete_ids.every((v: unknown) => typeof v === "string" && UUID_RE.test(v))) {
-        return jsonResp({ error: "delete_ids must contain only UUID strings" }, 400);
+      const allUuid = delete_ids.every(
+        (v: unknown) => typeof v === "string" && UUID_RE.test(v),
+      );
+      const allInt = delete_ids.every(
+        (v: unknown) =>
+          (typeof v === "number" && Number.isSafeInteger(v) && v > 0) ||
+          (typeof v === "string" && INT_RE.test(v)),
+      );
+      if (!allUuid && !allInt) {
+        return jsonResp(
+          {
+            error:
+              "delete_ids must be all UUID strings or all positive integers, not a mix",
+          },
+          400,
+        );
       }
+      deleteIdList = allUuid
+        ? (delete_ids as string[])
+        : (delete_ids as Array<string | number>).map((v) => Number(v));
     }
     if (on_conflict !== undefined && typeof on_conflict !== "string") {
       return jsonResp({ error: "on_conflict must be a string if provided" }, 400);
